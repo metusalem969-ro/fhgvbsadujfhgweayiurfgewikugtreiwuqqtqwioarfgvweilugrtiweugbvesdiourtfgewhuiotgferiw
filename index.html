@@ -3395,11 +3395,12 @@
                 }
             });
             
+            // Taste oriunde pe pagină → scrie în bara Google Search
             document.addEventListener('keydown', (e) => {
                 const activeElement = document.activeElement;
                 const isInModal = document.querySelector('.modal.show') !== null;
-                const isInInput = activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA';
-                
+                const isInInput = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+
                 if (e.key === 'Escape') {
                     document.querySelectorAll('.modal.show').forEach(modal => {
                         modal.classList.remove('show');
@@ -3407,13 +3408,24 @@
                     });
                     return;
                 }
-                
-                if (!isInModal && !isInInput && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-                    const searchInput = document.getElementById('searchInput');
-                    if (searchInput && searchInput !== activeElement) {
-                        searchInput.focus();
-                    }
-                }
+
+                if (isInModal || isInInput) return;
+                if (e.ctrlKey || e.metaKey || e.altKey) return;
+                if (e.key.length !== 1) return;
+
+                const googleInput = document.getElementById('googleSearchInput');
+                if (!googleInput) return;
+
+                e.preventDefault();
+                googleInput.focus();
+
+                const start = googleInput.selectionStart ?? googleInput.value.length;
+                const end = googleInput.selectionEnd ?? googleInput.value.length;
+                googleInput.value = googleInput.value.slice(0, start) + e.key + googleInput.value.slice(end);
+                googleInput.selectionStart = googleInput.selectionEnd = start + 1;
+
+                toggleClearButton('googleSearchInput', 'googleClearBtn');
+                playTypingSound();
             });
         });
 
