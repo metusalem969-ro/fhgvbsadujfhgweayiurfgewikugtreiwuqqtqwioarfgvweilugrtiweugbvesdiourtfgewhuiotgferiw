@@ -3029,14 +3029,16 @@
         
         function playSound(soundId, volume = 0.5) {
             if (!soundEnabled) return;
-            
+            unlockAudioOnGesture();
             try {
                 const sound = document.getElementById(soundId);
-                if (sound) {
-                    sound.currentTime = 0;
-                    sound.volume = volume;
-                    sound.play().catch(e => console.log('Sound play error:', e));
+                if (!sound) return;
+                if (!sound.src && SOUND_FILES[soundId]) {
+                    sound.src = resolveAssetUrl(SOUND_FILES[soundId]);
                 }
+                sound.currentTime = 0;
+                sound.volume = volume;
+                sound.play().catch((e) => console.log('Sound play error:', e));
             } catch (e) {
                 console.error('Error playing sound:', e);
             }
@@ -3056,6 +3058,82 @@
         function playNotificationBeep() {
             if (!soundEnabled) return;
             playSound('serverBeepSound', 0.4);
+        }
+
+        const SOUND_FILES = {
+            typingSound: 'keyboard-typing-one-short-292592.mp3',
+            clickSound: 'click.mp3',
+            categorySound: 'categorie.mp3',
+            toggleSound: 'toggle.mp3',
+            permanentSound: 'permanent.mp3',
+            notificationSound: 'notification-positive-bleep-joshua-chivers-1-00-01.mp3',
+            bleepSound: 'arcade-bleep-sound-6071.mp3',
+            thudSound: 'thud-sound-effect-319090.mp3',
+            serverBeepSound: 'ecg-machine-beep-gfx-sounds-1-1-00-00.mp3'
+        };
+
+        function resolveAssetUrl(relativePath) {
+            try {
+                return new URL(relativePath, window.location.href).href;
+            } catch (e) {
+                return relativePath;
+            }
+        }
+
+        let audioUnlocked = false;
+
+        function unlockAudioOnGesture() {
+            if (audioUnlocked || !soundEnabled) return;
+            audioUnlocked = true;
+            Object.keys(SOUND_FILES).forEach((id) => {
+                const audio = document.getElementById(id);
+                if (!audio) return;
+                const prevVolume = audio.volume;
+                audio.volume = 0.01;
+                const p = audio.play();
+                if (p && typeof p.then === 'function') {
+                    p.then(() => {
+                        audio.pause();
+                        audio.currentTime = 0;
+                        audio.volume = prevVolume;
+                    }).catch(() => {
+                        audio.volume = prevVolume;
+                    });
+                }
+            });
+        }
+
+        function initAudioElements() {
+            Object.entries(SOUND_FILES).forEach(([id, filename]) => {
+                const audio = document.getElementById(id);
+                if (!audio) return;
+                const primary = resolveAssetUrl(filename);
+                const fallback = resolveAssetUrl('sounds/' + filename);
+                const applySrc = (src) => {
+                    audio.src = src;
+                    const source = audio.querySelector('source');
+                    if (source) source.src = src;
+                };
+                applySrc(primary);
+                audio.addEventListener('error', function onAudioError() {
+                    if (audio.dataset.fallbackTried === '1') return;
+                    audio.dataset.fallbackTried = '1';
+                    applySrc(fallback);
+                    audio.load();
+                });
+            });
+        }
+
+        function initSoundListeners() {
+            document.querySelectorAll('input[type="text"]').forEach((input) => {
+                input.addEventListener('keydown', playTypingSound);
+            });
+            document.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+                checkbox.addEventListener('change', () => playSound('toggleSound', 0.3));
+            });
+            document.querySelectorAll('button:not(#soundToggle)').forEach((button) => {
+                button.addEventListener('click', () => playSound('clickSound', 0.2));
+            });
         }
 
         // All site links data
@@ -3428,7 +3506,12 @@
             loadTheme();
             loadZoom();
             loadSoundSettings();
+            initAudioElements();
+            initSoundListeners();
+            document.addEventListener('click', unlockAudioOnGesture, { once: true, passive: true });
+            document.addEventListener('touchstart', unlockAudioOnGesture, { once: true, passive: true });
             
+            try {
             const linksLoaded = loadAllLinks();
             if (!linksLoaded) {
                 loadCustomLinks();
@@ -3451,22 +3534,10 @@
             updateClock();
             loadWeather();
             setInterval(updateClock, 1000);
+            } catch (initErr) {
+                console.error('Dashboard init error:', initErr);
+            }
 
-            const inputs = document.querySelectorAll('input[type="text"]');
-            inputs.forEach(input => {
-                input.addEventListener('keydown', playTypingSound);
-            });
-            
-            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', () => playSound('toggleSound', 0.3));
-            });
-            
-            const buttons = document.querySelectorAll('button:not(#soundToggle)');
-            buttons.forEach(button => {
-                button.addEventListener('click', () => playSound('clickSound', 0.2));
-            });
-            
             // ===== ESC KEY TO CLEAR SEARCH INPUTS =====
             const googleSearchInput = document.getElementById('googleSearchInput');
             const filterInput = document.getElementById('filterInput');
@@ -3661,8 +3732,14 @@
 
             filtered.forEach((link) => {
                 const linkIndex = links.indexOf(link);
-                const domain = new URL(link.url).hostname;
-                const isFavorite = favorites.has(link.url);
+                let domain;
+                try {
+                    domain = new URL(link.url).hostname;
+                } catch (e) {
+                    console.warn('Invalid link URL skipped:', link.url);
+                    return;
+                }
+                const isFavorite = favorites.has(link.url) || [...favorites].some((f) => linkUrlMatches(f, link.url));
                 
                 const iconUrl = getSafeIconUrl(link, domain);
                 
@@ -4780,6 +4857,7 @@
             `;
             notification.textContent = message;
             document.body.appendChild(notification);
+            playNotificationBeep();
 
             setTimeout(() => {
                 notification.remove();
