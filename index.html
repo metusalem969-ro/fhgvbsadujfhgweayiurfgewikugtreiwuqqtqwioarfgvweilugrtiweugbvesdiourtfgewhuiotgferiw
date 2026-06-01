@@ -3318,26 +3318,26 @@
         }
 
         const FAVORITES_KEY = 'favoriteLinks_v1';
-        const DEFAULT_FAVORITE_URLS = [
-            'https://mail.yahoo.com/d/folders/1',
-            'https://mail.google.com',
-            'https://www.youtube.com',
-            'https://www.facebook.com',
-            'https://www.aliexpress.com',
-            'https://www.ebay.com',
-            'https://www.ebay.co.uk',
-            'https://www.amazon.co.uk/',
-            'https://web.whatsapp.com/',
-            'https://clicksud.co/',
-            'https://clicksud.com.in/',
-            'https://voxfilmeonline.biz/',
-            'https://divxfilmeonline.tv/filme-online/',
-            'https://filelist.io/login.php',
-            'https://www.imdb.com/watchlist',
-            'https://www.perplexity.ai',
-            'https://metusalem969-ro.github.io/quick-app-launcher/',
-            'http://localhost:8899/local/index.html'
+        /** Site-uri cu stea implicită — ca în captura principală a dashboard-ului */
+        const DEFAULT_STARRED_SITE_NAMES = [
+            'Yahoo', 'Gmail', 'YouTube', 'Facebook', 'WhatsApp',
+            'eBay', 'eBay UK', 'Amazon UK', 'AliExpress',
+            'ClickSud', 'Filelist', 'DivX Filme', 'IMDB', 'Vox Filme',
+            'FilmeHD API', 'JustWatch', 'Portalul TV', 'Top Filme HD', 'Cinepub', 'Pluto TV', 'Tubi',
+            'OpenAI', 'Perplexity', 'Arduino', 'Control PC Mobil', 'Control PC Desktop'
         ];
+        const DEFAULT_FAVORITE_EXTRA_URLS = [
+            'https://clicksud.com.in/',
+            'https://filmehd.se'
+        ];
+        const DEFAULT_FAVORITE_URLS = (() => {
+            const urls = new Set(DEFAULT_FAVORITE_EXTRA_URLS);
+            DEFAULT_STARRED_SITE_NAMES.forEach((name) => {
+                const entry = DEFAULT_LINKS.find((l) => l.name === name);
+                if (entry) urls.add(entry.url);
+            });
+            return [...urls];
+        })();
         const DEFAULT_ENSURE_LINKS = [
             {
                 name: 'Perplexity',
