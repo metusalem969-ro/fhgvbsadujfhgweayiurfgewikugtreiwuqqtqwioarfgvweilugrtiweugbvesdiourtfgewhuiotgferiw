@@ -3203,7 +3203,6 @@
             { name: "Kodular", url: "https://www.kodular.io", category: "development" },
             { name: "MakeWithTech", url: "https://makewithtech.com", category: "development" },
             { name: "Dropbox", url: "https://www.dropbox.com", category: "storage" },
-            { name: "Microsoft", url: "https://www.microsoft.com", category: "tech" },
             { name: "TeamViewer", url: "https://www.teamviewer.com", category: "tech" },
             { name: "Control PC Mobil", url: "https://metusalem969-ro.github.io/quick-app-launcher/", category: "tech", iconUrl: "icons/control-mobil.svg" },
             { name: "Control PC Desktop", url: "http://localhost:8899/local/index.html", category: "tech", iconUrl: "icons/control-desktop.svg" },
@@ -3881,11 +3880,12 @@
         function isRemovedLink(link) {
             const name = (link && link.name ? String(link.name) : '').toLowerCase();
             const url = (link && link.url ? String(link.url) : '').toLowerCase();
-            if (name === '123movies' || name === 'oracle' || name === 'crackle' || name === 'portalul tv') return true;
+            if (name === '123movies' || name === 'oracle' || name === 'crackle' || name === 'portalul tv' || name === 'microsoft') return true;
             if (url.includes('123movies')) return true;
             if (url.includes('oracle.com')) return true;
             if (url.includes('crackle.com')) return true;
             if (url.includes('portalultautv')) return true;
+            if (url.includes('microsoft.com')) return true;
             return false;
         }
 
@@ -3898,7 +3898,7 @@
             }
             [...favorites].forEach((url) => {
                 const u = String(url).toLowerCase();
-                if (u.includes('123movies') || u.includes('oracle.com') || u.includes('crackle.com') || u.includes('portalultautv')) {
+                if (u.includes('123movies') || u.includes('oracle.com') || u.includes('crackle.com') || u.includes('portalultautv') || u.includes('microsoft.com')) {
                     favorites.delete(url);
                     changed = true;
                 }
