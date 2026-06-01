@@ -3177,7 +3177,6 @@
             { name: "Voyo", url: "https://voyo.ro/", category: "filme" },
             { name: "Filmflix", url: "https://filmflix.ro/", category: "filme" },
             { name: "Tubi", url: "https://tubitv.com/", category: "filme" },
-            { name: "Crackle", url: "https://www.crackle.com/", category: "filme" },
             { name: "Roku", url: "https://www.roku.com/en-gb/", category: "filme" },
             { name: "Filmzie", url: "https://filmzie.com/home", category: "filme" },
             { name: "Yidio", url: "https://www.yidio.com/", category: "filme" },
@@ -3875,9 +3874,10 @@
         function isRemovedLink(link) {
             const name = (link && link.name ? String(link.name) : '').toLowerCase();
             const url = (link && link.url ? String(link.url) : '').toLowerCase();
-            if (name === '123movies' || name === 'oracle') return true;
+            if (name === '123movies' || name === 'oracle' || name === 'crackle') return true;
             if (url.includes('123movies')) return true;
             if (url.includes('oracle.com')) return true;
+            if (url.includes('crackle.com')) return true;
             return false;
         }
 
@@ -3890,7 +3890,7 @@
             }
             [...favorites].forEach((url) => {
                 const u = String(url).toLowerCase();
-                if (u.includes('123movies') || u.includes('oracle.com')) {
+                if (u.includes('123movies') || u.includes('oracle.com') || u.includes('crackle.com')) {
                     favorites.delete(url);
                     changed = true;
                 }
