@@ -3900,7 +3900,7 @@
             const time = now.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             document.getElementById('mainTime').textContent = time;
             
-            const fullDateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const fullDateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('fullDateMain').textContent = now.toLocaleDateString('ro-RO', fullDateOptions);
             
             const daysRo = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă'];
@@ -3932,7 +3932,7 @@
         function updateClockModal(date = new Date()) {
             document.getElementById('modalClockTime').textContent = date.toLocaleTimeString('ro-RO');
             
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('fullDate').textContent = date.toLocaleDateString('ro-RO', options);
             
             const daysRo = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă'];
