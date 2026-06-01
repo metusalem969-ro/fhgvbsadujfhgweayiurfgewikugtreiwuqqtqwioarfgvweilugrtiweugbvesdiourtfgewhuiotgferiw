@@ -1305,16 +1305,9 @@
         .search-box {
             position: relative;
             display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            align-items: center;
-            gap: 10px;
+            grid-template-columns: 1fr;
+            align-items: stretch;
             width: 100%;
-        }
-
-        /* Butonul „Caută" stă în coloana 2; clear rămâne peste input în coloana 1 */
-        .search-box > button:not(.input-clear-btn):not(.filter-clear-btn) {
-            grid-column: 2;
-            grid-row: 1;
         }
         
         /* Capăt roșu pe toată suprafața din dreapta input-ului (semi-capsulă integrată) */
@@ -1408,7 +1401,7 @@
         }
         
         #googleSearchInput {
-            padding-right: calc(3.5em + 6px);
+            padding-right: calc(7.5em + 3.5em + 14px);
         }
         
         #filterInput {
@@ -1427,24 +1420,33 @@
             background: rgba(255, 255, 255, 0.35);
         }
 
-        .search-box button:not(.input-clear-btn):not(.filter-clear-btn) {
-            padding: 20px 45px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        .search-submit-btn {
+            grid-column: 1;
+            grid-row: 1;
+            justify-self: end;
+            align-self: stretch;
+            z-index: 3;
+            min-width: 7.5em;
+            max-width: 9em;
+            margin: 3px;
+            padding: 0 1.25em;
+            background: linear-gradient(135deg, #22c55e, #16a34a) !important;
             border: none;
-            border-radius: 50px;
-            color: var(--text);
-            font-size: 1.2em;
+            border-radius: 999px;
+            color: #fff !important;
+            font-size: 1.35em;
+            font-weight: 800;
             cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 700;
             white-space: nowrap;
-            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 4px 14px rgba(22, 163, 74, 0.45) !important;
         }
+        .search-box:has(.search-submit-btn) .input-clear-btn { margin-right: calc(7.5em + 8px); z-index: 4; }
+        .search-submit-btn:hover { background: linear-gradient(135deg, #16a34a, #15803d) !important; transform: scale(1.02); }
+        body[data-theme="light"] .search-submit-btn { background: linear-gradient(135deg, #22c55e, #16a34a) !important; color: #fff !important; }
 
-        .search-box button:not(.input-clear-btn):not(.filter-clear-btn):hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.5);
-        }
 
         /* Search History - FULL WIDTH */
         .search-history {
@@ -2277,10 +2279,9 @@
                 padding-right: calc(3.3em + 6px);
                 padding-left: 18px;
             }
-            .search-box button:not(.input-clear-btn):not(.filter-clear-btn) {
-                padding: 16px 18px;
-                font-size: 1em;
-            }
+            .search-submit-btn { min-width: 6em; font-size: 1.1em; margin: 2px; }
+            .search-box:has(.search-submit-btn) .input-clear-btn { margin-right: calc(6em + 6px); }
+            #googleSearchInput { padding-right: calc(6em + 3.3em + 10px); }
             .input-clear-btn,
             .filter-clear-btn {
                 width: 3.3em;
