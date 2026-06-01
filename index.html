@@ -3069,7 +3069,7 @@
             { name: "eBay UK", url: "https://www.ebay.co.uk", category: "shopping" },
             { name: "AliExpress", url: "https://www.aliexpress.com", category: "shopping" },
             { name: "ClickSud", url: "https://clicksud.co/", category: "filme" },
-            { name: "Filelist", url: "https://filelist.io/login.php", category: "fisiere" },
+            { name: "Filelist", url: "https://filelist.io/login.php", category: "fisiere", iconUrl: "icons/filelist.ico" },
             { name: "DivX Filme", url: "https://divxfilmeonline.tv/filme-online/", category: "filme" },
             { name: "IMDB", url: "https://www.imdb.com/watchlist", category: "filme" },
             { name: "FilmeHD API", url: "https://filmehd.se/wp-json", category: "filme" },
@@ -3152,6 +3152,8 @@
             }
         }
 
+        const DEFAULT_LINK_ICON = 'icons/default.svg';
+
         const BUILTIN_ICON_URLS = {
             'https://web.whatsapp.com': 'icons/whatsapp.svg',
             'https://web.whatsapp.com/': 'icons/whatsapp.svg',
@@ -3168,6 +3170,7 @@
             'yahoo.com': 'icons/yahoo.svg',
             'www.arduino.cc': 'icons/arduino.svg',
             'arduino.cc': 'icons/arduino.svg'
+            'filelist.io': 'icons/filelist.ico'
         };
 
         function normalizeLinkUrl(url) {
@@ -3207,7 +3210,7 @@
             if (builtinIcon) return resolveIconUrl(builtinIcon);
             const customIcon = resolveIconUrl(link.iconUrl);
             if (customIcon) return customIcon;
-            return `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(domain)}`;
+            return resolveIconUrl(DEFAULT_LINK_ICON) || `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(domain)}`;
         }
 
         function applyBuiltinIcons() {
@@ -3672,7 +3675,7 @@
                     <div class="link-edit-btn" title="Editează" data-edit-index="${linkIndex}">✏️</div>
                     <img src="${escapeHtml(iconUrl)}" 
                          alt="${escapeHtml(link.name)}" 
-                         onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>'">
+                         onerror="this.onerror=null;this.src='icons/default.svg'">
                     <div class="link-name">${escapeHtml(link.name)}</div>
                     ${previewHTML}
                 `;
