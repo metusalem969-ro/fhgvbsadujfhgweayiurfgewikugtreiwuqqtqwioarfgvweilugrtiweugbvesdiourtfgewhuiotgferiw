@@ -629,22 +629,13 @@
             background: linear-gradient(135deg, rgba(6, 182, 212, 0.95) 0%, rgba(14, 165, 233, 0.95) 100%);
         }
 
-        /* THEME 5: Light Mode ☀️ - fundal alb */
+        /* THEME 5: Light Mode ☀️ - ✅ FIX 3 - CLEANED UP */
         body[data-theme="light"] {
-            background: #ffffff;
-        }
-        body[data-theme="light"] .enhanced-clock-container {
-            background: rgba(255, 255, 255, 0.98);
-            border-color: rgba(59, 130, 246, 0.22);
-            box-shadow: 0 4px 18px rgba(59, 130, 246, 0.1);
-        }
-        body[data-theme="light"] .date-detail-item {
-            background: rgba(241, 245, 249, 0.98);
-            border-color: rgba(59, 130, 246, 0.18);
+            background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 50%, #e0f2fe 100%);
         }
         body[data-theme="light"] .header {
-            background: rgba(255, 255, 255, 0.95);
-            border-color: rgba(59, 130, 246, 0.3);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(147, 51, 234, 0.15) 100%);
+            border-color: rgba(59, 130, 246, 0.4);
         }
         body[data-theme="light"] .header h1 {
             background: linear-gradient(135deg, #3b82f6, #9333ea, #ec4899);
@@ -1314,9 +1305,16 @@
         .search-box {
             position: relative;
             display: grid;
-            grid-template-columns: 1fr;
-            align-items: stretch;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 10px;
             width: 100%;
+        }
+
+        /* Butonul „Caută" stă în coloana 2; clear rămâne peste input în coloana 1 */
+        .search-box > button:not(.input-clear-btn):not(.filter-clear-btn) {
+            grid-column: 2;
+            grid-row: 1;
         }
         
         /* Capăt roșu pe toată suprafața din dreapta input-ului (semi-capsulă integrată) */
@@ -1410,7 +1408,7 @@
         }
         
         #googleSearchInput {
-            padding-right: calc(7.5em + 3.5em + 14px);
+            padding-right: calc(3.5em + 6px);
         }
         
         #filterInput {
@@ -1429,33 +1427,24 @@
             background: rgba(255, 255, 255, 0.35);
         }
 
-        .search-submit-btn {
-            grid-column: 1;
-            grid-row: 1;
-            justify-self: end;
-            align-self: stretch;
-            z-index: 3;
-            min-width: 7.5em;
-            max-width: 9em;
-            margin: 3px;
-            padding: 0 1.25em;
-            background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+        .search-box button:not(.input-clear-btn):not(.filter-clear-btn) {
+            padding: 20px 45px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             border: none;
-            border-radius: 999px;
-            color: #fff !important;
-            font-size: 1.35em;
-            font-weight: 800;
+            border-radius: 50px;
+            color: var(--text);
+            font-size: 1.2em;
             cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 700;
             white-space: nowrap;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 4px 14px rgba(22, 163, 74, 0.45) !important;
+            flex-shrink: 0;
         }
-        .search-box:has(.search-submit-btn) .input-clear-btn { margin-right: calc(7.5em + 8px); z-index: 4; }
-        .search-submit-btn:hover { background: linear-gradient(135deg, #16a34a, #15803d) !important; transform: scale(1.02); }
-        body[data-theme="light"] .search-submit-btn { background: linear-gradient(135deg, #22c55e, #16a34a) !important; color: #fff !important; }
 
+        .search-box button:not(.input-clear-btn):not(.filter-clear-btn):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.5);
+        }
 
         /* Search History - FULL WIDTH */
         .search-history {
@@ -1960,7 +1949,7 @@
             cursor: pointer;
             box-shadow: 0 5px 20px rgba(251, 191, 36, 0.6);
             transition: all 0.3s ease;
-            z-index: 100;
+            z-index: 1001;
         }
 
         .add-site-btn:hover {
@@ -2065,12 +2054,17 @@
                 text-align: center;
             }
 
-            .add-site-btn {
-                width: 50px;
-                height: 50px;
-                font-size: 1.5em;
-                bottom: 20px;
-                right: 20px;
+            #floatingButtons > .add-site-btn {
+                position: sticky !important;
+                left: 0;
+                flex: 0 0 auto;
+                width: 44px !important;
+                height: 44px !important;
+                min-width: 44px !important;
+                font-size: 1.35em !important;
+                margin-right: 2px;
+                z-index: 2;
+                order: -1;
             }
 
             #soundToggle, #themeToggle {
@@ -2288,9 +2282,10 @@
                 padding-right: calc(3.3em + 6px);
                 padding-left: 18px;
             }
-            .search-submit-btn { min-width: 6em; font-size: 1.1em; margin: 2px; }
-            .search-box:has(.search-submit-btn) .input-clear-btn { margin-right: calc(6em + 6px); }
-            #googleSearchInput { padding-right: calc(6em + 3.3em + 10px); }
+            .search-box button:not(.input-clear-btn):not(.filter-clear-btn) {
+                padding: 16px 18px;
+                font-size: 1em;
+            }
             .input-clear-btn,
             .filter-clear-btn {
                 width: 3.3em;
@@ -2366,6 +2361,7 @@
     
     <!-- Bară de butoane plutitoare: stack vertical pe dreapta (desktop), bară orizontală jos (mobil) -->
     <div id="floatingButtons">
+    <button type="button" class="add-site-btn" onclick="openAddModal()" title="Adaugă site nou">+</button>
     <!-- Sound Control Toggle -->
     <button id="soundToggle" style="position: fixed; bottom: 30px; right: 30px; width: 50px; height: 50px; background: linear-gradient(135deg, #10b981, #06b6d4); border: none; border-radius: 50%; color: var(--text); cursor: pointer; box-shadow: 0 5px 20px rgba(16, 185, 129, 0.6); transition: all 0.3s ease; z-index: 100; font-size: 1.5em;" onclick="toggleSound()" title="Toggle Sound">
         🔊
@@ -2482,7 +2478,7 @@
                        onkeypress="if(event.key==='Enter') performGoogleSearch()"
                        oninput="toggleClearButton('googleSearchInput', 'googleClearBtn')">
                 <button class="input-clear-btn" id="googleClearBtn" onclick="clearGoogleSearch()" title="Șterge (ESC)">✕</button>
-                <button type="button" class="search-submit-btn" onclick="performGoogleSearch()">Caută</button>
+                <button onclick="performGoogleSearch()">Caută</button>
             </div>
         </div>
 
@@ -2522,8 +2518,6 @@
         <div class="links-grid" id="linksGrid"></div>
     </div>
 
-    <!-- Add Site Button -->
-    <button class="add-site-btn" onclick="openAddModal()">+</button>
 
     <!-- Add Site Modal -->
     <div class="modal" id="addModal">
@@ -2870,13 +2864,14 @@
         }
 
         function getDefaultZoomLevel() {
-            return isMobileViewport() ? 60 : 70;
+            // Pe mobil 70% — 85% și mai ales 100% salvat anterior erau prea mari.
+            return isMobileViewport() ? 70 : 70;
         }
 
-        // La încărcare pe mobil, 70%+ și 100% salvat anterior sunt reduse la 60%.
+        // La încărcare pe mobil, valorile mari salvate (ex. 100%) sunt reduse automat.
         function normalizeZoomForMobile(level) {
             if (!isMobileViewport()) return level;
-            if (level >= 70) return 60;
+            if (level >= 85) return 70;
             return level;
         }
         
@@ -2952,25 +2947,18 @@
             light: { name: '☀️ Light Mode', emoji: '☀️' }
         };
         
-        function getDefaultTheme() {
-            return 'light';
-        }
-
         function loadTheme() {
             try {
                 const saved = localStorage.getItem(THEME_KEY);
-                let theme = getDefaultTheme();
-                if (!isMobileViewport() && saved && THEMES.includes(saved)) {
-                    theme = saved;
-                }
-                currentThemeIndex = THEMES.indexOf(theme);
-                if (currentThemeIndex === -1) currentThemeIndex = THEMES.indexOf('light');
-                applyTheme(THEMES[currentThemeIndex]);
-                if (isMobileViewport()) {
-                    localStorage.setItem(THEME_KEY, 'light');
+                if (saved && THEMES.includes(saved)) {
+                    const index = THEMES.indexOf(saved);
+                    currentThemeIndex = index;
+                    applyTheme(saved);
+                } else {
+                    applyTheme(THEMES[0]);
                 }
             } catch (e) {
-                applyTheme('light');
+                applyTheme(THEMES[0]);
             }
         }
         
@@ -3044,16 +3032,14 @@
         
         function playSound(soundId, volume = 0.5) {
             if (!soundEnabled) return;
-            unlockAudioOnGesture();
+            
             try {
                 const sound = document.getElementById(soundId);
-                if (!sound) return;
-                if (!sound.src && SOUND_FILES[soundId]) {
-                    sound.src = resolveAssetUrl(SOUND_FILES[soundId]);
+                if (sound) {
+                    sound.currentTime = 0;
+                    sound.volume = volume;
+                    sound.play().catch(e => console.log('Sound play error:', e));
                 }
-                sound.currentTime = 0;
-                sound.volume = volume;
-                sound.play().catch((e) => console.log('Sound play error:', e));
             } catch (e) {
                 console.error('Error playing sound:', e);
             }
@@ -3075,100 +3061,23 @@
             playSound('serverBeepSound', 0.4);
         }
 
-        const SOUND_FILES = {
-            typingSound: 'keyboard-typing-one-short-292592.mp3',
-            clickSound: 'click.mp3',
-            categorySound: 'categorie.mp3',
-            toggleSound: 'toggle.mp3',
-            permanentSound: 'permanent.mp3',
-            notificationSound: 'notification-positive-bleep-joshua-chivers-1-00-01.mp3',
-            bleepSound: 'arcade-bleep-sound-6071.mp3',
-            thudSound: 'thud-sound-effect-319090.mp3',
-            serverBeepSound: 'ecg-machine-beep-gfx-sounds-1-1-00-00.mp3'
-        };
-
-        function resolveAssetUrl(relativePath) {
-            try {
-                return new URL(relativePath, window.location.href).href;
-            } catch (e) {
-                return relativePath;
-            }
-        }
-
-        let audioUnlocked = false;
-
-        function unlockAudioOnGesture() {
-            if (audioUnlocked || !soundEnabled) return;
-            audioUnlocked = true;
-            Object.keys(SOUND_FILES).forEach((id) => {
-                const audio = document.getElementById(id);
-                if (!audio) return;
-                const prevVolume = audio.volume;
-                audio.volume = 0.01;
-                const p = audio.play();
-                if (p && typeof p.then === 'function') {
-                    p.then(() => {
-                        audio.pause();
-                        audio.currentTime = 0;
-                        audio.volume = prevVolume;
-                    }).catch(() => {
-                        audio.volume = prevVolume;
-                    });
-                }
-            });
-        }
-
-        function initAudioElements() {
-            Object.entries(SOUND_FILES).forEach(([id, filename]) => {
-                const audio = document.getElementById(id);
-                if (!audio) return;
-                const primary = resolveAssetUrl(filename);
-                const fallback = resolveAssetUrl('sounds/' + filename);
-                const applySrc = (src) => {
-                    audio.src = src;
-                    const source = audio.querySelector('source');
-                    if (source) source.src = src;
-                };
-                applySrc(primary);
-                audio.addEventListener('error', function onAudioError() {
-                    if (audio.dataset.fallbackTried === '1') return;
-                    audio.dataset.fallbackTried = '1';
-                    applySrc(fallback);
-                    audio.load();
-                });
-            });
-        }
-
-        function initSoundListeners() {
-            document.querySelectorAll('input[type="text"]').forEach((input) => {
-                input.addEventListener('keydown', playTypingSound);
-            });
-            document.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
-                checkbox.addEventListener('change', () => playSound('toggleSound', 0.3));
-            });
-            document.querySelectorAll('button:not(#soundToggle)').forEach((button) => {
-                button.addEventListener('click', () => playSound('clickSound', 0.2));
-            });
-        }
-
         // All site links data
         let links = [
-            { name: "Yahoo", url: "https://mail.yahoo.com/d/folders/1", category: "email", iconUrl: "icons/yahoo.svg" },
+            { name: "Yahoo", url: "https://mail.yahoo.com/d/folders/1", category: "email" },
             { name: "Gmail", url: "https://mail.google.com", category: "email" },
             { name: "YouTube", url: "https://www.youtube.com", category: "video" },
             { name: "Facebook", url: "https://www.facebook.com", category: "social" },
-            { name: "WhatsApp", url: "https://web.whatsapp.com/", category: "social", iconUrl: "icons/whatsapp.svg" },
             { name: "eBay", url: "https://www.ebay.com", category: "shopping" },
             { name: "eBay UK", url: "https://www.ebay.co.uk", category: "shopping" },
-            { name: "Amazon UK", url: "https://www.amazon.co.uk/", category: "shopping" },
             { name: "AliExpress", url: "https://www.aliexpress.com", category: "shopping" },
             { name: "ClickSud", url: "https://clicksud.co/", category: "filme" },
-            { name: "Filelist", url: "https://filelist.io/login.php", category: "fisiere", iconUrl: "icons/filelist.ico" },
+            { name: "Filelist", url: "https://filelist.io/login.php", category: "fisiere" },
             { name: "DivX Filme", url: "https://divxfilmeonline.tv/filme-online/", category: "filme" },
             { name: "IMDB", url: "https://www.imdb.com/watchlist", category: "filme" },
             { name: "FilmeHD API", url: "https://filmehd.se/wp-json", category: "filme" },
             { name: "Vox Filme", url: "https://voxfilmeonline.biz/", category: "filme" },
             { name: "JustWatch", url: "https://www.justwatch.com/ro/filme", category: "filme" },
+            { name: "Portalul TV", url: "https://portalultautv.biz/", category: "filme" },
             { name: "Top Filme HD", url: "https://www.topfilmehd.ro/", category: "filme" },
             { name: "Cinepub", url: "https://cinepub.ro/", category: "filme" },
             { name: "Pluto TV", url: "https://pluto.tv/uk/hub/home", category: "filme" },
@@ -3176,6 +3085,8 @@
             { name: "Voyo", url: "https://voyo.ro/", category: "filme" },
             { name: "Filmflix", url: "https://filmflix.ro/", category: "filme" },
             { name: "Tubi", url: "https://tubitv.com/", category: "filme" },
+            { name: "123Movies", url: "https://123moviesonl.net/", category: "filme" },
+            { name: "Crackle", url: "https://www.crackle.com/", category: "filme" },
             { name: "Roku", url: "https://www.roku.com/en-gb/", category: "filme" },
             { name: "Filmzie", url: "https://filmzie.com/home", category: "filme" },
             { name: "Yidio", url: "https://www.yidio.com/", category: "filme" },
@@ -3187,7 +3098,7 @@
             { name: "DeepSeek", url: "https://deepseek.ai", category: "ai" },
             { name: "Gemini AI", url: "https://gemini.google.com", category: "ai" },
             { name: "Perplexity", url: "https://www.perplexity.ai", category: "ai" },
-            { name: "Arduino", url: "https://www.arduino.cc", category: "electronics", iconUrl: "icons/arduino.svg" },
+            { name: "Arduino", url: "https://www.arduino.cc", category: "electronics" },
             { name: "Blynk", url: "https://blynk.io", category: "electronics" },
             { name: "Adafruit", url: "https://www.adafruit.com", category: "electronics" },
             { name: "App Inventor", url: "https://appinventor.mit.edu", category: "development" },
@@ -3197,8 +3108,8 @@
             { name: "Dropbox", url: "https://www.dropbox.com", category: "storage" },
             { name: "Microsoft", url: "https://www.microsoft.com", category: "tech" },
             { name: "TeamViewer", url: "https://www.teamviewer.com", category: "tech" },
-            { name: "Control PC Mobil", url: "https://metusalem969-ro.github.io/quick-app-launcher/", category: "tech", iconUrl: "icons/control-mobil.svg" },
-            { name: "Control PC Desktop", url: "http://localhost:8899/local/index.html", category: "tech", iconUrl: "icons/control-desktop.svg" },
+            { name: "Control PC Mobil", url: "https://metusalem969-ro.github.io/quick-app-launcher/", category: "tech" },
+            { name: "Control PC Desktop", url: "http://localhost:8899/local/index.html", category: "tech" },
             { name: "ElevenLabs", url: "https://elevenlabs.io", category: "audio" },
             { name: "Fiverr", url: "https://www.fiverr.com", category: "services" },
             { name: "Lebara", url: "https://www.lebara.com", category: "services" },
@@ -3243,113 +3154,18 @@
             }
         }
 
-        const BUILTIN_ICON_URLS = {
-            'https://web.whatsapp.com': 'icons/whatsapp.svg',
-            'https://web.whatsapp.com/': 'icons/whatsapp.svg',
-            'https://metusalem969-ro.github.io/quick-app-launcher': 'icons/control-mobil.svg',
-            'https://metusalem969-ro.github.io/quick-app-launcher/': 'icons/control-mobil.svg',
-            'http://localhost:8899/local/index.html': 'icons/control-desktop.svg',
-            'https://mail.yahoo.com/d/folders/1': 'icons/yahoo.svg',
-            'https://www.arduino.cc': 'icons/arduino.svg',
-            'https://www.arduino.cc/': 'icons/arduino.svg',
-            'https://filelist.io/login.php': 'icons/filelist.ico',
-            'https://filelist.io': 'icons/filelist.ico'
-        };
-
-        const HOST_ICON_URLS = {
-            'mail.yahoo.com': 'icons/yahoo.svg',
-            'yahoo.com': 'icons/yahoo.svg',
-            'www.arduino.cc': 'icons/arduino.svg',
-            'arduino.cc': 'icons/arduino.svg',
-            'filelist.io': 'icons/filelist.ico'
-        };
-
-        function normalizeLinkUrl(url) {
-            if (!url) return '';
-            try {
-                const parsed = new URL(url);
-                let path = parsed.pathname || '/';
-                if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
-                return `${parsed.origin}${path}${parsed.search}`;
-            } catch {
-                return String(url).replace(/\/$/, '');
-            }
-        }
-
-        function linkUrlMatches(a, b) {
-            if (!a || !b) return false;
-            if (a === b) return true;
-            if (normalizeLinkUrl(a) === normalizeLinkUrl(b)) return true;
-            try {
-                const hostA = new URL(a).hostname.replace(/^www\./i, '').split('.')[0];
-                const hostB = new URL(b).hostname.replace(/^www\./i, '').split('.')[0];
-                return hostA.length > 3 && hostA === hostB;
-            } catch (e) {
-                return false;
-            }
-        }
-
-        function resolveIconUrl(iconPath) {
-            if (!iconPath) return null;
-            if (isSafeHttpUrl(iconPath)) return iconPath;
-            if (iconPath.startsWith('./') || iconPath.startsWith('icons/') || iconPath.startsWith('/')) {
-                return new URL(iconPath, window.location.href).href;
-            }
-            return null;
-        }
-
-        function getBuiltinIconPath(url) {
-            const normalized = normalizeLinkUrl(url);
-            const direct = BUILTIN_ICON_URLS[url] || BUILTIN_ICON_URLS[normalized] || BUILTIN_ICON_URLS[normalized + '/'];
-            if (direct) return direct;
-            try {
-                const host = new URL(url).hostname;
-                const hostBare = host.replace(/^www\./, '');
-                return HOST_ICON_URLS[host] || HOST_ICON_URLS[hostBare];
-            } catch { return undefined; }
-        }
-
         function getSafeIconUrl(link, domain) {
-            const builtinIcon = getBuiltinIconPath(link.url);
-            if (builtinIcon) return resolveIconUrl(builtinIcon);
-            const customIcon = resolveIconUrl(link.iconUrl);
-            if (customIcon) return customIcon;
+            if (link.iconUrl && isSafeHttpUrl(link.iconUrl)) {
+                return link.iconUrl;
+            }
             return `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(domain)}`;
         }
 
-        function applyBuiltinIcons() {
-            let changed = false;
-            links.forEach((link) => {
-                const builtinIcon = getBuiltinIconPath(link.url);
-                if (builtinIcon && link.iconUrl !== builtinIcon) {
-                    link.iconUrl = builtinIcon;
-                    changed = true;
-                }
-            });
-            if (changed) saveAllLinks();
-        }
-
         const FAVORITES_KEY = 'favoriteLinks_v1';
-        /** Site-uri cu stea implicită — ca în captura principală a dashboard-ului */
-        const DEFAULT_STARRED_SITE_NAMES = [
-            'Yahoo', 'Gmail', 'YouTube', 'Facebook', 'WhatsApp',
-            'eBay', 'eBay UK', 'Amazon UK', 'AliExpress',
-            'ClickSud', 'Filelist', 'DivX Filme', 'IMDB', 'Vox Filme',
-            'FilmeHD API', 'JustWatch', 'Top Filme HD', 'Cinepub', 'Pluto TV', 'Tubi',
-            'OpenAI', 'Gemini AI', 'Perplexity', 'Arduino', 'Control PC Mobil', 'Control PC Desktop'
+        const DEFAULT_FAVORITE_URLS = [
+            'https://www.perplexity.ai',
+            'https://metusalem969-ro.github.io/quick-app-launcher/'
         ];
-        const DEFAULT_FAVORITE_EXTRA_URLS = [
-            'https://clicksud.com.in/',
-            'https://filmehd.se'
-        ];
-        const DEFAULT_FAVORITE_URLS = (() => {
-            const urls = new Set(DEFAULT_FAVORITE_EXTRA_URLS);
-            DEFAULT_STARRED_SITE_NAMES.forEach((name) => {
-                const entry = DEFAULT_LINKS.find((l) => l.name === name);
-                if (entry) urls.add(entry.url);
-            });
-            return [...urls];
-        })();
         const DEFAULT_ENSURE_LINKS = [
             {
                 name: 'Perplexity',
@@ -3357,22 +3173,14 @@
                 category: 'ai'
             },
             {
-                name: 'WhatsApp',
-                url: 'https://web.whatsapp.com/',
-                category: 'social',
-                iconUrl: 'icons/whatsapp.svg'
-            },
-            {
                 name: 'Control PC Mobil',
                 url: 'https://metusalem969-ro.github.io/quick-app-launcher/',
-                category: 'tech',
-                iconUrl: 'icons/control-mobil.svg'
+                category: 'tech'
             },
             {
                 name: 'Control PC Desktop',
                 url: 'http://localhost:8899/local/index.html',
-                category: 'tech',
-                iconUrl: 'icons/control-desktop.svg'
+                category: 'tech'
             }
         ];
         const CUSTOM_ORDER_KEY = 'customOrder_v1';
@@ -3518,23 +3326,14 @@
             loadTheme();
             loadZoom();
             loadSoundSettings();
-            initAudioElements();
-            initSoundListeners();
-            document.addEventListener('click', unlockAudioOnGesture, { once: true, passive: true });
-            document.addEventListener('touchstart', unlockAudioOnGesture, { once: true, passive: true });
             
-            try {
             const linksLoaded = loadAllLinks();
             if (!linksLoaded) {
                 loadCustomLinks();
             }
-            purgeRemovedLinks();
             
             loadFavorites();
             ensureBuiltinLinks();
-            ensureMissingDefaultLinks();
-            ensureFavoriteDefaultLinks();
-            applyBuiltinIcons();
             loadCustomOrder();
             loadVisitStats();
             initOfflineDetection();
@@ -3547,10 +3346,22 @@
             updateClock();
             loadWeather();
             setInterval(updateClock, 1000);
-            } catch (initErr) {
-                console.error('Dashboard init error:', initErr);
-            }
 
+            const inputs = document.querySelectorAll('input[type="text"]');
+            inputs.forEach(input => {
+                input.addEventListener('keydown', playTypingSound);
+            });
+            
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', () => playSound('toggleSound', 0.3));
+            });
+            
+            const buttons = document.querySelectorAll('button:not(#soundToggle)');
+            buttons.forEach(button => {
+                button.addEventListener('click', () => playSound('clickSound', 0.2));
+            });
+            
             // ===== ESC KEY TO CLEAR SEARCH INPUTS =====
             const googleSearchInput = document.getElementById('googleSearchInput');
             const filterInput = document.getElementById('filterInput');
@@ -3745,14 +3556,8 @@
 
             filtered.forEach((link) => {
                 const linkIndex = links.indexOf(link);
-                let domain;
-                try {
-                    domain = new URL(link.url).hostname;
-                } catch (e) {
-                    console.warn('Invalid link URL skipped:', link.url);
-                    return;
-                }
-                const isFavorite = favorites.has(link.url) || [...favorites].some((f) => linkUrlMatches(f, link.url));
+                const domain = new URL(link.url).hostname;
+                const isFavorite = favorites.has(link.url);
                 
                 const iconUrl = getSafeIconUrl(link, domain);
                 
@@ -3860,8 +3665,7 @@
             }
             let changed = false;
             DEFAULT_FAVORITE_URLS.forEach((url) => {
-                const already = [...favorites].some((f) => linkUrlMatches(f, url));
-                if (!already) {
+                if (!favorites.has(url)) {
                     favorites.add(url);
                     changed = true;
                 }
@@ -3869,111 +3673,16 @@
             if (changed) saveFavorites();
         }
 
-
-        function isRemovedLink(link) {
-            const name = (link && link.name ? String(link.name) : '').toLowerCase();
-            const url = (link && link.url ? String(link.url) : '').toLowerCase();
-            if (name === '123movies' || name === 'oracle' || name === 'crackle' || name === 'portalul tv') return true;
-            if (url.includes('123movies')) return true;
-            if (url.includes('oracle.com')) return true;
-            if (url.includes('crackle.com')) return true;
-            if (url.includes('portalultautv')) return true;
-            return false;
-        }
-
-        function purgeRemovedLinks() {
-            let changed = false;
-            const filtered = links.filter((l) => !isRemovedLink(l));
-            if (filtered.length !== links.length) {
-                links = filtered;
-                changed = true;
-            }
-            [...favorites].forEach((url) => {
-                const u = String(url).toLowerCase();
-                if (u.includes('123movies') || u.includes('oracle.com') || u.includes('crackle.com') || u.includes('portalultautv')) {
-                    favorites.delete(url);
-                    changed = true;
-                }
-            });
-            if (changed) {
-                saveAllLinks();
-                saveFavorites();
-            }
-        }
-
-        function ensureMissingDefaultLinks() {
-            let changed = false;
-            const addedNames = [];
-            DEFAULT_LINKS.forEach((entry) => {
-                if (isRemovedLink(entry)) return;
-                const exists = links.some((l) => (
-                    l.url === entry.url
-                    || normalizeLinkUrl(l.url) === normalizeLinkUrl(entry.url)
-                    || (l.name && entry.name && l.name.toLowerCase() === entry.name.toLowerCase())
-                ));
-                if (exists) return;
-                links.push({
-                    name: entry.name,
-                    url: entry.url,
-                    category: entry.category,
-                    iconUrl: entry.iconUrl || null,
-                    tags: entry.tags ?? null,
-                    notes: entry.notes ?? null
-                });
-                addedNames.push(entry.name);
-                changed = true;
-            });
-            if (changed) {
-                saveAllLinks();
-                if (addedNames.length > 0) {
-                    showNotification(`➕ Site-uri readăugate: ${addedNames.join(', ')}`, 'success');
-                }
-            }
-        }
-
-        function ensureFavoriteDefaultLinks() {
-            let changed = false;
-            const addedNames = [];
-            favorites.forEach((favUrl) => {
-                if (links.some((l) => linkUrlMatches(l.url, favUrl))) return;
-                const fromDefault = DEFAULT_LINKS.find((l) => linkUrlMatches(l.url, favUrl));
-                if (!fromDefault) return;
-                links.push({
-                    name: fromDefault.name,
-                    url: fromDefault.url,
-                    category: fromDefault.category,
-                    iconUrl: fromDefault.iconUrl || null,
-                    tags: fromDefault.tags ?? null,
-                    notes: fromDefault.notes ?? null
-                });
-                addedNames.push(fromDefault.name);
-                changed = true;
-            });
-            if (changed) {
-                saveAllLinks();
-                if (addedNames.length > 0) {
-                    showNotification(`⭐ Favorite restaurate: ${addedNames.join(', ')}`, 'success');
-                }
-            }
-        }
-
         function ensureBuiltinLinks() {
             let changed = false;
             const addedNames = [];
             DEFAULT_ENSURE_LINKS.forEach((entry) => {
-                const existing = links.find((l) => l.url === entry.url || normalizeLinkUrl(l.url) === normalizeLinkUrl(entry.url));
-                if (existing) {
-                    if (entry.iconUrl && existing.iconUrl !== entry.iconUrl) {
-                        existing.iconUrl = entry.iconUrl;
-                        changed = true;
-                    }
-                    return;
-                }
+                if (links.some((l) => l.url === entry.url)) return;
                 links.push({
                     name: entry.name,
                     url: entry.url,
                     category: entry.category,
-                    iconUrl: entry.iconUrl || null,
+                    iconUrl: null,
                     tags: null,
                     notes: null
                 });
@@ -3982,9 +3691,7 @@
             });
             if (changed) {
                 saveAllLinks();
-                if (addedNames.length > 0) {
-                    showNotification(`➕ Linkuri noi: ${addedNames.join(', ')}`, 'success');
-                }
+                showNotification(`➕ Linkuri noi: ${addedNames.join(', ')}`, 'success');
             }
         }
         
@@ -4007,7 +3714,6 @@
                 showNotification('⭐ Added to favorites!', 'success');
             }
             saveFavorites();
-            ensureFavoriteDefaultLinks();
             renderLinks();
         }
 
@@ -4198,7 +3904,7 @@
             const time = now.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             document.getElementById('mainTime').textContent = time;
             
-            const fullDateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+            const fullDateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('fullDateMain').textContent = now.toLocaleDateString('ro-RO', fullDateOptions);
             
             const daysRo = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă'];
@@ -4230,7 +3936,7 @@
         function updateClockModal(date = new Date()) {
             document.getElementById('modalClockTime').textContent = date.toLocaleTimeString('ro-RO');
             
-            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('fullDate').textContent = date.toLocaleDateString('ro-RO', options);
             
             const daysRo = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă'];
@@ -4902,7 +4608,6 @@
             `;
             notification.textContent = message;
             document.body.appendChild(notification);
-            playNotificationBeep();
 
             setTimeout(() => {
                 notification.remove();
