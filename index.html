@@ -334,15 +334,10 @@
                 font-weight: 700;
             }
             
-            .search-submit-btn {
-                min-width: 6.5em;
-                font-size: 1.15em;
-            }
-            #googleSearchInput {
-                padding-right: calc(6.5em + 3.4em + 12px);
-            }
-            .search-box:has(.search-submit-btn) .input-clear-btn {
-                margin-right: calc(6.5em + 8px);
+            .search-box button:not(.input-clear-btn):not(.filter-clear-btn) {
+                padding: 16px 22px;
+                font-size: 1em;
+                font-weight: 700;
             }
             
             .input-clear-btn,
@@ -396,20 +391,19 @@
             }
         }
         
-        /* Ultra small screens */
+        /* Ultra small screens - Buton doar cu icon */
         @media (max-width: 380px) {
-            .search-submit-btn {
-                min-width: 5.5em;
-                font-size: 1.05em;
-                padding: 0 0.75em;
+            /* Ascunde textul butonului pe ecrane foarte mici */
+            .search-box button:not(.input-clear-btn):not(.filter-clear-btn) {
+                font-size: 0 !important;
+                padding: 14px 18px !important;
+                min-width: 50px;
             }
-
-            .search-box:has(.search-submit-btn) .input-clear-btn {
-                margin-right: calc(5.5em + 6px);
-            }
-
-            #googleSearchInput {
-                padding-right: calc(5.5em + 3.2em + 10px) !important;
+            
+            .search-box button:not(.input-clear-btn):not(.filter-clear-btn)::after {
+                content: '🔍';
+                font-size: 1.3em;
+                display: inline-block;
             }
             
             .header h1 {
@@ -440,9 +434,10 @@
                 font-weight: 700;
             }
             
-            .search-submit-btn {
-                min-width: 7em;
-                font-size: 1.2em;
+            .search-box button:not(.input-clear-btn):not(.filter-clear-btn) {
+                padding: 18px 35px;
+                font-size: 1.1em;
+                font-weight: 700;
             }
             
             .links-grid {
@@ -1310,9 +1305,16 @@
         .search-box {
             position: relative;
             display: grid;
-            grid-template-columns: 1fr;
-            align-items: stretch;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 10px;
             width: 100%;
+        }
+
+        /* Butonul „Caută" stă în coloana 2; clear rămâne peste input în coloana 1 */
+        .search-box > button:not(.input-clear-btn):not(.filter-clear-btn) {
+            grid-column: 2;
+            grid-row: 1;
         }
         
         /* Capăt roșu pe toată suprafața din dreapta input-ului (semi-capsulă integrată) */
@@ -1406,7 +1408,7 @@
         }
         
         #googleSearchInput {
-            padding-right: calc(7.5em + 3.5em + 14px);
+            padding-right: calc(3.5em + 6px);
         }
         
         #filterInput {
@@ -1425,48 +1427,23 @@
             background: rgba(255, 255, 255, 0.35);
         }
 
-        .search-submit-btn {
-            grid-column: 1;
-            grid-row: 1;
-            justify-self: end;
-            align-self: stretch;
-            position: relative;
-            z-index: 3;
-            min-width: 7.5em;
-            max-width: 9em;
-            margin: 3px;
-            padding: 0 1.25em;
-            background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+        .search-box button:not(.input-clear-btn):not(.filter-clear-btn) {
+            padding: 20px 45px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             border: none;
-            border-radius: 999px;
-            color: #fff !important;
-            font-size: 1.35em;
-            font-weight: 800;
+            border-radius: 50px;
+            color: var(--text);
+            font-size: 1.2em;
             cursor: pointer;
-            transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+            transition: all 0.3s ease;
+            font-weight: 700;
             white-space: nowrap;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35),
-                        0 4px 14px rgba(22, 163, 74, 0.45) !important;
+            flex-shrink: 0;
         }
 
-        .search-box:has(.search-submit-btn) .input-clear-btn {
-            margin-right: calc(7.5em + 8px);
-            z-index: 4;
-        }
-
-        .search-submit-btn:hover {
-            background: linear-gradient(135deg, #16a34a, #15803d) !important;
-            transform: scale(1.02);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4),
-                        0 6px 18px rgba(22, 163, 74, 0.55) !important;
-        }
-
-        body[data-theme="light"] .search-submit-btn {
-            background: linear-gradient(135deg, #22c55e, #16a34a) !important;
-            color: #fff !important;
+        .search-box button:not(.input-clear-btn):not(.filter-clear-btn):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.5);
         }
 
         /* Search History - FULL WIDTH */
@@ -2297,16 +2274,12 @@
            altfel zona de text rămâne minusculă. Folosim ID-ul ca să batem regula #googleSearchInput. */
         @media (max-width: 768px) {
             #googleSearchInput {
-                padding-right: calc(6em + 3.3em + 10px);
+                padding-right: calc(3.3em + 6px);
                 padding-left: 18px;
             }
-            .search-submit-btn {
-                min-width: 6em;
-                font-size: 1.1em;
-                margin: 2px;
-            }
-            .search-box:has(.search-submit-btn) .input-clear-btn {
-                margin-right: calc(6em + 6px);
+            .search-box button:not(.input-clear-btn):not(.filter-clear-btn) {
+                padding: 16px 18px;
+                font-size: 1em;
             }
             .input-clear-btn,
             .filter-clear-btn {
