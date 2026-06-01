@@ -334,10 +334,15 @@
                 font-weight: 700;
             }
             
-            .search-box button:not(.input-clear-btn):not(.filter-clear-btn) {
-                padding: 16px 22px;
-                font-size: 1em;
-                font-weight: 700;
+            .search-submit-btn {
+                min-width: 6.5em;
+                font-size: 1.15em;
+            }
+            #googleSearchInput {
+                padding-right: calc(6.5em + 3.4em + 12px);
+            }
+            .search-box:has(.search-submit-btn) .input-clear-btn {
+                margin-right: calc(6.5em + 8px);
             }
             
             .input-clear-btn,
@@ -391,19 +396,20 @@
             }
         }
         
-        /* Ultra small screens - Buton doar cu icon */
+        /* Ultra small screens */
         @media (max-width: 380px) {
-            /* Ascunde textul butonului pe ecrane foarte mici */
-            .search-box button:not(.input-clear-btn):not(.filter-clear-btn) {
-                font-size: 0 !important;
-                padding: 14px 18px !important;
-                min-width: 50px;
+            .search-submit-btn {
+                min-width: 5.5em;
+                font-size: 1.05em;
+                padding: 0 0.75em;
             }
-            
-            .search-box button:not(.input-clear-btn):not(.filter-clear-btn)::after {
-                content: '🔍';
-                font-size: 1.3em;
-                display: inline-block;
+
+            .search-box:has(.search-submit-btn) .input-clear-btn {
+                margin-right: calc(5.5em + 6px);
+            }
+
+            #googleSearchInput {
+                padding-right: calc(5.5em + 3.2em + 10px) !important;
             }
             
             .header h1 {
@@ -434,10 +440,9 @@
                 font-weight: 700;
             }
             
-            .search-box button:not(.input-clear-btn):not(.filter-clear-btn) {
-                padding: 18px 35px;
-                font-size: 1.1em;
-                font-weight: 700;
+            .search-submit-btn {
+                min-width: 7em;
+                font-size: 1.2em;
             }
             
             .links-grid {
@@ -1305,16 +1310,9 @@
         .search-box {
             position: relative;
             display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            align-items: center;
-            gap: 10px;
+            grid-template-columns: 1fr;
+            align-items: stretch;
             width: 100%;
-        }
-
-        /* Butonul „Caută" stă în coloana 2; clear rămâne peste input în coloana 1 */
-        .search-box > button:not(.input-clear-btn):not(.filter-clear-btn) {
-            grid-column: 2;
-            grid-row: 1;
         }
         
         /* Capăt roșu pe toată suprafața din dreapta input-ului (semi-capsulă integrată) */
@@ -1408,7 +1406,7 @@
         }
         
         #googleSearchInput {
-            padding-right: calc(3.5em + 6px);
+            padding-right: calc(7.5em + 3.5em + 14px);
         }
         
         #filterInput {
@@ -1427,23 +1425,48 @@
             background: rgba(255, 255, 255, 0.35);
         }
 
-        .search-box button:not(.input-clear-btn):not(.filter-clear-btn) {
-            padding: 20px 45px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        .search-submit-btn {
+            grid-column: 1;
+            grid-row: 1;
+            justify-self: end;
+            align-self: stretch;
+            position: relative;
+            z-index: 3;
+            min-width: 7.5em;
+            max-width: 9em;
+            margin: 3px;
+            padding: 0 1.25em;
+            background: linear-gradient(135deg, #22c55e, #16a34a) !important;
             border: none;
-            border-radius: 50px;
-            color: var(--text);
-            font-size: 1.2em;
+            border-radius: 999px;
+            color: #fff !important;
+            font-size: 1.35em;
+            font-weight: 800;
             cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 700;
+            transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
             white-space: nowrap;
-            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35),
+                        0 4px 14px rgba(22, 163, 74, 0.45) !important;
         }
 
-        .search-box button:not(.input-clear-btn):not(.filter-clear-btn):hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.5);
+        .search-box:has(.search-submit-btn) .input-clear-btn {
+            margin-right: calc(7.5em + 8px);
+            z-index: 4;
+        }
+
+        .search-submit-btn:hover {
+            background: linear-gradient(135deg, #16a34a, #15803d) !important;
+            transform: scale(1.02);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                        0 6px 18px rgba(22, 163, 74, 0.55) !important;
+        }
+
+        body[data-theme="light"] .search-submit-btn {
+            background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+            color: #fff !important;
         }
 
         /* Search History - FULL WIDTH */
@@ -2274,12 +2297,16 @@
            altfel zona de text rămâne minusculă. Folosim ID-ul ca să batem regula #googleSearchInput. */
         @media (max-width: 768px) {
             #googleSearchInput {
-                padding-right: calc(3.3em + 6px);
+                padding-right: calc(6em + 3.3em + 10px);
                 padding-left: 18px;
             }
-            .search-box button:not(.input-clear-btn):not(.filter-clear-btn) {
-                padding: 16px 18px;
-                font-size: 1em;
+            .search-submit-btn {
+                min-width: 6em;
+                font-size: 1.1em;
+                margin: 2px;
+            }
+            .search-box:has(.search-submit-btn) .input-clear-btn {
+                margin-right: calc(6em + 6px);
             }
             .input-clear-btn,
             .filter-clear-btn {
@@ -2472,7 +2499,7 @@
                        onkeypress="if(event.key==='Enter') performGoogleSearch()"
                        oninput="toggleClearButton('googleSearchInput', 'googleClearBtn')">
                 <button class="input-clear-btn" id="googleClearBtn" onclick="clearGoogleSearch()" title="Șterge (ESC)">✕</button>
-                <button onclick="performGoogleSearch()">Caută</button>
+                <button type="button" class="search-submit-btn" onclick="performGoogleSearch()">Caută</button>
             </div>
         </div>
 
@@ -3059,7 +3086,7 @@
 
         // All site links data
         let links = [
-            { name: "Yahoo", url: "https://mail.yahoo.com/d/folders/1", category: "email", iconUrl: "icons/yahoo.svg" },
+            { name: "Yahoo", url: "https://mail.yahoo.com/d/folders/1", category: "email" },
             { name: "Gmail", url: "https://mail.google.com", category: "email" },
             { name: "YouTube", url: "https://www.youtube.com", category: "video" },
             { name: "Facebook", url: "https://www.facebook.com", category: "social" },
@@ -3094,7 +3121,7 @@
             { name: "DeepSeek", url: "https://deepseek.ai", category: "ai" },
             { name: "Gemini AI", url: "https://gemini.google.com", category: "ai" },
             { name: "Perplexity", url: "https://www.perplexity.ai", category: "ai" },
-            { name: "Arduino", url: "https://www.arduino.cc", category: "electronics", iconUrl: "icons/arduino.svg" },
+            { name: "Arduino", url: "https://www.arduino.cc", category: "electronics" },
             { name: "Blynk", url: "https://blynk.io", category: "electronics" },
             { name: "Adafruit", url: "https://www.adafruit.com", category: "electronics" },
             { name: "App Inventor", url: "https://appinventor.mit.edu", category: "development" },
@@ -3104,8 +3131,8 @@
             { name: "Dropbox", url: "https://www.dropbox.com", category: "storage" },
             { name: "Microsoft", url: "https://www.microsoft.com", category: "tech" },
             { name: "TeamViewer", url: "https://www.teamviewer.com", category: "tech" },
-            { name: "Control PC Mobil", url: "https://metusalem969-ro.github.io/quick-app-launcher/", category: "tech", iconUrl: "icons/control-mobil.svg" },
-            { name: "Control PC Desktop", url: "http://localhost:8899/local/index.html", category: "tech", iconUrl: "icons/control-desktop.svg" },
+            { name: "Control PC Mobil", url: "https://metusalem969-ro.github.io/quick-app-launcher/", category: "tech" },
+            { name: "Control PC Desktop", url: "http://localhost:8899/local/index.html", category: "tech" },
             { name: "ElevenLabs", url: "https://elevenlabs.io", category: "audio" },
             { name: "Fiverr", url: "https://www.fiverr.com", category: "services" },
             { name: "Lebara", url: "https://www.lebara.com", category: "services" },
@@ -3150,84 +3177,11 @@
             }
         }
 
-        const BUILTIN_ICON_URLS = {
-            'https://web.whatsapp.com': 'icons/whatsapp.svg',
-            'https://web.whatsapp.com/': 'icons/whatsapp.svg',
-            'https://metusalem969-ro.github.io/quick-app-launcher': 'icons/control-mobil.svg',
-            'https://metusalem969-ro.github.io/quick-app-launcher/': 'icons/control-mobil.svg',
-            'http://localhost:8899/local/index.html': 'icons/control-desktop.svg',
-            'https://mail.yahoo.com/d/folders/1': 'icons/yahoo.svg',
-            'https://www.arduino.cc': 'icons/arduino.svg',
-            'https://www.arduino.cc/': 'icons/arduino.svg'
-        };
-
-        const HOST_ICON_URLS = {
-            'mail.yahoo.com': 'icons/yahoo.svg',
-            'yahoo.com': 'icons/yahoo.svg',
-            'www.arduino.cc': 'icons/arduino.svg',
-            'arduino.cc': 'icons/arduino.svg'
-        };
-
-        function normalizeLinkUrl(url) {
-            if (!url) return '';
-            try {
-                const parsed = new URL(url);
-                let path = parsed.pathname || '/';
-                if (path.length > 1 && path.endsWith('/')) {
-                    path = path.slice(0, -1);
-                }
-                return `${parsed.origin}${path}${parsed.search}`;
-            } catch {
-                return String(url).replace(/\/$/, '');
-            }
-        }
-
-        function resolveIconUrl(iconPath) {
-            if (!iconPath) return null;
-            if (isSafeHttpUrl(iconPath)) return iconPath;
-            if (iconPath.startsWith('./') || iconPath.startsWith('icons/') || iconPath.startsWith('/')) {
-                return new URL(iconPath, window.location.href).href;
-            }
-            return null;
-        }
-
-        function getBuiltinIconPath(url) {
-            const normalized = normalizeLinkUrl(url);
-            const direct = BUILTIN_ICON_URLS[url] || BUILTIN_ICON_URLS[normalized] || BUILTIN_ICON_URLS[normalized + '/'];
-            if (direct) return direct;
-            try {
-                const host = new URL(url).hostname;
-                const hostBare = host.replace(/^www\./, '');
-                return HOST_ICON_URLS[host] || HOST_ICON_URLS[hostBare];
-            } catch {
-                return undefined;
-            }
-        }
-
         function getSafeIconUrl(link, domain) {
-            const builtinIcon = getBuiltinIconPath(link.url);
-            if (builtinIcon) {
-                return resolveIconUrl(builtinIcon);
-            }
-            const customIcon = resolveIconUrl(link.iconUrl);
-            if (customIcon) {
-                return customIcon;
+            if (link.iconUrl && isSafeHttpUrl(link.iconUrl)) {
+                return link.iconUrl;
             }
             return `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(domain)}`;
-        }
-
-        function applyBuiltinIcons() {
-            let changed = false;
-            links.forEach((link) => {
-                const builtinIcon = getBuiltinIconPath(link.url);
-                if (builtinIcon && link.iconUrl !== builtinIcon) {
-                    link.iconUrl = builtinIcon;
-                    changed = true;
-                }
-            });
-            if (changed) {
-                saveAllLinks();
-            }
         }
 
         const FAVORITES_KEY = 'favoriteLinks_v1';
@@ -3242,22 +3196,14 @@
                 category: 'ai'
             },
             {
-                name: 'WhatsApp',
-                url: 'https://web.whatsapp.com/',
-                category: 'social',
-                iconUrl: 'icons/whatsapp.svg'
-            },
-            {
                 name: 'Control PC Mobil',
                 url: 'https://metusalem969-ro.github.io/quick-app-launcher/',
-                category: 'tech',
-                iconUrl: 'icons/control-mobil.svg'
+                category: 'tech'
             },
             {
                 name: 'Control PC Desktop',
                 url: 'http://localhost:8899/local/index.html',
-                category: 'tech',
-                iconUrl: 'icons/control-desktop.svg'
+                category: 'tech'
             }
         ];
         const CUSTOM_ORDER_KEY = 'customOrder_v1';
@@ -3411,7 +3357,6 @@
             
             loadFavorites();
             ensureBuiltinLinks();
-            applyBuiltinIcons();
             loadCustomOrder();
             loadVisitStats();
             initOfflineDetection();
@@ -3755,19 +3700,12 @@
             let changed = false;
             const addedNames = [];
             DEFAULT_ENSURE_LINKS.forEach((entry) => {
-                const existing = links.find((l) => l.url === entry.url || normalizeLinkUrl(l.url) === normalizeLinkUrl(entry.url));
-                if (existing) {
-                    if (entry.iconUrl && existing.iconUrl !== entry.iconUrl) {
-                        existing.iconUrl = entry.iconUrl;
-                        changed = true;
-                    }
-                    return;
-                }
+                if (links.some((l) => l.url === entry.url)) return;
                 links.push({
                     name: entry.name,
                     url: entry.url,
                     category: entry.category,
-                    iconUrl: entry.iconUrl || null,
+                    iconUrl: null,
                     tags: null,
                     notes: null
                 });
@@ -3776,9 +3714,7 @@
             });
             if (changed) {
                 saveAllLinks();
-                if (addedNames.length > 0) {
-                    showNotification(`➕ Linkuri noi: ${addedNames.join(', ')}`, 'success');
-                }
+                showNotification(`➕ Linkuri noi: ${addedNames.join(', ')}`, 'success');
             }
         }
         
@@ -3991,7 +3927,7 @@
             const time = now.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             document.getElementById('mainTime').textContent = time;
             
-            const fullDateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+            const fullDateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('fullDateMain').textContent = now.toLocaleDateString('ro-RO', fullDateOptions);
             
             const daysRo = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă'];
@@ -4023,7 +3959,7 @@
         function updateClockModal(date = new Date()) {
             document.getElementById('modalClockTime').textContent = date.toLocaleTimeString('ro-RO');
             
-            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('fullDate').textContent = date.toLocaleDateString('ro-RO', options);
             
             const daysRo = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă'];
