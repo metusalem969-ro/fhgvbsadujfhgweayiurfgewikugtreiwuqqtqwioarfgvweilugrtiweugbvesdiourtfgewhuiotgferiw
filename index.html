@@ -3406,6 +3406,7 @@
             
             loadFavorites();
             ensureBuiltinLinks();
+            ensureMissingDefaultLinks();
             applyBuiltinIcons();
             loadCustomOrder();
             loadVisitStats();
@@ -3744,6 +3745,36 @@
                 }
             });
             if (changed) saveFavorites();
+        }
+
+
+        function ensureMissingDefaultLinks() {
+            let changed = false;
+            const addedNames = [];
+            DEFAULT_LINKS.forEach((entry) => {
+                const exists = links.some((l) => (
+                    l.url === entry.url
+                    || normalizeLinkUrl(l.url) === normalizeLinkUrl(entry.url)
+                    || (l.name && entry.name && l.name.toLowerCase() === entry.name.toLowerCase())
+                ));
+                if (exists) return;
+                links.push({
+                    name: entry.name,
+                    url: entry.url,
+                    category: entry.category,
+                    iconUrl: entry.iconUrl || null,
+                    tags: entry.tags ?? null,
+                    notes: entry.notes ?? null
+                });
+                addedNames.push(entry.name);
+                changed = true;
+            });
+            if (changed) {
+                saveAllLinks();
+                if (addedNames.length > 0) {
+                    showNotification(`➕ Site-uri readăugate: ${addedNames.join(', ')}`, 'success');
+                }
+            }
         }
 
         function ensureBuiltinLinks() {
