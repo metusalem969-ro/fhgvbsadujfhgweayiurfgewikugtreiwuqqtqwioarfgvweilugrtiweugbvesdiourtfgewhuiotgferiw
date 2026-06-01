@@ -15,6 +15,8 @@ concurrency:
 
 jobs:
   deploy:
+    # Doar repo-ul fhgvbs (Pages legacy eșua acolo). hercules-command-center folosește legacy.
+    if: github.repository == 'metusalem969-ro/fhgvbsadujfhgweayiurfgewikugtreiwuqqtqwioarfgvweilugrtiweugbvesdiourtfgewhuiotgferiw'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
