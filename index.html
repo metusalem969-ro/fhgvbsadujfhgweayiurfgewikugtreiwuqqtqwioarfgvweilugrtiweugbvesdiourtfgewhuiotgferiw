@@ -3093,6 +3093,7 @@
             { name: "OpenAI", url: "https://openai.com", category: "ai" },
             { name: "DeepSeek", url: "https://deepseek.ai", category: "ai" },
             { name: "Gemini AI", url: "https://gemini.google.com", category: "ai" },
+            { name: "Perplexity", url: "https://www.perplexity.ai", category: "ai" },
             { name: "Arduino", url: "https://www.arduino.cc", category: "electronics" },
             { name: "Blynk", url: "https://blynk.io", category: "electronics" },
             { name: "Adafruit", url: "https://www.adafruit.com", category: "electronics" },
@@ -3155,6 +3156,9 @@
         }
 
         const FAVORITES_KEY = 'favoriteLinks_v1';
+        const DEFAULT_FAVORITE_URLS = [
+            'https://www.perplexity.ai'
+        ];
         const CUSTOM_ORDER_KEY = 'customOrder_v1';
         const VISIT_STATS_KEY = 'visitStats_v1';
         let favorites = new Set();
@@ -3305,6 +3309,7 @@
             }
             
             loadFavorites();
+            ensurePerplexityLink();
             loadCustomOrder();
             loadVisitStats();
             initOfflineDetection();
@@ -3634,6 +3639,28 @@
             } catch (e) {
                 favorites = new Set();
             }
+            let changed = false;
+            DEFAULT_FAVORITE_URLS.forEach((url) => {
+                if (!favorites.has(url)) {
+                    favorites.add(url);
+                    changed = true;
+                }
+            });
+            if (changed) saveFavorites();
+        }
+
+        function ensurePerplexityLink() {
+            const perplexityUrl = 'https://www.perplexity.ai';
+            if (links.some((l) => l.url === perplexityUrl)) return;
+            links.push({
+                name: 'Perplexity',
+                url: perplexityUrl,
+                category: 'ai',
+                iconUrl: null,
+                tags: null,
+                notes: null
+            });
+            saveAllLinks();
         }
         
         function saveFavorites() {
