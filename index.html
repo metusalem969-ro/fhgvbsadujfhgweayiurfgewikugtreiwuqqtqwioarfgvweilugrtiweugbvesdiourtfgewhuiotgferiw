@@ -3177,7 +3177,6 @@
             { name: "Voyo", url: "https://voyo.ro/", category: "filme" },
             { name: "Filmflix", url: "https://filmflix.ro/", category: "filme" },
             { name: "Tubi", url: "https://tubitv.com/", category: "filme" },
-            { name: "123Movies", url: "https://123moviesonl.net/", category: "filme" },
             { name: "Crackle", url: "https://www.crackle.com/", category: "filme" },
             { name: "Roku", url: "https://www.roku.com/en-gb/", category: "filme" },
             { name: "Filmzie", url: "https://filmzie.com/home", category: "filme" },
@@ -3531,6 +3530,7 @@
             if (!linksLoaded) {
                 loadCustomLinks();
             }
+            purgeRemovedLinks();
             
             loadFavorites();
             ensureBuiltinLinks();
@@ -3872,10 +3872,40 @@
         }
 
 
+        function isRemovedLink(link) {
+            const name = (link && link.name ? String(link.name) : '').toLowerCase();
+            const url = (link && link.url ? String(link.url) : '').toLowerCase();
+            if (name === '123movies' || name === 'oracle') return true;
+            if (url.includes('123movies')) return true;
+            if (url.includes('oracle.com')) return true;
+            return false;
+        }
+
+        function purgeRemovedLinks() {
+            let changed = false;
+            const filtered = links.filter((l) => !isRemovedLink(l));
+            if (filtered.length !== links.length) {
+                links = filtered;
+                changed = true;
+            }
+            [...favorites].forEach((url) => {
+                const u = String(url).toLowerCase();
+                if (u.includes('123movies') || u.includes('oracle.com')) {
+                    favorites.delete(url);
+                    changed = true;
+                }
+            });
+            if (changed) {
+                saveAllLinks();
+                saveFavorites();
+            }
+        }
+
         function ensureMissingDefaultLinks() {
             let changed = false;
             const addedNames = [];
             DEFAULT_LINKS.forEach((entry) => {
+                if (isRemovedLink(entry)) return;
                 const exists = links.some((l) => (
                     l.url === entry.url
                     || normalizeLinkUrl(l.url) === normalizeLinkUrl(entry.url)
