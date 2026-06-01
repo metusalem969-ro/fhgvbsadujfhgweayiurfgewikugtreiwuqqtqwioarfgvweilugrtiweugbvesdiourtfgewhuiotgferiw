@@ -3067,6 +3067,7 @@
             { name: "WhatsApp", url: "https://web.whatsapp.com/", category: "social", iconUrl: "icons/whatsapp.svg" },
             { name: "eBay", url: "https://www.ebay.com", category: "shopping" },
             { name: "eBay UK", url: "https://www.ebay.co.uk", category: "shopping" },
+            { name: "Amazon UK", url: "https://www.amazon.co.uk/", category: "shopping" },
             { name: "AliExpress", url: "https://www.aliexpress.com", category: "shopping" },
             { name: "ClickSud", url: "https://clicksud.co/", category: "filme" },
             { name: "Filelist", url: "https://filelist.io/login.php", category: "fisiere", iconUrl: "icons/filelist.ico" },
@@ -3185,6 +3186,19 @@
             }
         }
 
+        function linkUrlMatches(a, b) {
+            if (!a || !b) return false;
+            if (a === b) return true;
+            if (normalizeLinkUrl(a) === normalizeLinkUrl(b)) return true;
+            try {
+                const hostA = new URL(a).hostname.replace(/^www\./i, '').split('.')[0];
+                const hostB = new URL(b).hostname.replace(/^www\./i, '').split('.')[0];
+                return hostA.length > 3 && hostA === hostB;
+            } catch (e) {
+                return false;
+            }
+        }
+
         function resolveIconUrl(iconPath) {
             if (!iconPath) return null;
             if (isSafeHttpUrl(iconPath)) return iconPath;
@@ -3227,8 +3241,24 @@
 
         const FAVORITES_KEY = 'favoriteLinks_v1';
         const DEFAULT_FAVORITE_URLS = [
+            'https://mail.yahoo.com/d/folders/1',
+            'https://mail.google.com',
+            'https://www.youtube.com',
+            'https://www.facebook.com',
+            'https://www.aliexpress.com',
+            'https://www.ebay.com',
+            'https://www.ebay.co.uk',
+            'https://www.amazon.co.uk/',
+            'https://web.whatsapp.com/',
+            'https://clicksud.co/',
+            'https://clicksud.com.in/',
+            'https://voxfilmeonline.biz/',
+            'https://divxfilmeonline.tv/filme-online/',
+            'https://filelist.io/login.php',
+            'https://www.imdb.com/watchlist',
             'https://www.perplexity.ai',
-            'https://metusalem969-ro.github.io/quick-app-launcher/'
+            'https://metusalem969-ro.github.io/quick-app-launcher/',
+            'http://localhost:8899/local/index.html'
         ];
         const DEFAULT_ENSURE_LINKS = [
             {
@@ -3407,6 +3437,7 @@
             loadFavorites();
             ensureBuiltinLinks();
             ensureMissingDefaultLinks();
+            ensureFavoriteDefaultLinks();
             applyBuiltinIcons();
             loadCustomOrder();
             loadVisitStats();
@@ -3739,7 +3770,8 @@
             }
             let changed = false;
             DEFAULT_FAVORITE_URLS.forEach((url) => {
-                if (!favorites.has(url)) {
+                const already = [...favorites].some((f) => linkUrlMatches(f, url));
+                if (!already) {
                     favorites.add(url);
                     changed = true;
                 }
@@ -3773,6 +3805,32 @@
                 saveAllLinks();
                 if (addedNames.length > 0) {
                     showNotification(`➕ Site-uri readăugate: ${addedNames.join(', ')}`, 'success');
+                }
+            }
+        }
+
+        function ensureFavoriteDefaultLinks() {
+            let changed = false;
+            const addedNames = [];
+            favorites.forEach((favUrl) => {
+                if (links.some((l) => linkUrlMatches(l.url, favUrl))) return;
+                const fromDefault = DEFAULT_LINKS.find((l) => linkUrlMatches(l.url, favUrl));
+                if (!fromDefault) return;
+                links.push({
+                    name: fromDefault.name,
+                    url: fromDefault.url,
+                    category: fromDefault.category,
+                    iconUrl: fromDefault.iconUrl || null,
+                    tags: fromDefault.tags ?? null,
+                    notes: fromDefault.notes ?? null
+                });
+                addedNames.push(fromDefault.name);
+                changed = true;
+            });
+            if (changed) {
+                saveAllLinks();
+                if (addedNames.length > 0) {
+                    showNotification(`⭐ Favorite restaurate: ${addedNames.join(', ')}`, 'success');
                 }
             }
         }
@@ -3827,6 +3885,7 @@
                 showNotification('⭐ Added to favorites!', 'success');
             }
             saveFavorites();
+            ensureFavoriteDefaultLinks();
             renderLinks();
         }
 
