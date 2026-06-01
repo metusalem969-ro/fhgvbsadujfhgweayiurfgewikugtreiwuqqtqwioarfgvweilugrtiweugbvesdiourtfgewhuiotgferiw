@@ -3159,7 +3159,8 @@
 
         const FAVORITES_KEY = 'favoriteLinks_v1';
         const DEFAULT_FAVORITE_URLS = [
-            'https://www.perplexity.ai'
+            'https://www.perplexity.ai',
+            'https://metusalem969-ro.github.io/quick-app-launcher/'
         ];
         const DEFAULT_ENSURE_LINKS = [
             {
@@ -3670,6 +3671,7 @@
 
         function ensureBuiltinLinks() {
             let changed = false;
+            const addedNames = [];
             DEFAULT_ENSURE_LINKS.forEach((entry) => {
                 if (links.some((l) => l.url === entry.url)) return;
                 links.push({
@@ -3680,9 +3682,13 @@
                     tags: null,
                     notes: null
                 });
+                addedNames.push(entry.name);
                 changed = true;
             });
-            if (changed) saveAllLinks();
+            if (changed) {
+                saveAllLinks();
+                showNotification(`➕ Linkuri noi: ${addedNames.join(', ')}`, 'success');
+            }
         }
         
         function saveFavorites() {

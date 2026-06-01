@@ -1,5 +1,5 @@
 /* sw.js */
-const CACHE_VERSION = "2026-01-01_01"; // <-- ține-l în sync cu index.html
+const CACHE_VERSION = "2026-05-31_02"; // <-- ține-l în sync cu index.html
 const CACHE_NAME = `cmd-center-${CACHE_VERSION}`;
 
 self.addEventListener("message", (event) => {
