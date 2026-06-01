@@ -3059,7 +3059,7 @@
 
         // All site links data
         let links = [
-            { name: "Yahoo", url: "https://mail.yahoo.com/d/folders/1", category: "email" },
+            { name: "Yahoo", url: "https://mail.yahoo.com/d/folders/1", category: "email", iconUrl: "icons/yahoo.svg" },
             { name: "Gmail", url: "https://mail.google.com", category: "email" },
             { name: "YouTube", url: "https://www.youtube.com", category: "video" },
             { name: "Facebook", url: "https://www.facebook.com", category: "social" },
@@ -3094,7 +3094,7 @@
             { name: "DeepSeek", url: "https://deepseek.ai", category: "ai" },
             { name: "Gemini AI", url: "https://gemini.google.com", category: "ai" },
             { name: "Perplexity", url: "https://www.perplexity.ai", category: "ai" },
-            { name: "Arduino", url: "https://www.arduino.cc", category: "electronics" },
+            { name: "Arduino", url: "https://www.arduino.cc", category: "electronics", iconUrl: "icons/arduino.svg" },
             { name: "Blynk", url: "https://blynk.io", category: "electronics" },
             { name: "Adafruit", url: "https://www.adafruit.com", category: "electronics" },
             { name: "App Inventor", url: "https://appinventor.mit.edu", category: "development" },
@@ -3155,7 +3155,17 @@
             'https://web.whatsapp.com/': 'icons/whatsapp.svg',
             'https://metusalem969-ro.github.io/quick-app-launcher': 'icons/control-mobil.svg',
             'https://metusalem969-ro.github.io/quick-app-launcher/': 'icons/control-mobil.svg',
-            'http://localhost:8899/local/index.html': 'icons/control-desktop.svg'
+            'http://localhost:8899/local/index.html': 'icons/control-desktop.svg',
+            'https://mail.yahoo.com/d/folders/1': 'icons/yahoo.svg',
+            'https://www.arduino.cc': 'icons/arduino.svg',
+            'https://www.arduino.cc/': 'icons/arduino.svg'
+        };
+
+        const HOST_ICON_URLS = {
+            'mail.yahoo.com': 'icons/yahoo.svg',
+            'yahoo.com': 'icons/yahoo.svg',
+            'www.arduino.cc': 'icons/arduino.svg',
+            'arduino.cc': 'icons/arduino.svg'
         };
 
         function normalizeLinkUrl(url) {
@@ -3183,7 +3193,15 @@
 
         function getBuiltinIconPath(url) {
             const normalized = normalizeLinkUrl(url);
-            return BUILTIN_ICON_URLS[url] || BUILTIN_ICON_URLS[normalized] || BUILTIN_ICON_URLS[normalized + '/'];
+            const direct = BUILTIN_ICON_URLS[url] || BUILTIN_ICON_URLS[normalized] || BUILTIN_ICON_URLS[normalized + '/'];
+            if (direct) return direct;
+            try {
+                const host = new URL(url).hostname;
+                const hostBare = host.replace(/^www\./, '');
+                return HOST_ICON_URLS[host] || HOST_ICON_URLS[hostBare];
+            } catch {
+                return undefined;
+            }
         }
 
         function getSafeIconUrl(link, domain) {
