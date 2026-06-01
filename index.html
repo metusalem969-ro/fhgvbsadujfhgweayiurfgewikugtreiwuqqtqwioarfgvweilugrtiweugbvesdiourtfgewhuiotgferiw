@@ -3104,6 +3104,8 @@
             { name: "Dropbox", url: "https://www.dropbox.com", category: "storage" },
             { name: "Microsoft", url: "https://www.microsoft.com", category: "tech" },
             { name: "TeamViewer", url: "https://www.teamviewer.com", category: "tech" },
+            { name: "Control PC Mobil", url: "https://metusalem969-ro.github.io/quick-app-launcher/", category: "tech" },
+            { name: "Control PC Desktop", url: "http://localhost:8899/local/index.html", category: "tech" },
             { name: "ElevenLabs", url: "https://elevenlabs.io", category: "audio" },
             { name: "Fiverr", url: "https://www.fiverr.com", category: "services" },
             { name: "Lebara", url: "https://www.lebara.com", category: "services" },
@@ -3158,6 +3160,23 @@
         const FAVORITES_KEY = 'favoriteLinks_v1';
         const DEFAULT_FAVORITE_URLS = [
             'https://www.perplexity.ai'
+        ];
+        const DEFAULT_ENSURE_LINKS = [
+            {
+                name: 'Perplexity',
+                url: 'https://www.perplexity.ai',
+                category: 'ai'
+            },
+            {
+                name: 'Control PC Mobil',
+                url: 'https://metusalem969-ro.github.io/quick-app-launcher/',
+                category: 'tech'
+            },
+            {
+                name: 'Control PC Desktop',
+                url: 'http://localhost:8899/local/index.html',
+                category: 'tech'
+            }
         ];
         const CUSTOM_ORDER_KEY = 'customOrder_v1';
         const VISIT_STATS_KEY = 'visitStats_v1';
@@ -3309,7 +3328,7 @@
             }
             
             loadFavorites();
-            ensurePerplexityLink();
+            ensureBuiltinLinks();
             loadCustomOrder();
             loadVisitStats();
             initOfflineDetection();
@@ -3649,18 +3668,21 @@
             if (changed) saveFavorites();
         }
 
-        function ensurePerplexityLink() {
-            const perplexityUrl = 'https://www.perplexity.ai';
-            if (links.some((l) => l.url === perplexityUrl)) return;
-            links.push({
-                name: 'Perplexity',
-                url: perplexityUrl,
-                category: 'ai',
-                iconUrl: null,
-                tags: null,
-                notes: null
+        function ensureBuiltinLinks() {
+            let changed = false;
+            DEFAULT_ENSURE_LINKS.forEach((entry) => {
+                if (links.some((l) => l.url === entry.url)) return;
+                links.push({
+                    name: entry.name,
+                    url: entry.url,
+                    category: entry.category,
+                    iconUrl: null,
+                    tags: null,
+                    notes: null
+                });
+                changed = true;
             });
-            saveAllLinks();
+            if (changed) saveAllLinks();
         }
         
         function saveFavorites() {
