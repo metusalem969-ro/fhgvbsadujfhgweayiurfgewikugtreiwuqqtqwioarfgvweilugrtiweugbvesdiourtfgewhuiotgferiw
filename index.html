@@ -3104,8 +3104,8 @@
             { name: "Dropbox", url: "https://www.dropbox.com", category: "storage" },
             { name: "Microsoft", url: "https://www.microsoft.com", category: "tech" },
             { name: "TeamViewer", url: "https://www.teamviewer.com", category: "tech" },
-            { name: "Control PC Mobil", url: "https://metusalem969-ro.github.io/quick-app-launcher/", category: "tech" },
-            { name: "Control PC Desktop", url: "http://localhost:8899/local/index.html", category: "tech" },
+            { name: "Control PC Mobil", url: "https://metusalem969-ro.github.io/quick-app-launcher/", category: "tech", iconUrl: "icons/control-mobil.svg" },
+            { name: "Control PC Desktop", url: "http://localhost:8899/local/index.html", category: "tech", iconUrl: "icons/control-desktop.svg" },
             { name: "ElevenLabs", url: "https://elevenlabs.io", category: "audio" },
             { name: "Fiverr", url: "https://www.fiverr.com", category: "services" },
             { name: "Lebara", url: "https://www.lebara.com", category: "services" },
@@ -3150,11 +3150,66 @@
             }
         }
 
+        const BUILTIN_ICON_URLS = {
+            'https://web.whatsapp.com': 'icons/whatsapp.svg',
+            'https://web.whatsapp.com/': 'icons/whatsapp.svg',
+            'https://metusalem969-ro.github.io/quick-app-launcher': 'icons/control-mobil.svg',
+            'https://metusalem969-ro.github.io/quick-app-launcher/': 'icons/control-mobil.svg',
+            'http://localhost:8899/local/index.html': 'icons/control-desktop.svg'
+        };
+
+        function normalizeLinkUrl(url) {
+            if (!url) return '';
+            try {
+                const parsed = new URL(url);
+                let path = parsed.pathname || '/';
+                if (path.length > 1 && path.endsWith('/')) {
+                    path = path.slice(0, -1);
+                }
+                return `${parsed.origin}${path}${parsed.search}`;
+            } catch {
+                return String(url).replace(/\/$/, '');
+            }
+        }
+
+        function resolveIconUrl(iconPath) {
+            if (!iconPath) return null;
+            if (isSafeHttpUrl(iconPath)) return iconPath;
+            if (iconPath.startsWith('./') || iconPath.startsWith('icons/') || iconPath.startsWith('/')) {
+                return new URL(iconPath, window.location.href).href;
+            }
+            return null;
+        }
+
+        function getBuiltinIconPath(url) {
+            const normalized = normalizeLinkUrl(url);
+            return BUILTIN_ICON_URLS[url] || BUILTIN_ICON_URLS[normalized] || BUILTIN_ICON_URLS[normalized + '/'];
+        }
+
         function getSafeIconUrl(link, domain) {
-            if (link.iconUrl && isSafeHttpUrl(link.iconUrl)) {
-                return link.iconUrl;
+            const builtinIcon = getBuiltinIconPath(link.url);
+            if (builtinIcon) {
+                return resolveIconUrl(builtinIcon);
+            }
+            const customIcon = resolveIconUrl(link.iconUrl);
+            if (customIcon) {
+                return customIcon;
             }
             return `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(domain)}`;
+        }
+
+        function applyBuiltinIcons() {
+            let changed = false;
+            links.forEach((link) => {
+                const builtinIcon = getBuiltinIconPath(link.url);
+                if (builtinIcon && link.iconUrl !== builtinIcon) {
+                    link.iconUrl = builtinIcon;
+                    changed = true;
+                }
+            });
+            if (changed) {
+                saveAllLinks();
+            }
         }
 
         const FAVORITES_KEY = 'favoriteLinks_v1';
@@ -3169,14 +3224,22 @@
                 category: 'ai'
             },
             {
+                name: 'WhatsApp',
+                url: 'https://web.whatsapp.com/',
+                category: 'social',
+                iconUrl: 'icons/whatsapp.svg'
+            },
+            {
                 name: 'Control PC Mobil',
                 url: 'https://metusalem969-ro.github.io/quick-app-launcher/',
-                category: 'tech'
+                category: 'tech',
+                iconUrl: 'icons/control-mobil.svg'
             },
             {
                 name: 'Control PC Desktop',
                 url: 'http://localhost:8899/local/index.html',
-                category: 'tech'
+                category: 'tech',
+                iconUrl: 'icons/control-desktop.svg'
             }
         ];
         const CUSTOM_ORDER_KEY = 'customOrder_v1';
@@ -3330,6 +3393,7 @@
             
             loadFavorites();
             ensureBuiltinLinks();
+            applyBuiltinIcons();
             loadCustomOrder();
             loadVisitStats();
             initOfflineDetection();
@@ -3673,12 +3737,19 @@
             let changed = false;
             const addedNames = [];
             DEFAULT_ENSURE_LINKS.forEach((entry) => {
-                if (links.some((l) => l.url === entry.url)) return;
+                const existing = links.find((l) => l.url === entry.url || normalizeLinkUrl(l.url) === normalizeLinkUrl(entry.url));
+                if (existing) {
+                    if (entry.iconUrl && existing.iconUrl !== entry.iconUrl) {
+                        existing.iconUrl = entry.iconUrl;
+                        changed = true;
+                    }
+                    return;
+                }
                 links.push({
                     name: entry.name,
                     url: entry.url,
                     category: entry.category,
-                    iconUrl: null,
+                    iconUrl: entry.iconUrl || null,
                     tags: null,
                     notes: null
                 });
@@ -3687,7 +3758,9 @@
             });
             if (changed) {
                 saveAllLinks();
-                showNotification(`➕ Linkuri noi: ${addedNames.join(', ')}`, 'success');
+                if (addedNames.length > 0) {
+                    showNotification(`➕ Linkuri noi: ${addedNames.join(', ')}`, 'success');
+                }
             }
         }
         
@@ -3900,7 +3973,7 @@
             const time = now.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             document.getElementById('mainTime').textContent = time;
             
-            const fullDateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+            const fullDateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('fullDateMain').textContent = now.toLocaleDateString('ro-RO', fullDateOptions);
             
             const daysRo = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă'];
@@ -3932,7 +4005,7 @@
         function updateClockModal(date = new Date()) {
             document.getElementById('modalClockTime').textContent = date.toLocaleTimeString('ro-RO');
             
-            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('fullDate').textContent = date.toLocaleDateString('ro-RO', options);
             
             const daysRo = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă'];

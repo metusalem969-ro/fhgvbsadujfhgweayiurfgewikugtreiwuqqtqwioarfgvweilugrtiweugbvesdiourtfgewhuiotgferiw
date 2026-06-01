@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="Control desktop">
+  <rect x="2.5" y="4" width="19" height="12" rx="1.8" fill="#1e3a5f"/>
+  <rect x="3.8" y="5.4" width="16.4" height="9.2" rx="0.8" fill="#dbeafe"/>
+  <rect x="10" y="17.2" width="4" height="1.6" rx="0.4" fill="#64748b"/>
+  <rect x="7.5" y="18.4" width="9" height="1.4" rx="0.5" fill="#94a3b8"/>
+  <path fill="#38bdf8" d="M6.5 8.2h11v1.3h-11zm0 2.5h7.5v1.3H6.5z"/>
+</svg>

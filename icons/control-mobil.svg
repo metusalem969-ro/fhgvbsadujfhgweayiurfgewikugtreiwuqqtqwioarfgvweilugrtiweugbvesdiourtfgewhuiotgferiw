@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="Control mobil">
+  <rect x="7" y="2" width="10" height="20" rx="2.2" fill="#0c4a6e"/>
+  <rect x="8.2" y="4" width="7.6" height="14" rx="1" fill="#e0f2fe"/>
+  <circle cx="12" cy="19.2" r="0.9" fill="#7dd3fc"/>
+  <path fill="#38bdf8" d="M10.2 8.2h3.6v1.4H10.2zm0 2.8h3.6v1.4H10.2z"/>
+  <path fill="#f59e0b" d="M16.8 7.2 19 5l1.2 1.2-2.2 2.2zm-9.6 0L5 5 3.8 6.2l2.2 2.2z"/>
+</svg>
