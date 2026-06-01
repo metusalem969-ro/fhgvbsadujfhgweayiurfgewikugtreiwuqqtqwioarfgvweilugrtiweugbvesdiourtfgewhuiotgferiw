@@ -3060,10 +3060,11 @@
 
         // All site links data
         let links = [
-            { name: "Yahoo", url: "https://mail.yahoo.com/d/folders/1", category: "email" },
+            { name: "Yahoo", url: "https://mail.yahoo.com/d/folders/1", category: "email", iconUrl: "icons/yahoo.svg" },
             { name: "Gmail", url: "https://mail.google.com", category: "email" },
             { name: "YouTube", url: "https://www.youtube.com", category: "video" },
             { name: "Facebook", url: "https://www.facebook.com", category: "social" },
+            { name: "WhatsApp", url: "https://web.whatsapp.com/", category: "social", iconUrl: "icons/whatsapp.svg" },
             { name: "eBay", url: "https://www.ebay.com", category: "shopping" },
             { name: "eBay UK", url: "https://www.ebay.co.uk", category: "shopping" },
             { name: "AliExpress", url: "https://www.aliexpress.com", category: "shopping" },
@@ -3095,7 +3096,7 @@
             { name: "DeepSeek", url: "https://deepseek.ai", category: "ai" },
             { name: "Gemini AI", url: "https://gemini.google.com", category: "ai" },
             { name: "Perplexity", url: "https://www.perplexity.ai", category: "ai" },
-            { name: "Arduino", url: "https://www.arduino.cc", category: "electronics" },
+            { name: "Arduino", url: "https://www.arduino.cc", category: "electronics", iconUrl: "icons/arduino.svg" },
             { name: "Blynk", url: "https://blynk.io", category: "electronics" },
             { name: "Adafruit", url: "https://www.adafruit.com", category: "electronics" },
             { name: "App Inventor", url: "https://appinventor.mit.edu", category: "development" },
@@ -3105,8 +3106,8 @@
             { name: "Dropbox", url: "https://www.dropbox.com", category: "storage" },
             { name: "Microsoft", url: "https://www.microsoft.com", category: "tech" },
             { name: "TeamViewer", url: "https://www.teamviewer.com", category: "tech" },
-            { name: "Control PC Mobil", url: "https://metusalem969-ro.github.io/quick-app-launcher/", category: "tech" },
-            { name: "Control PC Desktop", url: "http://localhost:8899/local/index.html", category: "tech" },
+            { name: "Control PC Mobil", url: "https://metusalem969-ro.github.io/quick-app-launcher/", category: "tech", iconUrl: "icons/control-mobil.svg" },
+            { name: "Control PC Desktop", url: "http://localhost:8899/local/index.html", category: "tech", iconUrl: "icons/control-desktop.svg" },
             { name: "ElevenLabs", url: "https://elevenlabs.io", category: "audio" },
             { name: "Fiverr", url: "https://www.fiverr.com", category: "services" },
             { name: "Lebara", url: "https://www.lebara.com", category: "services" },
@@ -3151,11 +3152,74 @@
             }
         }
 
-        function getSafeIconUrl(link, domain) {
-            if (link.iconUrl && isSafeHttpUrl(link.iconUrl)) {
-                return link.iconUrl;
+        const BUILTIN_ICON_URLS = {
+            'https://web.whatsapp.com': 'icons/whatsapp.svg',
+            'https://web.whatsapp.com/': 'icons/whatsapp.svg',
+            'https://metusalem969-ro.github.io/quick-app-launcher': 'icons/control-mobil.svg',
+            'https://metusalem969-ro.github.io/quick-app-launcher/': 'icons/control-mobil.svg',
+            'http://localhost:8899/local/index.html': 'icons/control-desktop.svg',
+            'https://mail.yahoo.com/d/folders/1': 'icons/yahoo.svg',
+            'https://www.arduino.cc': 'icons/arduino.svg',
+            'https://www.arduino.cc/': 'icons/arduino.svg'
+        };
+
+        const HOST_ICON_URLS = {
+            'mail.yahoo.com': 'icons/yahoo.svg',
+            'yahoo.com': 'icons/yahoo.svg',
+            'www.arduino.cc': 'icons/arduino.svg',
+            'arduino.cc': 'icons/arduino.svg'
+        };
+
+        function normalizeLinkUrl(url) {
+            if (!url) return '';
+            try {
+                const parsed = new URL(url);
+                let path = parsed.pathname || '/';
+                if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
+                return `${parsed.origin}${path}${parsed.search}`;
+            } catch {
+                return String(url).replace(/\/$/, '');
             }
+        }
+
+        function resolveIconUrl(iconPath) {
+            if (!iconPath) return null;
+            if (isSafeHttpUrl(iconPath)) return iconPath;
+            if (iconPath.startsWith('./') || iconPath.startsWith('icons/') || iconPath.startsWith('/')) {
+                return new URL(iconPath, window.location.href).href;
+            }
+            return null;
+        }
+
+        function getBuiltinIconPath(url) {
+            const normalized = normalizeLinkUrl(url);
+            const direct = BUILTIN_ICON_URLS[url] || BUILTIN_ICON_URLS[normalized] || BUILTIN_ICON_URLS[normalized + '/'];
+            if (direct) return direct;
+            try {
+                const host = new URL(url).hostname;
+                const hostBare = host.replace(/^www\./, '');
+                return HOST_ICON_URLS[host] || HOST_ICON_URLS[hostBare];
+            } catch { return undefined; }
+        }
+
+        function getSafeIconUrl(link, domain) {
+            const builtinIcon = getBuiltinIconPath(link.url);
+            if (builtinIcon) return resolveIconUrl(builtinIcon);
+            const customIcon = resolveIconUrl(link.iconUrl);
+            if (customIcon) return customIcon;
             return `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(domain)}`;
+        }
+
+        function applyBuiltinIcons() {
+            let changed = false;
+            links.forEach((link) => {
+                const builtinIcon = getBuiltinIconPath(link.url);
+                if (builtinIcon && link.iconUrl !== builtinIcon) {
+                    link.iconUrl = builtinIcon;
+                    changed = true;
+                }
+            });
+            if (changed) saveAllLinks();
         }
 
         const FAVORITES_KEY = 'favoriteLinks_v1';
@@ -3170,14 +3234,22 @@
                 category: 'ai'
             },
             {
+                name: 'WhatsApp',
+                url: 'https://web.whatsapp.com/',
+                category: 'social',
+                iconUrl: 'icons/whatsapp.svg'
+            },
+            {
                 name: 'Control PC Mobil',
                 url: 'https://metusalem969-ro.github.io/quick-app-launcher/',
-                category: 'tech'
+                category: 'tech',
+                iconUrl: 'icons/control-mobil.svg'
             },
             {
                 name: 'Control PC Desktop',
                 url: 'http://localhost:8899/local/index.html',
-                category: 'tech'
+                category: 'tech',
+                iconUrl: 'icons/control-desktop.svg'
             }
         ];
         const CUSTOM_ORDER_KEY = 'customOrder_v1';
@@ -3331,6 +3403,7 @@
             
             loadFavorites();
             ensureBuiltinLinks();
+            applyBuiltinIcons();
             loadCustomOrder();
             loadVisitStats();
             initOfflineDetection();
@@ -3674,12 +3747,19 @@
             let changed = false;
             const addedNames = [];
             DEFAULT_ENSURE_LINKS.forEach((entry) => {
-                if (links.some((l) => l.url === entry.url)) return;
+                const existing = links.find((l) => l.url === entry.url || normalizeLinkUrl(l.url) === normalizeLinkUrl(entry.url));
+                if (existing) {
+                    if (entry.iconUrl && existing.iconUrl !== entry.iconUrl) {
+                        existing.iconUrl = entry.iconUrl;
+                        changed = true;
+                    }
+                    return;
+                }
                 links.push({
                     name: entry.name,
                     url: entry.url,
                     category: entry.category,
-                    iconUrl: null,
+                    iconUrl: entry.iconUrl || null,
                     tags: null,
                     notes: null
                 });
@@ -3688,7 +3768,9 @@
             });
             if (changed) {
                 saveAllLinks();
-                showNotification(`➕ Linkuri noi: ${addedNames.join(', ')}`, 'success');
+                if (addedNames.length > 0) {
+                    showNotification(`➕ Linkuri noi: ${addedNames.join(', ')}`, 'success');
+                }
             }
         }
         
@@ -3901,7 +3983,7 @@
             const time = now.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             document.getElementById('mainTime').textContent = time;
             
-            const fullDateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const fullDateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('fullDateMain').textContent = now.toLocaleDateString('ro-RO', fullDateOptions);
             
             const daysRo = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă'];
@@ -3933,7 +4015,7 @@
         function updateClockModal(date = new Date()) {
             document.getElementById('modalClockTime').textContent = date.toLocaleTimeString('ro-RO');
             
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('fullDate').textContent = date.toLocaleDateString('ro-RO', options);
             
             const daysRo = ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă'];
