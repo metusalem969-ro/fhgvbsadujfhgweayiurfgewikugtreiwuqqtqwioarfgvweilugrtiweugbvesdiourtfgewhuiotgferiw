@@ -3169,7 +3169,6 @@
             { name: "FilmeHD API", url: "https://filmehd.se/wp-json", category: "filme" },
             { name: "Vox Filme", url: "https://voxfilmeonline.biz/", category: "filme" },
             { name: "JustWatch", url: "https://www.justwatch.com/ro/filme", category: "filme" },
-            { name: "Portalul TV", url: "https://portalultautv.biz/", category: "filme" },
             { name: "Top Filme HD", url: "https://www.topfilmehd.ro/", category: "filme" },
             { name: "Cinepub", url: "https://cinepub.ro/", category: "filme" },
             { name: "Pluto TV", url: "https://pluto.tv/uk/hub/home", category: "filme" },
@@ -3336,7 +3335,7 @@
             'Yahoo', 'Gmail', 'YouTube', 'Facebook', 'WhatsApp',
             'eBay', 'eBay UK', 'Amazon UK', 'AliExpress',
             'ClickSud', 'Filelist', 'DivX Filme', 'IMDB', 'Vox Filme',
-            'FilmeHD API', 'JustWatch', 'Portalul TV', 'Top Filme HD', 'Cinepub', 'Pluto TV', 'Tubi',
+            'FilmeHD API', 'JustWatch', 'Top Filme HD', 'Cinepub', 'Pluto TV', 'Tubi',
             'OpenAI', 'Perplexity', 'Arduino', 'Control PC Mobil', 'Control PC Desktop'
         ];
         const DEFAULT_FAVORITE_EXTRA_URLS = [
@@ -3874,10 +3873,11 @@
         function isRemovedLink(link) {
             const name = (link && link.name ? String(link.name) : '').toLowerCase();
             const url = (link && link.url ? String(link.url) : '').toLowerCase();
-            if (name === '123movies' || name === 'oracle' || name === 'crackle') return true;
+            if (name === '123movies' || name === 'oracle' || name === 'crackle' || name === 'portalul tv') return true;
             if (url.includes('123movies')) return true;
             if (url.includes('oracle.com')) return true;
             if (url.includes('crackle.com')) return true;
+            if (url.includes('portalultautv')) return true;
             return false;
         }
 
@@ -3890,7 +3890,7 @@
             }
             [...favorites].forEach((url) => {
                 const u = String(url).toLowerCase();
-                if (u.includes('123movies') || u.includes('oracle.com') || u.includes('crackle.com')) {
+                if (u.includes('123movies') || u.includes('oracle.com') || u.includes('crackle.com') || u.includes('portalultautv')) {
                     favorites.delete(url);
                     changed = true;
                 }
