@@ -3174,7 +3174,9 @@
             { name: "Filelist", url: "https://filelist.io/login.php", category: "fisiere", iconUrl: "icons/filelist.ico" },
             { name: "DivX Filme", url: "https://divxfilmeonline.tv/filme-online/", category: "filme" },
             { name: "IMDB", url: "https://www.imdb.com/watchlist", category: "filme" },
-            { name: "FilmeHD", url: "https://filmehd.se/", category: "filme", iconUrl: "icons/filmehd.svg" },
+            { name: "FilmeHD.to", url: "https://filmehd.to/", category: "filme", iconUrl: "icons/filmehd-to.svg" },
+            { name: "FilmeHD.cc", url: "https://filmehd.cc/", category: "filme", iconUrl: "icons/filmehd-cc.svg" },
+            { name: "OneMagia", url: "https://onemagia.com/movies", category: "filme", iconUrl: "icons/onemagia.svg" },
             { name: "Vox Filme", url: "https://voxfilmeonline.biz/", category: "filme" },
             { name: "JustWatch", url: "https://www.justwatch.com/ro/filme", category: "filme" },
             { name: "Top Filme HD", url: "https://www.topfilmehd.ro/", category: "filme" },
@@ -3261,9 +3263,12 @@
             'https://www.arduino.cc/': 'icons/arduino.svg',
             'https://filelist.io/login.php': 'icons/filelist.ico',
             'https://filelist.io': 'icons/filelist.ico',
-            'https://filmehd.se': 'icons/filmehd.svg',
-            'https://filmehd.se/': 'icons/filmehd.svg',
-            'https://filmehd.se/wp-json': 'icons/filmehd.svg'
+            'https://filmehd.to': 'icons/filmehd-to.svg',
+            'https://filmehd.to/': 'icons/filmehd-to.svg',
+            'https://filmehd.cc': 'icons/filmehd-cc.svg',
+            'https://filmehd.cc/': 'icons/filmehd-cc.svg',
+            'https://onemagia.com/movies': 'icons/onemagia.svg',
+            'https://onemagia.com': 'icons/onemagia.svg'
         };
 
         const HOST_ICON_URLS = {
@@ -3272,7 +3277,9 @@
             'www.arduino.cc': 'icons/arduino.svg',
             'arduino.cc': 'icons/arduino.svg',
             'filelist.io': 'icons/filelist.ico',
-            'filmehd.se': 'icons/filmehd.svg'
+            'filmehd.to': 'icons/filmehd-to.svg',
+            'filmehd.cc': 'icons/filmehd-cc.svg',
+            'onemagia.com': 'icons/onemagia.svg'
         };
 
         function normalizeLinkUrl(url) {
@@ -3310,13 +3317,21 @@
             return window.location.origin + path;
         }
 
-        const FILMEHD_ICON_DATA = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#1565c0"/><polygon points="8,7 8,17 16,12" fill="#fff"/><text x="12" y="22" text-anchor="middle" fill="#e3f2fd" font-family="Arial,sans-serif" font-size="5.5" font-weight="800">HD</text></svg>');
+        const INLINE_ICON_DATA = {
+            'icons/filmehd.svg': 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#1565c0"/><polygon points="8,7 8,17 16,12" fill="#fff"/><text x="12" y="22" text-anchor="middle" fill="#e3f2fd" font-family="Arial,sans-serif" font-size="5.5" font-weight="800">HD</text></svg>'),
+            'icons/filmehd-to.svg': 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#2e7d32"/><polygon points="8,7 8,17 16,12" fill="#fff"/><text x="12" y="22" text-anchor="middle" fill="#e8f5e9" font-family="Arial,sans-serif" font-size="5" font-weight="800">.to</text></svg>'),
+            'icons/filmehd-cc.svg': 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#1565c0"/><polygon points="8,7 8,17 16,12" fill="#fff"/><text x="12" y="22" text-anchor="middle" fill="#e3f2fd" font-family="Arial,sans-serif" font-size="5" font-weight="800">.cc</text></svg>'),
+            'icons/onemagia.svg': 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#6a1b9a"/><circle cx="12" cy="11" r="5.5" fill="none" stroke="#fff" stroke-width="1.4"/><polygon points="10,8.5 10,13.5 15,11" fill="#fff"/><text x="12" y="22" text-anchor="middle" fill="#f3e5f5" font-family="Arial,sans-serif" font-size="4.5" font-weight="800">MAGIA</text></svg>')
+        };
 
         function resolveIconUrl(iconPath) {
             if (!iconPath) return null;
-            if (iconPath === 'icons/filmehd.svg' || iconPath.endsWith('/filmehd.svg')) {
-                return FILMEHD_ICON_DATA;
+            if (INLINE_ICON_DATA[iconPath]) {
+                return INLINE_ICON_DATA[iconPath];
             }
+            const iconFile = iconPath.replace(/^.*\//, '');
+            const byName = Object.entries(INLINE_ICON_DATA).find(([k]) => k.endsWith('/' + iconFile));
+            if (byName) return byName[1];
             if (isSafeHttpUrl(iconPath)) return iconPath;
             if (iconPath.startsWith('./') || iconPath.startsWith('icons/') || iconPath.startsWith('/')) {
                 const rel = iconPath.replace(/^\//, '').replace(/^\.\//, '');
@@ -3357,8 +3372,9 @@
             if (builtinIcon) return resolveIconUrl(builtinIcon);
             const customIcon = resolveIconUrl(link.iconUrl);
             if (customIcon) return customIcon;
-            if (domain && domain.replace(/^www\./, '') === 'filmehd.se') {
-                return FILMEHD_ICON_DATA;
+            const hostIcon = HOST_ICON_URLS[domain] || HOST_ICON_URLS[domain.replace(/^www\./, '')];
+            if (hostIcon && INLINE_ICON_DATA[hostIcon]) {
+                return INLINE_ICON_DATA[hostIcon];
             }
             return `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(domain)}`;
         }
@@ -3381,12 +3397,14 @@
             'Yahoo', 'Gmail', 'YouTube', 'Facebook', 'WhatsApp',
             'eBay', 'eBay UK', 'Amazon UK', 'AliExpress',
             'ClickSud', 'Filelist', 'DivX Filme', 'IMDB', 'Vox Filme',
-            'FilmeHD', 'JustWatch', 'Top Filme HD', 'Cinepub', 'Pluto TV', 'Tubi',
+            'FilmeHD.to', 'FilmeHD.cc', 'OneMagia', 'JustWatch', 'Top Filme HD', 'Cinepub', 'Pluto TV', 'Tubi',
             'OpenAI', 'Gemini AI', 'Perplexity', 'Arduino', 'Control PC Mobil', 'Control PC Desktop'
         ];
         const DEFAULT_FAVORITE_EXTRA_URLS = [
             'https://clicksud.com.in/',
-            'https://filmehd.se'
+            'https://filmehd.to/',
+            'https://filmehd.cc/',
+            'https://onemagia.com/movies'
         ];
         const DEFAULT_FAVORITE_URLS = (() => {
             const urls = new Set(DEFAULT_FAVORITE_EXTRA_URLS);
@@ -3926,35 +3944,41 @@
             if (url.includes('crackle.com')) return true;
             if (url.includes('portalultautv')) return true;
             if (url.includes('microsoft.com')) return true;
+            if (url.includes('filmehd.se')) return true;
             return false;
         }
 
 
         function migrateLegacyFilmehdLinks() {
-            const newUrl = 'https://filmehd.se/';
-            const legacyUrls = ['https://filmehd.se/wp-json', 'https://filmehd.se/wp-json/'];
+            const replaceUrl = 'https://filmehd.to/';
+            const legacyUrls = [
+                'https://filmehd.se/',
+                'https://filmehd.se',
+                'https://filmehd.se/wp-json',
+                'https://filmehd.se/wp-json/'
+            ];
             let changed = false;
             links.forEach((link) => {
-                const u = link.url || '';
+                const u = (link.url || '').toLowerCase();
                 if (!u.includes('filmehd.se')) return;
-                if (u.includes('/wp-json') || link.name === 'FilmeHD API') {
-                    link.url = newUrl;
-                    if (link.name === 'FilmeHD API') link.name = 'FilmeHD';
-                    link.iconUrl = 'icons/filmehd.svg';
-                    changed = true;
-                }
+                link.url = replaceUrl;
+                if (link.name === 'FilmeHD' || link.name === 'FilmeHD API') link.name = 'FilmeHD.to';
+                link.iconUrl = 'icons/filmehd-to.svg';
+                changed = true;
             });
             legacyUrls.forEach((oldUrl) => {
                 if (favorites.has(oldUrl)) {
                     favorites.delete(oldUrl);
-                    favorites.add(newUrl);
+                    favorites.add(replaceUrl);
+                    favorites.add('https://filmehd.cc/');
+                    favorites.add('https://onemagia.com/movies');
                     changed = true;
                 }
             });
             legacyUrls.forEach((oldUrl) => {
                 if (visitStats[oldUrl]) {
-                    const existing = visitStats[newUrl] || { count: 0, lastVisit: null };
-                    visitStats[newUrl] = {
+                    const existing = visitStats[replaceUrl] || { count: 0, lastVisit: null };
+                    visitStats[replaceUrl] = {
                         count: existing.count + visitStats[oldUrl].count,
                         lastVisit: Math.max(existing.lastVisit || 0, visitStats[oldUrl].lastVisit || 0) || null
                     };
@@ -3978,7 +4002,7 @@
             }
             [...favorites].forEach((url) => {
                 const u = String(url).toLowerCase();
-                if (u.includes('123movies') || u.includes('oracle.com') || u.includes('crackle.com') || u.includes('portalultautv') || u.includes('microsoft.com')) {
+                if (u.includes('123movies') || u.includes('oracle.com') || u.includes('crackle.com') || u.includes('portalultautv') || u.includes('microsoft.com') || u.includes('filmehd.se')) {
                     favorites.delete(url);
                     changed = true;
                 }

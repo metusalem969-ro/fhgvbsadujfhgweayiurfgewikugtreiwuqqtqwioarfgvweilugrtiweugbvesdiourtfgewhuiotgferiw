@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="OneMagia">
+  <rect width="24" height="24" rx="4" fill="#6a1b9a"/>
+  <circle cx="12" cy="11" r="5.5" fill="none" stroke="#fff" stroke-width="1.4"/>
+  <polygon points="10,8.5 10,13.5 15,11" fill="#fff"/>
+  <text x="12" y="22" text-anchor="middle" fill="#f3e5f5" font-family="Arial,Helvetica,sans-serif" font-size="4.5" font-weight="800">MAGIA</text>
+</svg>
