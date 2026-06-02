@@ -154,3 +154,39 @@ Pipeline-ul republică site-ul în 1–2 minute.
 | `icons/`, `sounds/`, `*.mp3` | Resurse site |
 
 Dacă vrei ajutor la un pas concret (eroare pipeline, URL, Cursor), spune la ce pas ești.
+
+---
+
+## Actualizări noi (ex. Bollywood Filme) nu apar pe site
+
+GitHub și GitLab **nu se sincronizează singure**. Modificările făcute pe GitHub apar pe GitLab Pages doar după ce trimiți codul la **GitLab**.
+
+### Pe mobil — editare rapidă în GitLab
+
+1. Deschide proiectul (repo-ul lung) pe **gitlab.com**
+2. **Code** → **index.html** → **Edit** (creion)
+3. Caută (`Ctrl+F` / Find on page): `OneMagia`
+4. **După** linia OneMagia, adaugă:
+
+```javascript
+            { name: "Bollywood Filme", url: "https://www.justwatch.com/ro/filme?production_countries=IN", category: "filme", iconUrl: "icons/bollywood.svg" },
+```
+
+5. **Commit changes** → mesaj: `Adaugă Bollywood Filme`
+6. **Build → Pipelines** → aștepți **verde**
+7. Pe telefon: reîncarcă site-ul **fără cache** (închide tab, deschide din nou)
+
+### Iconița (opțional)
+
+**Code** → folder **icons** → **Upload file** → `bollywood.svg` (din proiectul de pe GitHub).
+
+### De pe PC (mai simplu pe termen lung)
+
+```bash
+git remote add github https://github.com/metusalem969-ro/fhgvbsadujfhgweayiurfgewikugtreiwuqqtqwioarfgvweilugrtiweugbvesdiourtfgewhuiotgferiw.git
+git remote add gitlab https://gitlab.com/Hercules-metusalem/NUME-PROIECT.git
+git pull github main
+git push gitlab main
+```
+
+Înlocuiește `NUME-PROIECT` cu numele real al repo-ului tău GitLab.
