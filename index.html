@@ -11,6 +11,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Launcher">
+    <meta name="robots" content="noindex, nofollow">
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -2353,9 +2354,167 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Ecran acces privat */
+        .privacy-lock {
+            position: fixed;
+            inset: 0;
+            z-index: 100000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: linear-gradient(145deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+        }
+        .privacy-lock.hidden {
+            display: none;
+        }
+        .privacy-lock-card {
+            width: 100%;
+            max-width: 380px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 28px 24px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(12px);
+            color: #f8fafc;
+            text-align: center;
+        }
+        .privacy-lock-card h2 {
+            font-size: 1.35em;
+            margin-bottom: 8px;
+        }
+        .privacy-lock-card p {
+            font-size: 0.9em;
+            color: #94a3b8;
+            margin-bottom: 20px;
+            line-height: 1.45;
+        }
+        .privacy-lock-card input {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(15, 23, 42, 0.6);
+            color: #fff;
+            font-size: 1.05em;
+            margin-bottom: 12px;
+        }
+        .privacy-lock-card input:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+        }
+        .privacy-lock-card button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #fff;
+            font-weight: 700;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        .privacy-lock-card button:hover {
+            filter: brightness(1.08);
+        }
+        .privacy-lock-error {
+            color: #f87171;
+            font-size: 0.85em;
+            min-height: 1.2em;
+            margin-top: 8px;
+        }
     </style>
 </head>
 <body>
+
+    <div id="privacyLock" class="privacy-lock" role="dialog" aria-label="Acces privat">
+        <div class="privacy-lock-card">
+            <h2>🔒 Acces privat</h2>
+            <p id="privacyLockHint">Introdu parola pentru a deschide dashboard-ul.</p>
+            <input type="password" id="privacyPassword" autocomplete="current-password" placeholder="Parolă" />
+            <input type="password" id="privacyPasswordConfirm" class="privacy-setup-only" autocomplete="new-password" placeholder="Confirmă parola" style="display:none;" />
+            <button type="button" id="privacySubmitBtn">Intră</button>
+            <div id="privacyLockError" class="privacy-lock-error"></div>
+        </div>
+    </div>
+    <script>
+    (function initPrivacyLock() {
+        const HASH_KEY = 'dashboard_privacy_hash_v1';
+        const SESSION_KEY = 'dashboard_privacy_unlocked_v1';
+        const lockEl = document.getElementById('privacyLock');
+        const passEl = document.getElementById('privacyPassword');
+        const confirmEl = document.getElementById('privacyPasswordConfirm');
+        const hintEl = document.getElementById('privacyLockHint');
+        const errEl = document.getElementById('privacyLockError');
+        const btnEl = document.getElementById('privacySubmitBtn');
+        if (!lockEl || !passEl || !btnEl) return;
+
+        function sha256(text) {
+            const enc = new TextEncoder().encode(text);
+            return crypto.subtle.digest('SHA-256', enc).then((buf) =>
+                Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('')
+            );
+        }
+
+        function unlock() {
+            sessionStorage.setItem(SESSION_KEY, '1');
+            lockEl.classList.add('hidden');
+            document.body.classList.remove('privacy-locked');
+        }
+
+        const isSetup = !localStorage.getItem(HASH_KEY);
+        if (isSetup) {
+            hintEl.textContent = 'Alege o parolă pentru a proteja dashboard-ul. O vei folosi la fiecare dispozitiv nou.';
+            btnEl.textContent = 'Salvează parola';
+            confirmEl.style.display = 'block';
+            passEl.placeholder = 'Parolă nouă';
+        }
+
+        if (sessionStorage.getItem(SESSION_KEY) === '1' && !isSetup) {
+            unlock();
+            return;
+        }
+
+        document.body.classList.add('privacy-locked');
+
+        async function submit() {
+            errEl.textContent = '';
+            const pass = passEl.value.trim();
+            if (pass.length < 4) {
+                errEl.textContent = 'Parola trebuie să aibă cel puțin 4 caractere.';
+                return;
+            }
+            if (isSetup) {
+                const confirm = confirmEl.value.trim();
+                if (pass !== confirm) {
+                    errEl.textContent = 'Parolele nu coincid.';
+                    return;
+                }
+                const hash = await sha256(pass);
+                localStorage.setItem(HASH_KEY, hash);
+                unlock();
+                return;
+            }
+            const stored = localStorage.getItem(HASH_KEY);
+            const hash = await sha256(pass);
+            if (hash === stored) {
+                unlock();
+            } else {
+                errEl.textContent = 'Parolă greșită.';
+                passEl.value = '';
+                passEl.focus();
+            }
+        }
+
+        btnEl.addEventListener('click', submit);
+        passEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+        confirmEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+        passEl.focus();
+    })();
+    </script>
     <div id="particles" class="particles"></div>
     
     <!-- Audio element for typing sound -->
