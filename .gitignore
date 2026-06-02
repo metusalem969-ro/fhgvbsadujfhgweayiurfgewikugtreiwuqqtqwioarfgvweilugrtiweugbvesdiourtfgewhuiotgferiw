@@ -8,3 +8,7 @@ Thumbs.db
 *.swp
 .idea/
 .vscode/
+
+# Token local (nu comite niciodată)
+.gitlab-token
+.env.local

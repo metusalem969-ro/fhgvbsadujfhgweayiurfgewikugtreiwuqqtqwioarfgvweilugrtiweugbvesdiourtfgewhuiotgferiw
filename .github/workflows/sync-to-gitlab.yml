@@ -1,7 +1,7 @@
 # Trimite automat main de pe GitHub către GitLab (după ce adaugi secretele în repo).
 # GitHub → Settings → Secrets and variables → Actions → New repository secret:
 #   GITLAB_TOKEN = token GitLab (scope: write_repository, api)
-#   GITLAB_PROJECT = calea proiectului, ex: Hercules-metusalem969/nume-repo
+#   GITLAB_PROJECT = Hercules-metusalem969/dashboard
 
 name: Sync to GitLab
 

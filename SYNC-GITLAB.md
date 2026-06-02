@@ -48,17 +48,24 @@ Dacă mirror nu merge pe proiectul vechi:
 2. Copiază tokenul.
 3. GitHub → repo → **Settings** → **Secrets and variables** → **Actions** → **New secret**:
    - `GITLAB_TOKEN` = tokenul GitLab
-   - `GITLAB_PROJECT` = calea exactă din URL, ex. `Hercules-metusalem969/fhgvbsadujfhgweayiurfgewikugtreiwuqqtqwioarfgvweilugrtiweugbvesdiourtfgewhuiotgferiw`
+   - `GITLAB_PROJECT` = `Hercules-metusalem969/dashboard` (proiectul importat cu Pages)
 4. La fiecare push pe `main`, workflow-ul `.github/workflows/sync-to-gitlab.yml` trimite codul la GitLab.
 
 ---
 
-## De ce nu pot modifica eu direct GitLab
+## Push direct de la agent (după token)
 
-Cloud Agent are acces la **GitHub** (repo-ul tău de aici), **nu** la contul tău **GitLab** (fără parolă/token GitLab). De aceea:
+Dacă adaugi `GITLAB_TOKEN` în Cursor (vezi **GITLAB-PAS-CU-PAS.md**), agentul poate rula:
 
-- pe **GitHub** am pus deja Bollywood;
-- pe **GitLab** trebuie **mirror** (A), **import** (B) sau **secret** (C) — o dată.
+```bash
+./scripts/push-to-gitlab.sh
+```
+
+— același rezultat ca push pe GitHub, fără edit manual în browser.
+
+## De ce nu merge fără token
+
+Cloud Agent are acces la **GitHub** (`origin`), nu la **GitLab** până nu există `GITLAB_TOKEN` sau mirror/Actions (metodele de mai sus).
 
 ---
 
