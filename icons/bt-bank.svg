@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="Banca Transilvania">
-  <rect width="24" height="24" rx="4" fill="#003da5"/>
-  <rect x="4" y="5" width="16" height="11" rx="2" fill="#fff"/>
-  <text x="12" y="13.2" text-anchor="middle" fill="#003da5" font-family="Arial,Helvetica,sans-serif" font-size="7.5" font-weight="900">BT</text>
-  <rect x="4" y="17" width="16" height="2" rx="1" fill="#f5a623"/>
-  <text x="12" y="22" text-anchor="middle" fill="#dce8ff" font-family="Arial,Helvetica,sans-serif" font-size="3.6" font-weight="700">TRANSILVANIA</text>
-</svg>

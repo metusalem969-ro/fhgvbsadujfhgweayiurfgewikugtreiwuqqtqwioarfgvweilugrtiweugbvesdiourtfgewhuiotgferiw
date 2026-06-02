@@ -2958,8 +2958,8 @@
             { name: "Lebara", url: "https://www.lebara.com", category: "services" },
             { name: "Octopus Energy", url: "https://octopus.energy", category: "services" },
             { name: "Virgin Media", url: "https://www.virginmedia.com", category: "services" },
-            { name: "Lloyds Bank", url: "https://online.lloydsbank.co.uk/", category: "finance", iconUrl: "icons/lloyds.svg" },
-            { name: "BT Bank", url: "https://ebanking.bancatransilvania.ro/", category: "finance", iconUrl: "icons/bt-bank.svg" },
+            { name: "Lloyds Bank", url: "https://online.lloydsbank.co.uk/", category: "finance", iconUrl: "icons/lloyds.png" },
+            { name: "BT Bank", url: "https://ebanking.bancatransilvania.ro/", category: "finance", iconUrl: "icons/bt-bank.png" },
             { name: "Revolut", url: "https://app.revolut.com/", category: "finance" },
             { name: "Wise", url: "https://wise.com/", category: "finance" },
             { name: "PayPal", url: "https://www.paypal.com", category: "finance" },
@@ -3019,14 +3019,14 @@
             'https://onemagia.com/movies': 'icons/onemagia.svg',
             'https://onemagia.com': 'icons/onemagia.svg',
             'https://www.justwatch.com/ro/filme?production_countries=IN': 'icons/bollywood.svg',
-            'https://online.lloydsbank.co.uk': 'icons/lloyds.svg',
-            'https://online.lloydsbank.co.uk/': 'icons/lloyds.svg',
-            'https://www.lloydsbank.com': 'icons/lloyds.svg',
-            'https://www.lloydsbank.com/': 'icons/lloyds.svg',
-            'https://ebanking.bancatransilvania.ro': 'icons/bt-bank.svg',
-            'https://ebanking.bancatransilvania.ro/': 'icons/bt-bank.svg',
-            'https://www.bancatransilvania.ro': 'icons/bt-bank.svg',
-            'https://www.bancatransilvania.ro/': 'icons/bt-bank.svg'
+            'https://online.lloydsbank.co.uk': 'icons/lloyds.png',
+            'https://online.lloydsbank.co.uk/': 'icons/lloyds.png',
+            'https://www.lloydsbank.com': 'icons/lloyds.png',
+            'https://www.lloydsbank.com/': 'icons/lloyds.png',
+            'https://ebanking.bancatransilvania.ro': 'icons/bt-bank.png',
+            'https://ebanking.bancatransilvania.ro/': 'icons/bt-bank.png',
+            'https://www.bancatransilvania.ro': 'icons/bt-bank.png',
+            'https://www.bancatransilvania.ro/': 'icons/bt-bank.png'
         };
 
         const HOST_ICON_URLS = {
@@ -3039,12 +3039,12 @@
             'filmehd.cc': 'icons/filmehd-cc.svg',
             'onemagia.com': 'icons/onemagia.svg',
             'www.justwatch.com': 'icons/bollywood.svg',
-            'online.lloydsbank.co.uk': 'icons/lloyds.svg',
-            'www.lloydsbank.com': 'icons/lloyds.svg',
-            'lloydsbank.com': 'icons/lloyds.svg',
-            'ebanking.bancatransilvania.ro': 'icons/bt-bank.svg',
-            'www.bancatransilvania.ro': 'icons/bt-bank.svg',
-            'bancatransilvania.ro': 'icons/bt-bank.svg'
+            'online.lloydsbank.co.uk': 'icons/lloyds.png',
+            'www.lloydsbank.com': 'icons/lloyds.png',
+            'lloydsbank.com': 'icons/lloyds.png',
+            'ebanking.bancatransilvania.ro': 'icons/bt-bank.png',
+            'www.bancatransilvania.ro': 'icons/bt-bank.png',
+            'bancatransilvania.ro': 'icons/bt-bank.png'
         };
 
         function normalizeLinkUrl(url) {
@@ -3154,10 +3154,16 @@
             return `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(domain)}`;
         }
 
+        const FORCED_ICON_BY_NAME = {
+            'Lloyds Bank': 'icons/lloyds.png',
+            'BT Bank': 'icons/bt-bank.png'
+        };
+
         function applyBuiltinIcons() {
             let changed = false;
             links.forEach((link) => {
-                const builtinIcon = getBuiltinIconPath(link.url);
+                const forced = link.name && FORCED_ICON_BY_NAME[link.name];
+                const builtinIcon = forced || getBuiltinIconPath(link.url);
                 if (builtinIcon && link.iconUrl !== builtinIcon) {
                     link.iconUrl = builtinIcon;
                     changed = true;
