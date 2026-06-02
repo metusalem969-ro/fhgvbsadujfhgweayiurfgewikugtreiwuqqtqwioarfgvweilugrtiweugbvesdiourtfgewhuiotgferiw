@@ -1,5 +1,5 @@
 /* sw.js */
-const CACHE_VERSION = "2026-05-31_02"; // <-- ține-l în sync cu index.html
+const CACHE_VERSION = "2026-06-02_bt-pay"; // bump la fiecare deploy important
 const CACHE_NAME = `cmd-center-${CACHE_VERSION}`;
 
 self.addEventListener("message", (event) => {
@@ -15,6 +15,8 @@ self.addEventListener("install", (event) => {
       "./",
       "./index.html",
       "./manifest.json",
+      "./icons/bt-bank.png",
+      "./icons/lloyds.png",
       // dacă vrei: sunete/icon-uri stabile
       // "./click.mp3",
       // "./toggle.mp3",

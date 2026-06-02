@@ -3087,7 +3087,23 @@
             return window.location.origin + path;
         }
 
+        const BT_PAY_URL = 'https://btpay.bancatransilvania.ro/';
+
+        function fixOutboundLinkUrl(url) {
+            if (!url) return url;
+            const u = String(url).toLowerCase();
+            if (
+                u.includes('ebanking.bancatransilvania')
+                || u.includes('neobt.ro')
+                || u.includes('ib.btrl.ro')
+            ) {
+                return BT_PAY_URL;
+            }
+            return url;
+        }
+
         function resolveLinkUrl(url) {
+            url = fixOutboundLinkUrl(url);
             if (!url) return url;
             try {
                 return new URL(url, getAppBaseUrl()).href;
@@ -3388,6 +3404,7 @@
             loadCustomOrder();
             loadVisitStats();
             migrateLegacyFilmehdLinks();
+            migrateBtBankUrl();
             initOfflineDetection();
             adjustMobilePlaceholder();
             
@@ -3788,6 +3805,48 @@
                 saveAllLinks();
                 saveFavorites();
                 saveVisitStats();
+            }
+        }
+
+        function migrateBtBankUrl() {
+            const legacyHosts = ['ebanking.bancatransilvania', 'neobt.ro', 'ib.btrl.ro'];
+            let changed = false;
+            links.forEach((link) => {
+                const u = (link.url || '').toLowerCase();
+                const isBt = (link.name === 'BT Bank') || legacyHosts.some((h) => u.includes(h));
+                if (!isBt) return;
+                const fixed = fixOutboundLinkUrl(link.url);
+                if (link.url !== fixed || link.iconUrl !== 'icons/bt-bank.png') {
+                    link.url = fixed;
+                    link.iconUrl = 'icons/bt-bank.png';
+                    changed = true;
+                }
+            });
+            [...favorites].forEach((favUrl) => {
+                const fixed = fixOutboundLinkUrl(favUrl);
+                if (fixed !== favUrl) {
+                    favorites.delete(favUrl);
+                    favorites.add(fixed);
+                    changed = true;
+                }
+            });
+            Object.keys(visitStats).forEach((key) => {
+                const fixed = fixOutboundLinkUrl(key);
+                if (fixed !== key) {
+                    const existing = visitStats[fixed] || { count: 0, lastVisit: null };
+                    visitStats[fixed] = {
+                        count: existing.count + (visitStats[key].count || 0),
+                        lastVisit: Math.max(existing.lastVisit || 0, visitStats[key].lastVisit || 0) || null
+                    };
+                    delete visitStats[key];
+                    changed = true;
+                }
+            });
+            if (changed) {
+                saveAllLinks();
+                saveFavorites();
+                saveVisitStats();
+                showNotification('BT Bank: link actualizat la BT Pay Web', 'success');
             }
         }
 
