@@ -3178,6 +3178,7 @@
             { name: "FilmeHD.to", url: "https://filmehd.to/", category: "filme", iconUrl: "icons/filmehd-to.svg" },
             { name: "FilmeHD.cc", url: "https://filmehd.cc/", category: "filme", iconUrl: "icons/filmehd-cc.svg" },
             { name: "OneMagia", url: "https://onemagia.com/movies", category: "filme", iconUrl: "icons/onemagia.svg" },
+            { name: "Bollywood Filme", url: "https://www.justwatch.com/ro/filme?production_countries=IN", category: "filme", iconUrl: "icons/bollywood.svg" },
             { name: "Vox Filme", url: "https://voxfilmeonline.biz/", category: "filme" },
             { name: "JustWatch", url: "https://www.justwatch.com/ro/filme", category: "filme" },
             { name: "Top Filme HD", url: "https://www.topfilmehd.ro/", category: "filme" },
@@ -3269,7 +3270,8 @@
             'https://filmehd.cc': 'icons/filmehd-cc.svg',
             'https://filmehd.cc/': 'icons/filmehd-cc.svg',
             'https://onemagia.com/movies': 'icons/onemagia.svg',
-            'https://onemagia.com': 'icons/onemagia.svg'
+            'https://onemagia.com': 'icons/onemagia.svg',
+            'https://www.justwatch.com/ro/filme?production_countries=IN': 'icons/bollywood.svg'
         };
 
         const HOST_ICON_URLS = {
@@ -3280,7 +3282,8 @@
             'filelist.io': 'icons/filelist.ico',
             'filmehd.to': 'icons/filmehd-to.svg',
             'filmehd.cc': 'icons/filmehd-cc.svg',
-            'onemagia.com': 'icons/onemagia.svg'
+            'onemagia.com': 'icons/onemagia.svg',
+            'www.justwatch.com': 'icons/bollywood.svg'
         };
 
         function normalizeLinkUrl(url) {
@@ -3322,7 +3325,8 @@
             'icons/filmehd.svg': 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#1565c0"/><polygon points="8,7 8,17 16,12" fill="#fff"/><text x="12" y="22" text-anchor="middle" fill="#e3f2fd" font-family="Arial,sans-serif" font-size="5.5" font-weight="800">HD</text></svg>'),
             'icons/filmehd-to.svg': 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#2e7d32"/><polygon points="8,7 8,17 16,12" fill="#fff"/><text x="12" y="22" text-anchor="middle" fill="#e8f5e9" font-family="Arial,sans-serif" font-size="5" font-weight="800">.to</text></svg>'),
             'icons/filmehd-cc.svg': 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#1565c0"/><polygon points="8,7 8,17 16,12" fill="#fff"/><text x="12" y="22" text-anchor="middle" fill="#e3f2fd" font-family="Arial,sans-serif" font-size="5" font-weight="800">.cc</text></svg>'),
-            'icons/onemagia.svg': 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#6a1b9a"/><circle cx="12" cy="11" r="5.5" fill="none" stroke="#fff" stroke-width="1.4"/><polygon points="10,8.5 10,13.5 15,11" fill="#fff"/><text x="12" y="22" text-anchor="middle" fill="#f3e5f5" font-family="Arial,sans-serif" font-size="4.5" font-weight="800">MAGIA</text></svg>')
+            'icons/onemagia.svg': 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#6a1b9a"/><circle cx="12" cy="11" r="5.5" fill="none" stroke="#fff" stroke-width="1.4"/><polygon points="10,8.5 10,13.5 15,11" fill="#fff"/><text x="12" y="22" text-anchor="middle" fill="#f3e5f5" font-family="Arial,sans-serif" font-size="4.5" font-weight="800">MAGIA</text></svg>'),
+            'icons/bollywood.svg': 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#e65100"/><polygon points="8,7 8,17 16,12" fill="#fff"/><text x="12" y="22" text-anchor="middle" fill="#fff3e0" font-family="Arial,sans-serif" font-size="4.5" font-weight="800">BOLLY</text></svg>')
         };
 
         function resolveIconUrl(iconPath) {
