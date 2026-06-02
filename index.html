@@ -3174,7 +3174,7 @@
             { name: "Filelist", url: "https://filelist.io/login.php", category: "fisiere", iconUrl: "icons/filelist.ico" },
             { name: "DivX Filme", url: "https://divxfilmeonline.tv/filme-online/", category: "filme" },
             { name: "IMDB", url: "https://www.imdb.com/watchlist", category: "filme" },
-            { name: "FilmeHD API", url: "https://filmehd.se/wp-json", category: "filme" },
+            { name: "FilmeHD", url: "https://filmehd.se/", category: "filme", iconUrl: "icons/filmehd.svg" },
             { name: "Vox Filme", url: "https://voxfilmeonline.biz/", category: "filme" },
             { name: "JustWatch", url: "https://www.justwatch.com/ro/filme", category: "filme" },
             { name: "Top Filme HD", url: "https://www.topfilmehd.ro/", category: "filme" },
@@ -3260,7 +3260,10 @@
             'https://www.arduino.cc': 'icons/arduino.svg',
             'https://www.arduino.cc/': 'icons/arduino.svg',
             'https://filelist.io/login.php': 'icons/filelist.ico',
-            'https://filelist.io': 'icons/filelist.ico'
+            'https://filelist.io': 'icons/filelist.ico',
+            'https://filmehd.se': 'icons/filmehd.svg',
+            'https://filmehd.se/': 'icons/filmehd.svg',
+            'https://filmehd.se/wp-json': 'icons/filmehd.svg'
         };
 
         const HOST_ICON_URLS = {
@@ -3268,7 +3271,8 @@
             'yahoo.com': 'icons/yahoo.svg',
             'www.arduino.cc': 'icons/arduino.svg',
             'arduino.cc': 'icons/arduino.svg',
-            'filelist.io': 'icons/filelist.ico'
+            'filelist.io': 'icons/filelist.ico',
+            'filmehd.se': 'icons/filmehd.svg'
         };
 
         function normalizeLinkUrl(url) {
@@ -3342,7 +3346,7 @@
             'Yahoo', 'Gmail', 'YouTube', 'Facebook', 'WhatsApp',
             'eBay', 'eBay UK', 'Amazon UK', 'AliExpress',
             'ClickSud', 'Filelist', 'DivX Filme', 'IMDB', 'Vox Filme',
-            'FilmeHD API', 'JustWatch', 'Top Filme HD', 'Cinepub', 'Pluto TV', 'Tubi',
+            'FilmeHD', 'JustWatch', 'Top Filme HD', 'Cinepub', 'Pluto TV', 'Tubi',
             'OpenAI', 'Gemini AI', 'Perplexity', 'Arduino', 'Control PC Mobil', 'Control PC Desktop'
         ];
         const DEFAULT_FAVORITE_EXTRA_URLS = [
@@ -3544,6 +3548,7 @@
             applyBuiltinIcons();
             loadCustomOrder();
             loadVisitStats();
+            migrateLegacyFilmehdLinks();
             initOfflineDetection();
             adjustMobilePlaceholder();
             
@@ -3887,6 +3892,46 @@
             if (url.includes('portalultautv')) return true;
             if (url.includes('microsoft.com')) return true;
             return false;
+        }
+
+
+        function migrateLegacyFilmehdLinks() {
+            const newUrl = 'https://filmehd.se/';
+            const legacyUrls = ['https://filmehd.se/wp-json', 'https://filmehd.se/wp-json/'];
+            let changed = false;
+            links.forEach((link) => {
+                const u = link.url || '';
+                if (!u.includes('filmehd.se')) return;
+                if (u.includes('/wp-json') || link.name === 'FilmeHD API') {
+                    link.url = newUrl;
+                    if (link.name === 'FilmeHD API') link.name = 'FilmeHD';
+                    link.iconUrl = 'icons/filmehd.svg';
+                    changed = true;
+                }
+            });
+            legacyUrls.forEach((oldUrl) => {
+                if (favorites.has(oldUrl)) {
+                    favorites.delete(oldUrl);
+                    favorites.add(newUrl);
+                    changed = true;
+                }
+            });
+            legacyUrls.forEach((oldUrl) => {
+                if (visitStats[oldUrl]) {
+                    const existing = visitStats[newUrl] || { count: 0, lastVisit: null };
+                    visitStats[newUrl] = {
+                        count: existing.count + visitStats[oldUrl].count,
+                        lastVisit: Math.max(existing.lastVisit || 0, visitStats[oldUrl].lastVisit || 0) || null
+                    };
+                    delete visitStats[oldUrl];
+                    changed = true;
+                }
+            });
+            if (changed) {
+                saveAllLinks();
+                saveFavorites();
+                saveVisitStats();
+            }
         }
 
         function purgeRemovedLinks() {
