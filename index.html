@@ -2265,7 +2265,7 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1><span class="header-emoji">🚀</span> FAMILIA STREANGA CDȘ</h1>
+            <h1><span class="header-emoji">🚀</span> FAMILIA STREANGA CDS</h1>
             
             <!-- ONE COLUMN LAYOUT: Clock -->
             <div class="header-two-columns">
@@ -3540,10 +3540,24 @@
         
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').then(
-                    () => {},
-                    () => {}
-                );
+                navigator.serviceWorker.register('sw.js').then((reg) => {
+                    reg.update();
+                    if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    reg.addEventListener('updatefound', () => {
+                        const worker = reg.installing;
+                        if (!worker) return;
+                        worker.addEventListener('statechange', () => {
+                            if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+                                worker.postMessage({ type: 'SKIP_WAITING' });
+                            }
+                        });
+                    });
+                }).catch(() => {});
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (sessionStorage.getItem('swReloaded')) return;
+                    sessionStorage.setItem('swReloaded', '1');
+                    window.location.reload();
+                });
             });
         }
 
