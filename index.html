@@ -3300,11 +3300,27 @@
             }
         }
 
+        function getAppBaseUrl() {
+            let path = window.location.pathname || '/';
+            if (/\.\w{2,5}$/i.test(path)) {
+                path = path.replace(/\/[^/]*$/, '/');
+            } else if (!path.endsWith('/')) {
+                path += '/';
+            }
+            return window.location.origin + path;
+        }
+
+        const FILMEHD_ICON_DATA = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#1565c0"/><polygon points="8,7 8,17 16,12" fill="#fff"/><text x="12" y="22" text-anchor="middle" fill="#e3f2fd" font-family="Arial,sans-serif" font-size="5.5" font-weight="800">HD</text></svg>');
+
         function resolveIconUrl(iconPath) {
             if (!iconPath) return null;
+            if (iconPath === 'icons/filmehd.svg' || iconPath.endsWith('/filmehd.svg')) {
+                return FILMEHD_ICON_DATA;
+            }
             if (isSafeHttpUrl(iconPath)) return iconPath;
             if (iconPath.startsWith('./') || iconPath.startsWith('icons/') || iconPath.startsWith('/')) {
-                return new URL(iconPath, window.location.href).href;
+                const rel = iconPath.replace(/^\//, '').replace(/^\.\//, '');
+                return new URL(rel, getAppBaseUrl()).href;
             }
             return null;
         }
@@ -3320,11 +3336,30 @@
             } catch { return undefined; }
         }
 
+
+        function handleLinkIconError(img) {
+            if (img.dataset.fallback === '2') return;
+            if (img.dataset.fallback !== '1') {
+                img.dataset.fallback = '1';
+                const def = resolveIconUrl('icons/default.svg');
+                if (def && img.src !== def) {
+                    img.src = def;
+                    return;
+                }
+            }
+            img.dataset.fallback = '2';
+            img.onerror = null;
+            img.src = "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>";
+        }
+
         function getSafeIconUrl(link, domain) {
             const builtinIcon = getBuiltinIconPath(link.url);
             if (builtinIcon) return resolveIconUrl(builtinIcon);
             const customIcon = resolveIconUrl(link.iconUrl);
             if (customIcon) return customIcon;
+            if (domain && domain.replace(/^www\./, '') === 'filmehd.se') {
+                return FILMEHD_ICON_DATA;
+            }
             return `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(domain)}`;
         }
 
@@ -3809,7 +3844,7 @@
                     <div class="link-edit-btn" title="Editează" data-edit-index="${linkIndex}">✏️</div>
                     <img src="${escapeHtml(iconUrl)}" 
                          alt="${escapeHtml(link.name)}" 
-                         onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>'">
+                         onerror="handleLinkIconError(this)">
                     <div class="link-name">${escapeHtml(link.name)}</div>
                     ${previewHTML}
                 `;
