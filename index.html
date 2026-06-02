@@ -3397,7 +3397,7 @@
             'Yahoo', 'Gmail', 'YouTube', 'Facebook', 'WhatsApp',
             'eBay', 'eBay UK', 'Amazon UK', 'AliExpress',
             'ClickSud', 'Filelist', 'DivX Filme', 'IMDB', 'Vox Filme',
-            'FilmeHD.to', 'FilmeHD.cc', 'OneMagia', 'JustWatch', 'Top Filme HD', 'Cinepub', 'Pluto TV', 'Tubi',
+            'FilmeHD.to', 'FilmeHD.cc', 'OneMagia', 'JustWatch', 'Top Filme HD',
             'OpenAI', 'Gemini AI', 'Perplexity', 'Arduino', 'Control PC Mobil', 'Control PC Desktop'
         ];
         const DEFAULT_FAVORITE_EXTRA_URLS = [
@@ -3924,6 +3924,17 @@
                 favorites = new Set();
             }
             let changed = false;
+            const UNSTAR_SITE_NAMES = ['Cinepub', 'Pluto TV', 'Tubi'];
+            UNSTAR_SITE_NAMES.forEach((siteName) => {
+                const entry = links.find((l) => l.name === siteName) || DEFAULT_LINKS.find((l) => l.name === siteName);
+                if (!entry) return;
+                [...favorites].forEach((favUrl) => {
+                    if (linkUrlMatches(favUrl, entry.url)) {
+                        favorites.delete(favUrl);
+                        changed = true;
+                    }
+                });
+            });
             DEFAULT_FAVORITE_URLS.forEach((url) => {
                 const already = [...favorites].some((f) => linkUrlMatches(f, url));
                 if (!already) {
