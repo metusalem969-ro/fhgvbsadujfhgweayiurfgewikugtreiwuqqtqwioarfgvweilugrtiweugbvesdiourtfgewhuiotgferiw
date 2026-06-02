@@ -1,0 +1,18 @@
+# GitLab Pages — publică dashboard-ul static din rădăcina repo-ului
+image: alpine:3.20
+
+stages:
+  - deploy
+
+pages:
+  stage: deploy
+  script:
+    - mkdir -p public
+    - cp index.html manifest.json sw.js .nojekyll public/ 2>/dev/null || true
+    - cp *.mp3 public/ 2>/dev/null || true
+    - cp -r icons sounds public/
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

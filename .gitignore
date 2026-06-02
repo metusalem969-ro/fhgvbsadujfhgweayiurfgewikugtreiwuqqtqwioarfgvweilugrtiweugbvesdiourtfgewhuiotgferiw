@@ -1,0 +1,10 @@
+# Copie locală de rezervă — nu o publicăm pe Pages
+index.html.versiune-buna.html
+hercules-backup-2025-12-31.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
