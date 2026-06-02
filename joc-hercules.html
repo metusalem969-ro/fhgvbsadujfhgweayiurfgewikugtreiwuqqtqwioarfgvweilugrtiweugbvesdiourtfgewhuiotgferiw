@@ -6,6 +6,10 @@
     <title>🎮 Snake Hercules</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            touch-action: manipulation;
+            overscroll-behavior: none;
+        }
         body {
             min-height: 100vh;
             font-family: system-ui, -apple-system, Segoe UI, sans-serif;
@@ -15,6 +19,12 @@
             flex-direction: column;
             align-items: center;
             padding: 16px;
+        }
+        #playZone {
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+            cursor: pointer;
         }
         .top-bar {
             width: 100%;
@@ -53,21 +63,23 @@
         .controls {
             margin-top: 14px;
             display: grid;
-            grid-template-columns: repeat(3, 56px);
-            grid-template-rows: repeat(3, 56px);
-            gap: 6px;
+            grid-template-columns: repeat(3, 72px);
+            grid-template-rows: repeat(3, 72px);
+            gap: 8px;
         }
         .controls button {
             border: none;
-            border-radius: 12px;
+            border-radius: 14px;
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: #fff;
-            font-size: 1.4rem;
+            font-size: 1.6rem;
             cursor: pointer;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
             box-shadow: 0 4px 12px rgba(0,0,0,0.35);
         }
         .controls button:active { transform: scale(0.95); }
-        .controls .empty { visibility: hidden; }
+        .controls .empty { visibility: hidden; pointer-events: none; }
         #btnStart {
             margin-top: 12px;
             padding: 10px 24px;
@@ -81,7 +93,9 @@
         }
         @media (min-width: 700px) {
             .controls { display: none; }
+            .hint-touch { display: none; }
         }
+        .hint-touch { color: #a78bfa; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -94,9 +108,11 @@
         <span>Scor: <span id="score">0</span></span>
         <span>Record: <span id="best">0</span></span>
     </div>
-    <canvas id="board" width="360" height="360" aria-label="Joc Snake"></canvas>
+    <div id="playZone">
+        <canvas id="board" width="360" height="360" aria-label="Joc Snake"></canvas>
+    </div>
     <button type="button" id="btnStart">▶ Start / Restart</button>
-    <p class="hint">Săgeți sau swipe pe telefon. Mănâncă 🍎, evită pereții și coada ta.</p>
+    <p class="hint"><span class="hint-touch">👆 Glisează degetul pe pătratul jocului sau apasă ▲▼◀▶.<br></span>Pe PC: săgeți. Mănâncă 🍎, evită pereții.</p>
     <div class="controls" aria-label="Controale tactile">
         <span class="empty"></span>
         <button type="button" data-dir="up">▲</button>
@@ -209,10 +225,31 @@
             loopId = requestAnimationFrame(frame);
         }
 
+        function ensureRunning() {
+            if (!running) start();
+        }
+
         function setDir(x, y) {
-            if (!running) return;
+            ensureRunning();
             if (x === -dir.x && y === -dir.y) return;
             nextDir = { x, y };
+        }
+
+        function applySwipe(dx, dy) {
+            const min = 10;
+            if (Math.abs(dx) < min && Math.abs(dy) < min) return false;
+            if (Math.abs(dx) > Math.abs(dy)) setDir(dx > 0 ? 1 : -1, 0);
+            else setDir(0, dy > 0 ? 1 : -1);
+            return true;
+        }
+
+        function applyTap(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            const x = clientX - rect.left - rect.width / 2;
+            const y = clientY - rect.top - rect.height / 2;
+            if (Math.abs(x) < 8 && Math.abs(y) < 8) return;
+            if (Math.abs(x) > Math.abs(y)) setDir(x > 0 ? 1 : -1, 0);
+            else setDir(0, y > 0 ? 1 : -1);
         }
 
         document.getElementById('btnStart').addEventListener('click', start);
@@ -224,27 +261,51 @@
             else if (k === 'ArrowRight') setDir(1, 0);
         });
         document.querySelectorAll('.controls button[data-dir]').forEach((btn) => {
-            btn.addEventListener('click', () => {
+            const go = (e) => {
+                e.preventDefault();
                 const d = btn.dataset.dir;
                 if (d === 'up') setDir(0, -1);
                 if (d === 'down') setDir(0, 1);
                 if (d === 'left') setDir(-1, 0);
                 if (d === 'right') setDir(1, 0);
+            };
+            btn.addEventListener('click', go);
+            btn.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                go(e);
             });
         });
 
-        let touchX = 0, touchY = 0;
-        canvas.addEventListener('touchstart', (e) => {
-            touchX = e.touches[0].clientX;
-            touchY = e.touches[0].clientY;
-        }, { passive: true });
-        canvas.addEventListener('touchend', (e) => {
-            const dx = e.changedTouches[0].clientX - touchX;
-            const dy = e.changedTouches[0].clientY - touchY;
-            if (Math.abs(dx) < 20 && Math.abs(dy) < 20) return;
-            if (Math.abs(dx) > Math.abs(dy)) setDir(dx > 0 ? 1 : -1, 0);
-            else setDir(0, dy > 0 ? 1 : -1);
-        }, { passive: true });
+        const playZone = document.getElementById('playZone');
+        let pointerStart = null;
+
+        playZone.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            playZone.setPointerCapture(e.pointerId);
+            pointerStart = { x: e.clientX, y: e.clientY, id: e.pointerId };
+        });
+
+        playZone.addEventListener('pointermove', (e) => {
+            if (!pointerStart || e.pointerId !== pointerStart.id) return;
+            const dx = e.clientX - pointerStart.x;
+            const dy = e.clientY - pointerStart.y;
+            if (Math.hypot(dx, dy) > 18) {
+                applySwipe(dx, dy);
+                pointerStart = { x: e.clientX, y: e.clientY, id: e.pointerId };
+            }
+        });
+
+        playZone.addEventListener('pointerup', (e) => {
+            if (!pointerStart || e.pointerId !== pointerStart.id) return;
+            const dx = e.clientX - pointerStart.x;
+            const dy = e.clientY - pointerStart.y;
+            pointerStart = null;
+            if (!applySwipe(dx, dy)) applyTap(e.clientX, e.clientY);
+        });
+
+        playZone.addEventListener('pointercancel', () => {
+            pointerStart = null;
+        });
 
         draw();
     </script>
