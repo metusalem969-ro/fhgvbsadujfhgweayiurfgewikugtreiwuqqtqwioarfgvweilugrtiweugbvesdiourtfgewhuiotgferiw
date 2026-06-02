@@ -3,7 +3,7 @@
 # Necesită: GITLAB_TOKEN (+ opțional GITLAB_PROJECT).
 set -euo pipefail
 
-PROJECT="${GITLAB_PROJECT:-Hercules-metusalem969/dashboard}"
+PROJECT="${GITLAB_PROJECT:-Hercules-metusalem969/hercules-dashboard}"
 BRANCH="${1:-$(git rev-parse --abbrev-ref HEAD)}"
 TARGET_BRANCH="${2:-main}"
 
