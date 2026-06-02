@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🎮 Snake Hercules</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+            background: linear-gradient(135deg, #1a2332 0%, #2d3e56 50%, #1a2332 100%);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px;
+        }
+        .top-bar {
+            width: 100%;
+            max-width: 420px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .top-bar a {
+            color: #a78bfa;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        h1 { font-size: 1.25rem; }
+        .stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        #board {
+            border: 3px solid rgba(167, 139, 250, 0.6);
+            border-radius: 8px;
+            background: #0f172a;
+            touch-action: none;
+            max-width: 100%;
+        }
+        .hint {
+            margin-top: 12px;
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            text-align: center;
+            max-width: 420px;
+        }
+        .controls {
+            margin-top: 14px;
+            display: grid;
+            grid-template-columns: repeat(3, 56px);
+            grid-template-rows: repeat(3, 56px);
+            gap: 6px;
+        }
+        .controls button {
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            font-size: 1.4rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+        }
+        .controls button:active { transform: scale(0.95); }
+        .controls .empty { visibility: hidden; }
+        #btnStart {
+            margin-top: 12px;
+            padding: 10px 24px;
+            border: none;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #fff;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        @media (min-width: 700px) {
+            .controls { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <a href="index.html">← Dashboard</a>
+        <h1>🎮 Snake Hercules</h1>
+        <span></span>
+    </div>
+    <div class="stats">
+        <span>Scor: <span id="score">0</span></span>
+        <span>Record: <span id="best">0</span></span>
+    </div>
+    <canvas id="board" width="360" height="360" aria-label="Joc Snake"></canvas>
+    <button type="button" id="btnStart">▶ Start / Restart</button>
+    <p class="hint">Săgeți sau swipe pe telefon. Mănâncă 🍎, evită pereții și coada ta.</p>
+    <div class="controls" aria-label="Controale tactile">
+        <span class="empty"></span>
+        <button type="button" data-dir="up">▲</button>
+        <span class="empty"></span>
+        <button type="button" data-dir="left">◀</button>
+        <span class="empty"></span>
+        <button type="button" data-dir="right">▶</button>
+        <span class="empty"></span>
+        <button type="button" data-dir="down">▼</button>
+        <span class="empty"></span>
+    </div>
+    <script>
+        const canvas = document.getElementById('board');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const bestEl = document.getElementById('best');
+        const BEST_KEY = 'snakeHerculesBest_v1';
+        const GRID = 18;
+        const CELL = canvas.width / GRID;
+
+        let snake, dir, nextDir, food, score, best, loopId, running;
+
+        best = parseInt(localStorage.getItem(BEST_KEY) || '0', 10);
+        bestEl.textContent = best;
+
+        function reset() {
+            snake = [
+                { x: 9, y: 9 },
+                { x: 8, y: 9 },
+                { x: 7, y: 9 }
+            ];
+            dir = { x: 1, y: 0 };
+            nextDir = { ...dir };
+            food = spawnFood();
+            score = 0;
+            scoreEl.textContent = score;
+        }
+
+        function spawnFood() {
+            let f;
+            do {
+                f = { x: Math.floor(Math.random() * GRID), y: Math.floor(Math.random() * GRID) };
+            } while (snake.some(s => s.x === f.x && s.y === f.y));
+            return f;
+        }
+
+        function draw() {
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#ef4444';
+            ctx.font = `${CELL * 0.75}px serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🍎', food.x * CELL + CELL / 2, food.y * CELL + CELL / 2 + 1);
+            snake.forEach((s, i) => {
+                ctx.fillStyle = i === 0 ? '#10b981' : '#34d399';
+                ctx.fillRect(s.x * CELL + 1, s.y * CELL + 1, CELL - 2, CELL - 2);
+            });
+        }
+
+        function tick() {
+            dir = nextDir;
+            const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+            if (head.x < 0 || head.y < 0 || head.x >= GRID || head.y >= GRID) return gameOver();
+            if (snake.some(s => s.x === head.x && s.y === head.y)) return gameOver();
+            snake.unshift(head);
+            if (head.x === food.x && head.y === food.y) {
+                score++;
+                scoreEl.textContent = score;
+                if (score > best) {
+                    best = score;
+                    bestEl.textContent = best;
+                    localStorage.setItem(BEST_KEY, String(best));
+                }
+                food = spawnFood();
+            } else {
+                snake.pop();
+            }
+            draw();
+        }
+
+        function gameOver() {
+            running = false;
+            cancelAnimationFrame(loopId);
+            ctx.fillStyle = 'rgba(0,0,0,0.65)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 22px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Game Over!', canvas.width / 2, canvas.height / 2 - 10);
+            ctx.font = '16px sans-serif';
+            ctx.fillText('Apasă Start', canvas.width / 2, canvas.height / 2 + 20);
+        }
+
+        function start() {
+            if (running) reset();
+            running = true;
+            reset();
+            draw();
+            let last = 0;
+            function frame(t) {
+                if (!running) return;
+                loopId = requestAnimationFrame(frame);
+                if (t - last > 140) {
+                    last = t;
+                    tick();
+                }
+            }
+            cancelAnimationFrame(loopId);
+            loopId = requestAnimationFrame(frame);
+        }
+
+        function setDir(x, y) {
+            if (!running) return;
+            if (x === -dir.x && y === -dir.y) return;
+            nextDir = { x, y };
+        }
+
+        document.getElementById('btnStart').addEventListener('click', start);
+        document.addEventListener('keydown', (e) => {
+            const k = e.key;
+            if (k === 'ArrowUp') setDir(0, -1);
+            else if (k === 'ArrowDown') setDir(0, 1);
+            else if (k === 'ArrowLeft') setDir(-1, 0);
+            else if (k === 'ArrowRight') setDir(1, 0);
+        });
+        document.querySelectorAll('.controls button[data-dir]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const d = btn.dataset.dir;
+                if (d === 'up') setDir(0, -1);
+                if (d === 'down') setDir(0, 1);
+                if (d === 'left') setDir(-1, 0);
+                if (d === 'right') setDir(1, 0);
+            });
+        });
+
+        let touchX = 0, touchY = 0;
+        canvas.addEventListener('touchstart', (e) => {
+            touchX = e.touches[0].clientX;
+            touchY = e.touches[0].clientY;
+        }, { passive: true });
+        canvas.addEventListener('touchend', (e) => {
+            const dx = e.changedTouches[0].clientX - touchX;
+            const dy = e.changedTouches[0].clientY - touchY;
+            if (Math.abs(dx) < 20 && Math.abs(dy) < 20) return;
+            if (Math.abs(dx) > Math.abs(dy)) setDir(dx > 0 ? 1 : -1, 0);
+            else setDir(0, dy > 0 ? 1 : -1);
+        }, { passive: true });
+
+        draw();
+    </script>
+</body>
+</html>

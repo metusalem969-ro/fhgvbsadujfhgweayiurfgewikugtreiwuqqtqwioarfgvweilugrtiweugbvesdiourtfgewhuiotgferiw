@@ -2422,6 +2422,11 @@
         🔄
     </button>
 
+    <!-- Game Button -->
+    <button id="gameButton" style="position: fixed; bottom: 310px; right: 30px; width: 50px; height: 50px; background: linear-gradient(135deg, #a855f7, #7c3aed); border: none; border-radius: 50%; color: var(--text); cursor: pointer; box-shadow: 0 5px 20px rgba(168, 85, 247, 0.6); transition: all 0.3s ease; z-index: 100; font-size: 1.5em;" onclick="openHerculesGame()" title="Snake Hercules">
+        🎮
+    </button>
+
     <!-- Weather Button -->
     <button id="weatherButton" style="position: fixed; bottom: 380px; right: 30px; width: 50px; height: 50px; background: linear-gradient(135deg, #06b6d4, #0ea5e9); border: none; border-radius: 50%; color: var(--text); cursor: pointer; box-shadow: 0 5px 20px rgba(6, 182, 212, 0.6); transition: all 0.3s ease; z-index: 100; font-size: 1.5em;" onclick="toggleWeatherModal()" title="Informații Vreme">
         ☁️
@@ -3232,7 +3237,8 @@
             { name: "Ginger", url: "https://www.gingersoftware.com/", category: "writing" },
             { name: "Hemingway", url: "http://www.hemingwayapp.com/", category: "writing" },
             { name: "GrammarCheck", url: "https://www.grammarcheck.net/", category: "writing" },
-            { name: "Scribbr", url: "https://www.scribbr.com/", category: "writing" }
+            { name: "Scribbr", url: "https://www.scribbr.com/", category: "writing" },
+            { name: "Snake Hercules", url: "joc-hercules.html", category: "jocuri", iconUrl: "icons/jocuri.svg" }
         ];
 
         const DEFAULT_LINKS = JSON.parse(JSON.stringify(links));
@@ -3319,6 +3325,20 @@
                 path += '/';
             }
             return window.location.origin + path;
+        }
+
+        function resolveLinkUrl(url) {
+            if (!url) return url;
+            try {
+                return new URL(url, getAppBaseUrl()).href;
+            } catch {
+                return url;
+            }
+        }
+
+        function openHerculesGame() {
+            playSound('clickSound', 0.3);
+            window.open(resolveLinkUrl('joc-hercules.html'), '_blank', 'noopener');
         }
 
         const INLINE_ICON_DATA = {
@@ -3471,7 +3491,8 @@
             { key: "gov", label: "Gov", icon: "fa-landmark" },
             { key: "translation", label: "Translation", icon: "fa-language" },
             { key: "security", label: "Security", icon: "fa-shield-alt" },
-            { key: "writing", label: "Writing", icon: "fa-pen" }
+            { key: "writing", label: "Writing", icon: "fa-pen" },
+            { key: "jocuri", label: "Jocuri", icon: "fa-gamepad" }
         ];
 
         let currentFilter = 'all';
@@ -3815,9 +3836,10 @@
 
             filtered.forEach((link) => {
                 const linkIndex = links.indexOf(link);
+                const resolvedUrl = resolveLinkUrl(link.url);
                 let domain;
                 try {
-                    domain = new URL(link.url).hostname;
+                    domain = new URL(resolvedUrl).hostname;
                 } catch (e) {
                     console.warn('Invalid link URL skipped:', link.url);
                     return;
@@ -3827,7 +3849,7 @@
                 const iconUrl = getSafeIconUrl(link, domain);
                 
                 const card = document.createElement('a');
-                card.href = link.url;
+                card.href = resolvedUrl;
                 card.className = 'link-card';
                 card.dataset.name = link.name.toLowerCase();
                 card.dataset.category = link.category.toLowerCase();
