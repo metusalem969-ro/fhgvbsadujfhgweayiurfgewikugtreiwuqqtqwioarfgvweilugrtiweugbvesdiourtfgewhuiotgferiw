@@ -2501,7 +2501,7 @@
         <!-- Button Filter - FULL WIDTH -->
         <div class="search-container">
             <div class="search-box">
-                <input type="text" id="filterInput" placeholder="🔍 Caută site sau categorie (ex: email, filme, youtube)..." 
+                <input type="text" id="filterInput" placeholder="🔍 Caută site sau categorie (ex: las fierbinti, seriale, filme)..." 
                        oninput="filterButtons(); toggleClearButton('filterInput', 'filterClearBtn');">
                 <button class="filter-clear-btn" id="filterClearBtn" onclick="clearFilterInput()" title="Șterge (ESC)">✕</button>
             </div>
@@ -3134,6 +3134,26 @@
             { name: "Fawesome", url: "https://fawesome.tv/home/", category: "filme" },
             { name: "CONtv", url: "https://www.contv.com/", category: "filme" },
             { name: "Cineby", url: "https://www.cineby.app/browse/movie", category: "filme" },
+            /* Las Fierbinți — episoade (căutare directă pe fiecare site) */
+            { name: "Las Fierbinți · ClickSud", url: "https://clicksud.co/?s=las+fierbinti", category: "seriale", tags: ["las-fierbinti", "seriale", "gratis"], iconUrl: "icons/las-fierbinti.svg" },
+            { name: "Las Fierbinți · ClickSud IN", url: "https://clicksud.com.in/?s=las+fierbinti", category: "seriale", tags: ["las-fierbinti", "seriale", "gratis"], iconUrl: "icons/las-fierbinti.svg" },
+            { name: "Las Fierbinți · ClickSud ORG", url: "https://clicksud.org/?s=las+fierbinti", category: "seriale", tags: ["las-fierbinti", "seriale", "gratis"], iconUrl: "icons/las-fierbinti.svg" },
+            { name: "Las Fierbinți · RSerial", url: "https://rserial.com/?s=las+fierbinti", category: "seriale", tags: ["las-fierbinti", "seriale", "gratis"], iconUrl: "icons/las-fierbinti.svg" },
+            { name: "Las Fierbinți · Despre Seriale", url: "https://despre-seriale.net/?s=las+fierbinti", category: "seriale", tags: ["las-fierbinti", "seriale", "gratis"], iconUrl: "icons/las-fierbinti.svg" },
+            { name: "Las Fierbinți · Filmflix", url: "https://filmflix.ro/?s=las+fierbinti", category: "seriale", tags: ["las-fierbinti", "seriale", "gratis"], iconUrl: "icons/las-fierbinti.svg" },
+            { name: "Las Fierbinți · Vox Filme", url: "https://voxfilmeonline.biz/?s=las+fierbinti", category: "seriale", tags: ["las-fierbinti", "seriale", "gratis"], iconUrl: "icons/las-fierbinti.svg" },
+            { name: "Las Fierbinți · FilmeHD.to", url: "https://filmehd.to/?s=las+fierbinti", category: "seriale", tags: ["las-fierbinti", "seriale", "gratis"], iconUrl: "icons/las-fierbinti.svg" },
+            { name: "Las Fierbinți · FilmeHD.cc", url: "https://filmehd.cc/?s=las+fierbinti", category: "seriale", tags: ["las-fierbinti", "seriale", "gratis"], iconUrl: "icons/las-fierbinti.svg" },
+            { name: "Las Fierbinți · OneMagia", url: "https://onemagia.com/?s=las+fierbinti", category: "seriale", tags: ["las-fierbinti", "seriale", "gratis"], iconUrl: "icons/las-fierbinti.svg" },
+            { name: "Las Fierbinți · HDFilme", url: "https://www.hdfilme.ro/?s=las+fierbinti", category: "seriale", tags: ["las-fierbinti", "seriale", "gratis"], iconUrl: "icons/las-fierbinti.svg" },
+            { name: "Las Fierbinți · Filme Bune", url: "https://www.filme-bune.biz/?s=las+fierbinti", category: "seriale", tags: ["las-fierbinti", "seriale", "gratis"], iconUrl: "icons/las-fierbinti.svg" },
+            { name: "Las Fierbinți · Top Filme HD", url: "https://www.topfilmehd.ro/?s=las+fierbinti", category: "seriale", tags: ["las-fierbinti", "seriale", "gratis"], iconUrl: "icons/las-fierbinti.svg" },
+            { name: "Las Fierbinți · DivXFilme", url: "https://divxfilme.org/?s=las+fierbinti", category: "seriale", tags: ["las-fierbinti", "seriale", "gratis"], iconUrl: "icons/las-fierbinti.svg" },
+            { name: "Las Fierbinți · YouTube", url: "https://www.youtube.com/results?search_query=las+fierbinti+episod", category: "seriale", tags: ["las-fierbinti", "seriale", "gratis"], iconUrl: "icons/las-fierbinti.svg" },
+            { name: "Las Fierbinți · YouTube Oficial", url: "https://www.youtube.com/@LasFierbinti", category: "seriale", tags: ["las-fierbinti", "seriale", "gratis"], iconUrl: "icons/las-fierbinti.svg" },
+            { name: "Las Fierbinți · Dailymotion", url: "https://www.dailymotion.com/search/las%20fierbinti/videos", category: "seriale", tags: ["las-fierbinti", "seriale", "gratis"], iconUrl: "icons/las-fierbinti.svg" },
+            { name: "Las Fierbinți · Voyo", url: "https://voyo.protv.ro/landing-page/5-las-fierbinti", category: "seriale", tags: ["las-fierbinti", "seriale", "voyo"], iconUrl: "icons/las-fierbinti.svg", notes: "Oficial Pro TV — perioadă probă, apoi abonament" },
+            { name: "Las Fierbinți · Pro TV Plus", url: "https://protvplus.ro/emisiuni/las-fierbinti", category: "seriale", tags: ["las-fierbinti", "seriale"], iconUrl: "icons/las-fierbinti.svg", notes: "Ultimele episoade; sezoane vechi pe Voyo" },
             { name: "DeepAI", url: "https://deepai.org/", category: "ai" },
             { name: "OpenAI", url: "https://openai.com", category: "ai" },
             { name: "DeepSeek", url: "https://deepseek.ai", category: "ai" },
@@ -3331,7 +3351,8 @@
             'icons/filmehd-to.svg': 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#2e7d32"/><polygon points="8,7 8,17 16,12" fill="#fff"/><text x="12" y="22" text-anchor="middle" fill="#e8f5e9" font-family="Arial,sans-serif" font-size="5" font-weight="800">.to</text></svg>'),
             'icons/filmehd-cc.svg': 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#1565c0"/><polygon points="8,7 8,17 16,12" fill="#fff"/><text x="12" y="22" text-anchor="middle" fill="#e3f2fd" font-family="Arial,sans-serif" font-size="5" font-weight="800">.cc</text></svg>'),
             'icons/onemagia.svg': 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#6a1b9a"/><circle cx="12" cy="11" r="5.5" fill="none" stroke="#fff" stroke-width="1.4"/><polygon points="10,8.5 10,13.5 15,11" fill="#fff"/><text x="12" y="22" text-anchor="middle" fill="#f3e5f5" font-family="Arial,sans-serif" font-size="4.5" font-weight="800">MAGIA</text></svg>'),
-            'icons/bollywood.svg': 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#e65100"/><polygon points="8,7 8,17 16,12" fill="#fff"/><text x="12" y="22" text-anchor="middle" fill="#fff3e0" font-family="Arial,sans-serif" font-size="4.5" font-weight="800">BOLLY</text></svg>')
+            'icons/bollywood.svg': 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#e65100"/><polygon points="8,7 8,17 16,12" fill="#fff"/><text x="12" y="22" text-anchor="middle" fill="#fff3e0" font-family="Arial,sans-serif" font-size="4.5" font-weight="800">BOLLY</text></svg>'),
+            'icons/las-fierbinti.svg': 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="5" fill="#ea580c"/><text x="12" y="15" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="9" font-weight="800">LF</text></svg>')
         };
 
         function resolveIconUrl(iconPath) {
@@ -3378,6 +3399,10 @@
         }
 
         function getSafeIconUrl(link, domain) {
+            if (link.name && String(link.name).startsWith('Las Fierbinți')) {
+                const lf = resolveIconUrl(link.iconUrl || 'icons/las-fierbinti.svg');
+                if (lf) return lf;
+            }
             const builtinIcon = getBuiltinIconPath(link.url);
             if (builtinIcon) return resolveIconUrl(builtinIcon);
             const customIcon = resolveIconUrl(link.iconUrl);
@@ -3477,6 +3502,7 @@
             { key: "social", label: "Social", icon: "fa-users" },
             { key: "shopping", label: "Shopping", icon: "fa-shopping-cart" },
             { key: "filme", label: "Filme", icon: "fa-film" },
+            { key: "seriale", label: "Seriale", icon: "fa-tv" },
             { key: "fisiere", label: "Fisiere", icon: "fa-folder" },
             { key: "ai", label: "AI", icon: "fa-robot" },
             { key: "electronics", label: "Electronics", icon: "fa-microchip" },
@@ -3869,6 +3895,7 @@
                 card.dataset.name = link.name.toLowerCase();
                 card.dataset.category = link.category.toLowerCase();
                 card.dataset.url = link.url;
+                card.dataset.tags = (link.tags && Array.isArray(link.tags) ? link.tags.join(' ') : '').toLowerCase();
                 card.dataset.index = linkIndex;
                 card.target = '_blank';
                 card.draggable = true;
@@ -4348,11 +4375,13 @@
                 const category = card.dataset.category;
                 const url = card.dataset.url ? card.dataset.url.toLowerCase() : '';
                 
+                const tags = card.dataset.tags || '';
                 const matchesName = fuzzyMatch(name, query);
                 const matchesCategory = fuzzyMatch(category, query);
                 const matchesUrl = url.includes(query);
+                const matchesTags = fuzzyMatch(tags, query) || tags.includes(query);
                 
-                if (matchesName || matchesCategory || matchesUrl) {
+                if (matchesName || matchesCategory || matchesUrl || matchesTags) {
                     card.classList.remove('hidden');
                 } else {
                     card.classList.add('hidden');
