@@ -4201,10 +4201,10 @@
             }
         }
         
-        function saveFavorites() {
+        function saveFavorites(skipCloudSync) {
             try {
                 localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites]));
-                if (window.HerculesCloudSync) HerculesCloudSync.scheduleCloudSyncPush();
+                if (!skipCloudSync && window.HerculesCloudSync) HerculesCloudSync.scheduleCloudSyncPush();
             } catch (e) {
                 console.error('Error saving favorites:', e);
             }
@@ -5442,18 +5442,26 @@
         function initHerculesCloudSyncBridge() {
             window.HerculesSyncDeps = {
                 getFavorites: () => [...favorites],
+                getSearchHistory: () => getSearchHistory(),
                 getPasswordHistory: () => JSON.parse(localStorage.getItem(PASSWORD_HISTORY_KEY) || '[]'),
                 getNotes: () => getNotes(),
                 getLinks: () => links,
                 getCustomOrder: () => customOrder,
+                getVisitStats: () => ({ ...visitStats }),
                 getTheme: () => localStorage.getItem(THEME_KEY) || 'purple',
                 getSoundEnabled: () => localStorage.getItem(SOUND_ENABLED_KEY) === 'true',
                 getZoomLevel: () => parseInt(localStorage.getItem(ZOOM_KEY) || String(getDefaultZoomLevel()), 10),
                 notify: (msg, type) => showNotification(msg, type),
                 applyMerged: (merged) => {
+                    const fromCloud = !!merged.fromCloud;
                     if (merged.favorites && Array.isArray(merged.favorites)) {
                         favorites = new Set(merged.favorites);
-                        saveFavorites();
+                        saveFavorites(true);
+                        ensureFavoriteDefaultLinks();
+                    }
+                    if (merged.searchHistory && Array.isArray(merged.searchHistory)) {
+                        saveSearchHistory(merged.searchHistory);
+                        renderSearchHistory();
                     }
                     if (merged.passwordHistory && Array.isArray(merged.passwordHistory)) {
                         localStorage.setItem(PASSWORD_HISTORY_KEY, JSON.stringify(merged.passwordHistory));
@@ -5469,6 +5477,10 @@
                     if (merged.customOrder && Array.isArray(merged.customOrder)) {
                         customOrder = merged.customOrder;
                         saveCustomOrder();
+                    }
+                    if (merged.visitStats && typeof merged.visitStats === 'object') {
+                        visitStats = merged.visitStats;
+                        saveVisitStats();
                     }
                     if (merged.theme && THEMES.includes(merged.theme)) {
                         localStorage.setItem(THEME_KEY, merged.theme);
@@ -5585,9 +5597,9 @@
             const pin = document.getElementById('syncPin').value || prompt('PIN sincronizare:');
             if (!pin) return;
             await HerculesCloudSync.unlockSyncPin(pin);
-            const r = await HerculesCloudSync.pullFromCloud(pin);
-            if (r.ok && r.updated) showNotification('⬇️ Date descărcate de pe cloud', 'success');
-            else if (r.ok) showNotification('ℹ️ Nu sunt date mai noi pe cloud', 'info');
+            const r = await HerculesCloudSync.pullFromCloud(pin, true);
+            if (r.ok && r.updated) showNotification('⬇️ Favorite, căutări, parole și note descărcate', 'success');
+            else if (r.ok) showNotification('ℹ️ Cloud deja la zi pe acest dispozitiv — pe PC apasă «Încarcă acum» apoi încearcă din nou', 'info');
             else showNotification('❌ ' + (r.error || 'Eroare la descărcare'), 'error');
             updateCloudSyncStatusUi();
         }

@@ -5,7 +5,7 @@
 (function (global) {
     'use strict';
 
-    const SYNC_VERSION = 3;
+    const SYNC_VERSION = 4;
     const SYNC_PROVIDER_KEY = 'herculesSyncProvider_v1';
     const SYNC_TOKEN_KEY = 'herculesSyncToken_v1';
     const SYNC_REMOTE_ID_KEY = 'herculesSyncRemoteId_v1';
@@ -111,10 +111,12 @@
             version: SYNC_VERSION,
             updatedAt: Date.now(),
             favorites: deps.getFavorites ? deps.getFavorites() : [],
+            searchHistory: deps.getSearchHistory ? deps.getSearchHistory() : [],
             passwordHistory: deps.getPasswordHistory ? deps.getPasswordHistory() : [],
             notes: deps.getNotes ? deps.getNotes() : [],
             links: deps.getLinks ? deps.getLinks() : [],
             customOrder: deps.getCustomOrder ? deps.getCustomOrder() : [],
+            visitStats: deps.getVisitStats ? deps.getVisitStats() : {},
             theme: deps.getTheme ? deps.getTheme() : null,
             soundEnabled: deps.getSoundEnabled ? deps.getSoundEnabled() : null,
             zoomLevel: deps.getZoomLevel ? deps.getZoomLevel() : null
@@ -139,25 +141,35 @@
         return [...set];
     }
 
-    async function applyRemotePayload(remote) {
+    async function applyRemotePayload(remote, options) {
+        const opts = options || {};
         const deps = global.HerculesSyncDeps;
         if (!deps || !remote) return false;
         const localTs = parseInt(localStorage.getItem(SYNC_LAST_PULL_KEY) || '0', 10);
-        if ((remote.updatedAt || 0) <= localTs) return false;
+        const remoteTs = remote.updatedAt || 0;
+        if (!opts.force && remoteTs <= localTs) return false;
+
+        const useRemoteFavorites = opts.force || opts.preferRemote;
+        const mergedFavorites = useRemoteFavorites
+            ? (Array.isArray(remote.favorites) ? remote.favorites : [])
+            : mergeFavorites(deps.getFavorites(), remote.favorites);
 
         if (deps.applyMerged) {
             deps.applyMerged({
-                favorites: mergeFavorites(deps.getFavorites(), remote.favorites),
+                favorites: mergedFavorites,
+                searchHistory: remote.searchHistory,
                 passwordHistory: mergePasswordHistory(deps.getPasswordHistory(), remote.passwordHistory),
                 notes: remote.notes,
                 links: remote.links,
                 customOrder: remote.customOrder,
+                visitStats: remote.visitStats,
                 theme: remote.theme,
                 soundEnabled: remote.soundEnabled,
-                zoomLevel: remote.zoomLevel
+                zoomLevel: remote.zoomLevel,
+                fromCloud: true
             });
         }
-        localStorage.setItem(SYNC_LAST_PULL_KEY, String(remote.updatedAt || Date.now()));
+        localStorage.setItem(SYNC_LAST_PULL_KEY, String(remoteTs || Date.now()));
         return true;
     }
 
@@ -296,7 +308,7 @@
         return id;
     }
 
-    async function pullFromCloud(pin) {
+    async function pullFromCloud(pin, force) {
         if (!navigator.onLine || pullInFlight) return { ok: false, reason: 'offline' };
         if (!getRemoteId()) return { ok: false, error: missingRemoteIdError().message };
         pullInFlight = true;
@@ -306,7 +318,7 @@
             const envelope = await remoteReadEnvelope();
             if (!envelope) return { ok: true, updated: false };
             const payload = await decryptJson(usePin, envelope);
-            const updated = await applyRemotePayload(payload);
+            const updated = await applyRemotePayload(payload, { force: !!force, preferRemote: !!force });
             return { ok: true, updated };
         } catch (e) {
             console.warn('Cloud pull:', e);
