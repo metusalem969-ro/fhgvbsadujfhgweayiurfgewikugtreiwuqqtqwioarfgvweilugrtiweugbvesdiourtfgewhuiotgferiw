@@ -1,5 +1,5 @@
 /* sw.js */
-const CACHE_VERSION = "2026-06-02_lf-site-favicons"; // bump la fiecare deploy important
+const CACHE_VERSION = "2026-06-03_lf-local-favicons"; // bump la fiecare deploy important
 const CACHE_NAME = `cmd-center-${CACHE_VERSION}`;
 
 self.addEventListener("message", (event) => {

@@ -3283,7 +3283,22 @@
             'divxfilmeonline.art': 'icons/divxfilmeonline-art.png',
             'app.revolut.com': 'icons/revolut.png',
             'revolut.com': 'icons/revolut.png',
-            'wise.com': 'icons/wise.png'
+            'wise.com': 'icons/wise.png',
+            'clicksud.co': 'icons/fav-clicksud-co.png',
+            'clicksud.com.in': 'icons/fav-clicksud-com-in.png',
+            'clicksud.org': 'icons/fav-clicksud-org.png',
+            'rserial.com': 'icons/fav-rserial-com.png',
+            'despre-seriale.net': 'icons/fav-despre-seriale-net.png',
+            'filmflix.ro': 'icons/fav-filmflix-ro.png',
+            'voxfilmeonline.biz': 'icons/fav-voxfilmeonline-biz.png',
+            'hdfilme.ro': 'icons/fav-hdfilme-ro.png',
+            'filme-bune.biz': 'icons/fav-filme-bune-biz.png',
+            'topfilmehd.ro': 'icons/fav-topfilmehd-ro.png',
+            'youtube.com': 'icons/fav-youtube-com.png',
+            'dailymotion.com': 'icons/fav-dailymotion-com.png',
+            'voyo.protv.ro': 'icons/fav-voyo-ro.png',
+            'protvplus.ro': 'icons/fav-protvplus-ro.png',
+            'protv.ro': 'icons/fav-protv-ro.png'
         };
 
         function normalizeLinkUrl(url) {
@@ -3470,10 +3485,25 @@
             'DivX Filme (.be)': 'icons/divxfilmeonline-be.png',
             'DivX Filme (.art)': 'icons/divxfilmeonline-art.png',
             'DivX Filme': 'icons/divxfilmeonline-be.png',
+            'Las Fierbinți · ClickSud': 'icons/fav-clicksud-co.png',
+            'Las Fierbinți · ClickSud IN': 'icons/fav-clicksud-com-in.png',
+            'Las Fierbinți · ClickSud ORG': 'icons/fav-clicksud-org.png',
+            'Las Fierbinți · RSerial': 'icons/fav-rserial-com.png',
+            'Las Fierbinți · Despre Seriale': 'icons/fav-despre-seriale-net.png',
+            'Las Fierbinți · Filmflix': 'icons/fav-filmflix-ro.png',
+            'Las Fierbinți · Vox Filme': 'icons/fav-voxfilmeonline-biz.png',
             'Las Fierbinți · FilmeHD.to': 'icons/filmehd-to.svg',
             'Las Fierbinți · FilmeHD.cc': 'icons/filmehd-cc.svg',
             'Las Fierbinți · OneMagia': 'icons/onemagia.svg',
-            'Las Fierbinți · DivXFilme': 'icons/divxfilme-org.png'
+            'Las Fierbinți · HDFilme': 'icons/fav-hdfilme-ro.png',
+            'Las Fierbinți · Filme Bune': 'icons/fav-filme-bune-biz.png',
+            'Las Fierbinți · Top Filme HD': 'icons/fav-topfilmehd-ro.png',
+            'Las Fierbinți · DivXFilme': 'icons/divxfilme-org.png',
+            'Las Fierbinți · YouTube': 'icons/fav-youtube-com.png',
+            'Las Fierbinți · YouTube Oficial': 'icons/fav-youtube-com.png',
+            'Las Fierbinți · Dailymotion': 'icons/fav-dailymotion-com.png',
+            'Las Fierbinți · Voyo': 'icons/fav-voyo-ro.png',
+            'Las Fierbinți · Pro TV Plus': 'icons/fav-protvplus-ro.png'
         };
 
         function applyBuiltinIcons() {
@@ -3508,7 +3538,7 @@
                 if (builtin && link.iconUrl !== builtin) {
                     link.iconUrl = builtin;
                     changed = true;
-                } else if (!builtin && link.iconUrl && !String(link.iconUrl).startsWith('icons/')) {
+                } else if (!builtin && link.iconUrl) {
                     link.iconUrl = null;
                     changed = true;
                 }
