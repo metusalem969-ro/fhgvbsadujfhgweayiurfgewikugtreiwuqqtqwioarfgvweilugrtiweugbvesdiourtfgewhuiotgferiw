@@ -2762,8 +2762,8 @@
         <div class="modal-content sync-modal-panel" style="max-width: 520px;">
             <h2 style="margin-bottom: 12px; text-align: center;">☁️ Sincronizare dispozitive</h2>
             <p class="sync-muted" style="text-align: center; margin-bottom: 16px; font-size: 0.9em;">
-                Favoritele ⭐, parolele generate 🔐 și notele se sincronizează criptat prin GitHub sau GitLab.
-                Folosește același PIN și același token pe telefon, tabletă și PC.
+                <strong>Primul dispozitiv:</strong> Token + PIN → «Activează» (la ID profil lași gol) → copiază ID-ul afișat.<br>
+                <strong>Al doilea dispozitiv:</strong> același Token + PIN + lipește ID profil → «Activează» → «Descarcă acum».
             </p>
             <div id="cloudSyncStatus" class="sync-status-box">Stare: neconfigurat</div>
             <label class="sync-label">Platformă</label>
@@ -5535,8 +5535,14 @@
         }
 
         async function manualCloudPull() {
+            if (!window.HerculesCloudSync) return;
+            const existingId = HerculesCloudSync.getRemoteId() || document.getElementById('syncRemoteId').value.trim();
+            if (!existingId) {
+                showNotification('⚠️ Lipsește ID profil. Pe primul PC: «Activează» fără ID. Pe telefon: lipește ID-ul copiat.', 'error');
+                return;
+            }
             const pin = document.getElementById('syncPin').value || prompt('PIN sincronizare:');
-            if (!pin || !window.HerculesCloudSync) return;
+            if (!pin) return;
             await HerculesCloudSync.unlockSyncPin(pin);
             const r = await HerculesCloudSync.pullFromCloud(pin);
             if (r.ok && r.updated) showNotification('⬇️ Date descărcate de pe cloud', 'success');
@@ -5546,12 +5552,21 @@
         }
 
         async function manualCloudPush() {
+            if (!window.HerculesCloudSync) return;
+            const token = document.getElementById('syncToken').value.trim() || localStorage.getItem('herculesSyncToken_v1');
+            if (!token) {
+                showNotification('⚠️ Lipsește token API. Completează token-ul și apasă «Activează».', 'error');
+                return;
+            }
             const pin = document.getElementById('syncPin').value || prompt('PIN sincronizare:');
-            if (!pin || !window.HerculesCloudSync) return;
+            if (!pin) return;
             await HerculesCloudSync.unlockSyncPin(pin);
             const r = await HerculesCloudSync.pushToCloud(pin, true);
-            if (r.ok) showNotification('⬆️ Date încărcate în cloud', 'success');
-            else showNotification('❌ ' + (r.error || 'Eroare la încărcare'), 'error');
+            if (r.ok) {
+                if (r.remoteId) document.getElementById('syncRemoteId').value = r.remoteId;
+                updateCloudSyncStatusUi();
+                showNotification('⬆️ Date încărcate. ID profil: ' + (r.remoteId || HerculesCloudSync.getRemoteId()), 'success');
+            } else showNotification('❌ ' + (r.error || 'Eroare la încărcare'), 'error');
         }
 
         function disableCloudSyncUi() {

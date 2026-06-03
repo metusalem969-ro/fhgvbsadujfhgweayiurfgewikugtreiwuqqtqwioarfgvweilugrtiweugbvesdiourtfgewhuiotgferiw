@@ -190,10 +190,17 @@
         return res.json();
     }
 
+    function missingRemoteIdError() {
+        return new Error(
+            'Lipsește ID profil (Gist/Snippet). Pe primul dispozitiv: apasă doar «Activează» (fără ID). ' +
+            'Pe al doilea: lipește ID-ul copiat de pe primul dispozitiv, apoi «Activează».'
+        );
+    }
+
     async function remoteReadEnvelope() {
         const provider = getSyncProvider();
         const id = getRemoteId();
-        if (!id) throw new Error('Lipsește ID-ul remote (gist/snippet)');
+        if (!id) throw missingRemoteIdError();
 
         if (provider === 'gitlab') {
             const snippet = await gitlabFetch('/snippets/' + encodeURIComponent(id));
@@ -271,6 +278,7 @@
 
     async function pullFromCloud(pin) {
         if (!navigator.onLine || pullInFlight) return { ok: false, reason: 'offline' };
+        if (!getRemoteId()) return { ok: false, error: missingRemoteIdError().message };
         pullInFlight = true;
         try {
             const usePin = pin || syncPinCache;
@@ -298,8 +306,8 @@
             const payload = collectPayload();
             if (!payload) return { ok: false, reason: 'no-deps' };
             const envelope = await encryptJson(usePin, payload);
-            await remoteWriteEnvelope(envelope);
-            return { ok: true };
+            const remoteId = await remoteWriteEnvelope(envelope);
+            return { ok: true, remoteId: remoteId || getRemoteId() };
         } catch (e) {
             console.warn('Cloud push:', e);
             return { ok: false, error: e.message };
@@ -322,18 +330,38 @@
 
     async function setupCloudSync({ provider, token, pin, remoteId }) {
         if (!pin || pin.length < 8) throw new Error('PIN-ul trebuie să aibă minim 8 caractere');
-        if (!token || token.length < 10) throw new Error('Token invalid');
+        if (!token || token.length < 10) throw new Error('Token invalid — lipește token GitHub (ghp_…) sau GitLab (glpat-…)');
         const pinHash = await sha256Hex(pin);
         syncPinCache = pin;
         localStorage.setItem(SYNC_PROVIDER_KEY, provider === 'gitlab' ? 'gitlab' : 'github');
         localStorage.setItem(SYNC_TOKEN_KEY, token.trim());
         localStorage.setItem(SYNC_PIN_HASH_KEY, pinHash);
-        if (remoteId) localStorage.setItem(SYNC_REMOTE_ID_KEY, String(remoteId).trim());
-        else localStorage.removeItem(SYNC_REMOTE_ID_KEY);
         localStorage.setItem(SYNC_ENABLED_KEY, 'true');
-        await pushToCloud(pin, true);
-        await pullFromCloud(pin);
-        return { remoteId: getRemoteId() };
+
+        const trimmedRemote = remoteId ? String(remoteId).trim() : '';
+        if (trimmedRemote) {
+            localStorage.setItem(SYNC_REMOTE_ID_KEY, trimmedRemote);
+        }
+        // Fără ID în formular: păstrăm ID existent sau creăm gist/snippet nou la push (primul dispozitiv)
+
+        const pushResult = await pushToCloud(pin, true);
+        if (!pushResult.ok) {
+            throw new Error(pushResult.error || 'Nu s-a putut încărca în cloud. Verifică token-ul (GitHub: scope «gist»).');
+        }
+
+        const finalId = getRemoteId();
+        if (!finalId) {
+            throw new Error(
+                'Cloud-ul nu a returnat ID profil. Verifică token-ul și încearcă din nou «Activează» (fără ID profil pe primul dispozitiv).'
+            );
+        }
+
+        const pullResult = await pullFromCloud(pin);
+        if (!pullResult.ok && pullResult.error && !pullResult.error.includes('Lipsește')) {
+            console.warn('Pull după activare:', pullResult.error);
+        }
+
+        return { remoteId: finalId };
     }
 
     function disableCloudSync() {
