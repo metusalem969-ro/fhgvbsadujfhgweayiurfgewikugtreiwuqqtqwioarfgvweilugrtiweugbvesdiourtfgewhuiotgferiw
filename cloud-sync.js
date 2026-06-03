@@ -12,6 +12,7 @@
     const SYNC_PIN_HASH_KEY = 'herculesSyncPinHash_v1';
     const SYNC_ENABLED_KEY = 'herculesSyncEnabled_v1';
     const SYNC_LAST_PULL_KEY = 'herculesSyncLastPull_v1';
+    const SYNC_SESSION_PIN_KEY = 'herculesSyncSessionPin_v1';
     const SYNC_FILE_NAME = 'hercules-sync.enc.json';
     const PASSWORD_HISTORY_MAX = 30;
 
