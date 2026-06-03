@@ -1,5 +1,5 @@
 /* sw.js */
-const CACHE_VERSION = "2026-06-03_pwd-modal"; // bump la fiecare deploy important
+const CACHE_VERSION = "2026-06-03_cloud-sync"; // bump la fiecare deploy important
 const CACHE_NAME = `cmd-center-${CACHE_VERSION}`;
 
 self.addEventListener("message", (event) => {
@@ -14,6 +14,7 @@ self.addEventListener("install", (event) => {
     await cache.addAll([
       "./",
       "./index.html",
+      "./cloud-sync.js",
       "./manifest.json",
       "./icons/bt-bank.png",
       "./icons/lloyds.png",

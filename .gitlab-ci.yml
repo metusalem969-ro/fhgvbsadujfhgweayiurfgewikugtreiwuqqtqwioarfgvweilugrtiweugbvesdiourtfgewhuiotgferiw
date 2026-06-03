@@ -8,7 +8,7 @@ pages:
   stage: deploy
   script:
     - mkdir -p public
-    - cp index.html manifest.json sw.js .nojekyll public/ 2>/dev/null || true
+    - cp index.html cloud-sync.js manifest.json sw.js .nojekyll public/ 2>/dev/null || true
     - cp *.mp3 public/ 2>/dev/null || true
     - cp -r icons sounds public/
   artifacts:

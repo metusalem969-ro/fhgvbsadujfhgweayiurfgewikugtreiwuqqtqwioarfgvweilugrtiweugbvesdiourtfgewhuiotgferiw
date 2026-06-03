@@ -2009,6 +2009,98 @@
             background: #e2e8f0 !important;
         }
 
+        #passwordModal .pwd-history-item {
+            background: rgba(255, 255, 255, 0.12);
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #passwordModal .pwd-history-item span {
+            color: #ffffff;
+        }
+
+        #passwordModal .pwd-history-time {
+            color: rgba(255, 255, 255, 0.65);
+            font-size: 0.8em;
+        }
+
+        body[data-theme="light"] #passwordModal .pwd-history-item {
+            background: #f1f5f9 !important;
+        }
+
+        body[data-theme="light"] #passwordModal .pwd-history-item span {
+            color: #0f172a !important;
+        }
+
+        body[data-theme="light"] #passwordModal .pwd-history-time {
+            color: #64748b !important;
+        }
+
+        .sync-modal-panel {
+            color: #f8fafc;
+        }
+
+        .sync-label {
+            display: block;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin: 10px 0 4px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .sync-input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            background: rgba(0, 0, 0, 0.25);
+            color: #fff;
+            font-size: 0.95em;
+            box-sizing: border-box;
+        }
+
+        .sync-muted {
+            color: rgba(255, 255, 255, 0.75);
+        }
+
+        .sync-status-box {
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: rgba(14, 165, 233, 0.2);
+            border: 1px solid rgba(14, 165, 233, 0.45);
+            font-size: 0.88em;
+            margin-bottom: 8px;
+            word-break: break-all;
+        }
+
+        body[data-theme="light"] .sync-modal-panel {
+            color: #0f172a;
+        }
+
+        body[data-theme="light"] .sync-label {
+            color: #1e293b;
+        }
+
+        body[data-theme="light"] .sync-input {
+            background: #f8fafc;
+            color: #0f172a;
+            border-color: #cbd5e1;
+        }
+
+        body[data-theme="light"] .sync-muted {
+            color: #475569;
+        }
+
+        body[data-theme="light"] .sync-status-box {
+            background: #e0f2fe;
+            border-color: #7dd3fc;
+            color: #0c4a6e;
+        }
+
         /* NOTES/TODO SYSTEM */
         #notesModal .modal-content {
             background: linear-gradient(135deg, rgba(139, 92, 246, 0.95) 0%, rgba(219, 39, 119, 0.95) 100%) !important;
@@ -2305,6 +2397,11 @@
     <!-- Reset Default Links Button -->
     <button id="resetLinksButton" style="position: fixed; bottom: 660px; right: 30px; width: 50px; height: 50px; background: linear-gradient(135deg, #ef4444, #b91c1c); border: none; border-radius: 50%; color: var(--text); cursor: pointer; box-shadow: 0 5px 20px rgba(239, 68, 68, 0.6); transition: all 0.3s ease; z-index: 100; font-size: 1.5em;" onclick="resetDefaultLinks()" title="Resetează site-urile inițiale">
         🔄
+    </button>
+
+    <!-- Cloud Sync Button -->
+    <button id="cloudSyncButton" style="position: fixed; bottom: 730px; right: 30px; width: 50px; height: 50px; background: linear-gradient(135deg, #0ea5e9, #0284c7); border: none; border-radius: 50%; color: var(--text); cursor: pointer; box-shadow: 0 5px 20px rgba(14, 165, 233, 0.6); transition: all 0.3s ease; z-index: 100; font-size: 1.5em;" onclick="openCloudSyncModal()" title="Sincronizare între dispozitive">
+        ☁️
     </button>
 
     </div>
@@ -2660,6 +2757,37 @@
         </div>
     </div>
 
+    <!-- Cloud Sync Modal -->
+    <div class="modal" id="cloudSyncModal">
+        <div class="modal-content sync-modal-panel" style="max-width: 520px;">
+            <h2 style="margin-bottom: 12px; text-align: center;">☁️ Sincronizare dispozitive</h2>
+            <p class="sync-muted" style="text-align: center; margin-bottom: 16px; font-size: 0.9em;">
+                Favoritele ⭐, parolele generate 🔐 și notele se sincronizează criptat prin GitHub sau GitLab.
+                Folosește același PIN și același token pe telefon, tabletă și PC.
+            </p>
+            <div id="cloudSyncStatus" class="sync-status-box">Stare: neconfigurat</div>
+            <label class="sync-label">Platformă</label>
+            <select id="syncProvider" class="sync-input">
+                <option value="github">GitHub Gist (recomandat)</option>
+                <option value="gitlab">GitLab Snippet</option>
+            </select>
+            <label class="sync-label">Token API (salvat doar în acest browser)</label>
+            <input type="password" id="syncToken" class="sync-input" placeholder="GitHub: ghp_… / GitLab: glpat-…" autocomplete="off">
+            <label class="sync-label">PIN sincronizare (min. 8 caractere, același peste tot)</label>
+            <input type="password" id="syncPin" class="sync-input" placeholder="Același PIN pe toate dispozitivele" autocomplete="off">
+            <label class="sync-label">ID profil (doar pe al 2-lea dispozitiv — copiază de pe primul)</label>
+            <input type="text" id="syncRemoteId" class="sync-input" placeholder="Gist ID sau Snippet ID (opțional la prima activare)">
+            <div class="modal-buttons" style="margin-top: 16px; flex-wrap: wrap; gap: 8px;">
+                <button type="button" class="btn-primary" onclick="activateCloudSync()">✅ Activează / salvează</button>
+                <button type="button" class="btn-secondary" onclick="manualCloudPull()">⬇️ Descarcă acum</button>
+                <button type="button" class="btn-secondary" onclick="manualCloudPush()">⬆️ Încarcă acum</button>
+                <button type="button" class="btn-secondary" onclick="disableCloudSyncUi()">🚫 Dezactivează</button>
+                <button type="button" class="btn-secondary" onclick="closeCloudSyncModal()">❌ Închide</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="cloud-sync.js"></script>
     <script>
         // Pinch-zoom permis (viewport: user-scalable=yes). Zoom-ul paginii e controlat doar de applyZoom().
         
@@ -3281,7 +3409,8 @@
             'eBay', 'eBay UK', 'Amazon UK', 'AliExpress',
             'ClickSud', 'Filelist', 'DivXFilme.org', 'DivX Filme (.be)', 'DivX Filme (.art)', 'IMDB', 'Vox Filme',
             'FilmeHD.to', 'FilmeHD.cc', 'OneMagia', 'JustWatch', 'Top Filme HD',
-            'OpenAI', 'Gemini AI', 'Perplexity', 'Arduino', 'Control PC Mobil', 'Control PC Desktop'
+            'OpenAI', 'Gemini AI', 'Perplexity', 'Arduino', 'Control PC Mobil', 'Control PC Desktop',
+            'Bollywood Filme', 'Cinepub', 'Pluto TV', 'Despre Seriale', 'Voyo', 'Filmflix', 'Tubi', 'Roku', 'Octopus Energy'
         ];
         const DEFAULT_FAVORITE_EXTRA_URLS = [
             'https://clicksud.com.in/',
@@ -3496,6 +3625,9 @@
             renderSearchHistory();
             updateClock();
             setInterval(updateClock, 1000);
+            initHerculesCloudSyncBridge();
+            if (window.HerculesCloudSync) HerculesCloudSync.initCloudSync();
+            updateCloudSyncStatusUi();
             } catch (initErr) {
                 console.error('Dashboard init error:', initErr);
             }
@@ -3823,17 +3955,6 @@
                 favorites = new Set();
             }
             let changed = false;
-            const UNSTAR_SITE_NAMES = ['Cinepub', 'Pluto TV', 'Tubi'];
-            UNSTAR_SITE_NAMES.forEach((siteName) => {
-                const entry = links.find((l) => l.name === siteName) || DEFAULT_LINKS.find((l) => l.name === siteName);
-                if (!entry) return;
-                [...favorites].forEach((favUrl) => {
-                    if (linkUrlMatches(favUrl, entry.url)) {
-                        favorites.delete(favUrl);
-                        changed = true;
-                    }
-                });
-            });
             DEFAULT_FAVORITE_URLS.forEach((url) => {
                 const already = [...favorites].some((f) => linkUrlMatches(f, url));
                 if (!already) {
@@ -4073,6 +4194,7 @@
         function saveFavorites() {
             try {
                 localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites]));
+                if (window.HerculesCloudSync) HerculesCloudSync.scheduleCloudSyncPush();
             } catch (e) {
                 console.error('Error saving favorites:', e);
             }
@@ -5102,9 +5224,11 @@
             try {
                 let history = JSON.parse(localStorage.getItem(PASSWORD_HISTORY_KEY) || '[]');
                 history.unshift({ password: password, timestamp: Date.now() });
-                history = history.slice(0, 5);
+                const pwdMax = (window.HerculesCloudSync && HerculesCloudSync.PASSWORD_HISTORY_MAX) || 30;
+                history = history.slice(0, pwdMax);
                 localStorage.setItem(PASSWORD_HISTORY_KEY, JSON.stringify(history));
                 renderPasswordHistory(history);
+                if (window.HerculesCloudSync) HerculesCloudSync.scheduleCloudSyncPush();
             } catch (e) {
                 console.error('Error saving password history:', e);
             }
@@ -5124,19 +5248,20 @@
             const container = document.getElementById('passwordHistory');
             
             if (!history || history.length === 0) {
-                container.innerHTML = '<div style="color: rgba(255, 255, 255, 0.6); text-align: center; padding: 10px;">Nicio parolă generată încă</div>';
+                container.innerHTML = '<div class="pwd-muted" style="text-align: center; padding: 10px;">Nicio parolă generată încă</div>';
                 return;
             }
             
             container.innerHTML = history.map((item, index) => {
                 const date = new Date(item.timestamp);
                 const timeStr = date.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
+                const safePass = escapeHtml(item.password);
                 
                 return `
-                    <div style="background: rgba(255, 255, 255, 0.1); padding: 8px 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-                        <span style="color: white; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.password}</span>
-                        <span style="color: rgba(255, 255, 255, 0.6); font-size: 0.8em; white-space: nowrap;">${timeStr}</span>
-                        <button onclick="copyPasswordFromHistory('${item.password.replace(/'/g, "\\'")}'); event.stopPropagation();" style="background: rgba(16, 185, 129, 0.6); border: none; color: white; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em; white-space: nowrap;" onmouseover="this.style.background='rgba(16, 185, 129, 0.8)'" onmouseout="this.style.background='rgba(16, 185, 129, 0.6)'">
+                    <div class="pwd-history-item">
+                        <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${safePass}</span>
+                        <span class="pwd-history-time" style="white-space: nowrap;">${timeStr}</span>
+                        <button type="button" onclick="copyPasswordFromHistory('${item.password.replace(/'/g, "\\'")}'); event.stopPropagation();" style="background: #059669; border: none; color: white; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85em;">
                             📋
                         </button>
                     </div>
@@ -5190,6 +5315,7 @@
         function saveNotes(notes) {
             try {
                 localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+                if (window.HerculesCloudSync) HerculesCloudSync.scheduleCloudSyncPush();
             } catch (e) {
                 console.error('Error saving notes:', e);
             }
@@ -5302,6 +5428,139 @@
             }
         }
         
+        // ===== CLOUD SYNC UI =====
+        function initHerculesCloudSyncBridge() {
+            window.HerculesSyncDeps = {
+                getFavorites: () => [...favorites],
+                getPasswordHistory: () => JSON.parse(localStorage.getItem(PASSWORD_HISTORY_KEY) || '[]'),
+                getNotes: () => getNotes(),
+                getLinks: () => links,
+                getCustomOrder: () => customOrder,
+                getTheme: () => localStorage.getItem(THEME_KEY) || 'purple',
+                getSoundEnabled: () => localStorage.getItem(SOUND_ENABLED_KEY) === 'true',
+                getZoomLevel: () => parseInt(localStorage.getItem(ZOOM_KEY) || String(getDefaultZoomLevel()), 10),
+                notify: (msg, type) => showNotification(msg, type),
+                applyMerged: (merged) => {
+                    if (merged.favorites && Array.isArray(merged.favorites)) {
+                        favorites = new Set(merged.favorites);
+                        saveFavorites();
+                    }
+                    if (merged.passwordHistory && Array.isArray(merged.passwordHistory)) {
+                        localStorage.setItem(PASSWORD_HISTORY_KEY, JSON.stringify(merged.passwordHistory));
+                        renderPasswordHistory(merged.passwordHistory);
+                    }
+                    if (merged.notes && Array.isArray(merged.notes)) {
+                        localStorage.setItem(NOTES_KEY, JSON.stringify(merged.notes));
+                    }
+                    if (merged.links && Array.isArray(merged.links) && merged.links.length > 0) {
+                        links = merged.links;
+                        saveAllLinks();
+                    }
+                    if (merged.customOrder && Array.isArray(merged.customOrder)) {
+                        customOrder = merged.customOrder;
+                        saveCustomOrder();
+                    }
+                    if (merged.theme && THEMES.includes(merged.theme)) {
+                        localStorage.setItem(THEME_KEY, merged.theme);
+                        applyTheme(merged.theme);
+                    }
+                    if (typeof merged.soundEnabled === 'boolean') {
+                        soundEnabled = merged.soundEnabled;
+                        localStorage.setItem(SOUND_ENABLED_KEY, soundEnabled.toString());
+                        updateSoundButton();
+                    }
+                    if (merged.zoomLevel && ZOOM_LEVELS.includes(merged.zoomLevel)) {
+                        const index = ZOOM_LEVELS.indexOf(merged.zoomLevel);
+                        currentZoomIndex = index;
+                        applyZoom(merged.zoomLevel);
+                    }
+                    renderLinks();
+                    updateCloudSyncStatusUi();
+                }
+            };
+        }
+
+        function updateCloudSyncStatusUi() {
+            const el = document.getElementById('cloudSyncStatus');
+            const btn = document.getElementById('cloudSyncButton');
+            if (!el) return;
+            if (!window.HerculesCloudSync || !HerculesCloudSync.isSyncConfigured()) {
+                el.textContent = 'Stare: neconfigurat — apasă Activează și folosește același PIN pe toate dispozitivele.';
+                if (btn) btn.style.boxShadow = '0 5px 20px rgba(14, 165, 233, 0.6)';
+                return;
+            }
+            const id = HerculesCloudSync.getRemoteId();
+            const prov = HerculesCloudSync.getSyncProvider() === 'gitlab' ? 'GitLab' : 'GitHub';
+            el.textContent = 'Stare: activ (' + prov + '). ID profil: ' + id + ' — copiază acest ID pe celelalte dispozitive.';
+            if (btn) btn.style.boxShadow = '0 5px 24px rgba(16, 185, 129, 0.85)';
+        }
+
+        function openCloudSyncModal() {
+            playSound('bleepSound', 0.3);
+            document.getElementById('cloudSyncModal').classList.add('show');
+            const prov = document.getElementById('syncProvider');
+            const remote = document.getElementById('syncRemoteId');
+            if (window.HerculesCloudSync && HerculesCloudSync.isSyncConfigured()) {
+                prov.value = HerculesCloudSync.getSyncProvider();
+                remote.value = HerculesCloudSync.getRemoteId();
+            }
+            updateCloudSyncStatusUi();
+        }
+
+        function closeCloudSyncModal() {
+            playSound('thudSound', 0.2);
+            document.getElementById('cloudSyncModal').classList.remove('show');
+        }
+
+        async function activateCloudSync() {
+            const provider = document.getElementById('syncProvider').value;
+            const token = document.getElementById('syncToken').value.trim();
+            const pin = document.getElementById('syncPin').value;
+            const remoteId = document.getElementById('syncRemoteId').value.trim();
+            if (!window.HerculesCloudSync) {
+                showNotification('Modulul de sync nu s-a încărcat', 'error');
+                return;
+            }
+            try {
+                const result = await HerculesCloudSync.setupCloudSync({ provider, token, pin, remoteId: remoteId || null });
+                document.getElementById('syncToken').value = '';
+                document.getElementById('syncPin').value = '';
+                document.getElementById('syncRemoteId').value = result.remoteId || '';
+                updateCloudSyncStatusUi();
+                playSound('permanentSound', 0.4);
+                showNotification('☁️ Sincronizare activă! ID: ' + (result.remoteId || ''), 'success');
+            } catch (e) {
+                showNotification('❌ Sync: ' + e.message, 'error');
+            }
+        }
+
+        async function manualCloudPull() {
+            const pin = document.getElementById('syncPin').value || prompt('PIN sincronizare:');
+            if (!pin || !window.HerculesCloudSync) return;
+            await HerculesCloudSync.unlockSyncPin(pin);
+            const r = await HerculesCloudSync.pullFromCloud(pin);
+            if (r.ok && r.updated) showNotification('⬇️ Date descărcate de pe cloud', 'success');
+            else if (r.ok) showNotification('ℹ️ Nu sunt date mai noi pe cloud', 'info');
+            else showNotification('❌ ' + (r.error || 'Eroare la descărcare'), 'error');
+            updateCloudSyncStatusUi();
+        }
+
+        async function manualCloudPush() {
+            const pin = document.getElementById('syncPin').value || prompt('PIN sincronizare:');
+            if (!pin || !window.HerculesCloudSync) return;
+            await HerculesCloudSync.unlockSyncPin(pin);
+            const r = await HerculesCloudSync.pushToCloud(pin, true);
+            if (r.ok) showNotification('⬆️ Date încărcate în cloud', 'success');
+            else showNotification('❌ ' + (r.error || 'Eroare la încărcare'), 'error');
+        }
+
+        function disableCloudSyncUi() {
+            if (!confirm('Dezactivezi sincronizarea pe acest dispozitiv?')) return;
+            if (window.HerculesCloudSync) HerculesCloudSync.disableCloudSync();
+            updateCloudSyncStatusUi();
+            showNotification('Sincronizare dezactivată local', 'info');
+        }
+
         function loadNotes() {
             const notes = getNotes();
             const container = document.getElementById('notesList');
