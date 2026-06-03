@@ -2762,8 +2762,8 @@
         <div class="modal-content sync-modal-panel" style="max-width: 520px;">
             <h2 style="margin-bottom: 12px; text-align: center;">☁️ Sincronizare dispozitive</h2>
             <p class="sync-muted" style="text-align: center; margin-bottom: 16px; font-size: 0.9em;">
-                <strong>Primul dispozitiv:</strong> Token + PIN → «Activează» (la ID profil lași gol) → copiază ID-ul afișat.<br>
-                <strong>Al doilea dispozitiv:</strong> același Token + PIN + lipește ID profil → «Activează» → «Descarcă acum».
+                <strong>1) Primul PC:</strong> token + PIN → «Activează» → apare <strong>ID profil</strong> (îl copiezi).<br>
+                <strong>2) Telefon:</strong> același token + PIN + <strong>lipești ID-ul</strong> → «Activează» → «Descarcă acum».
             </p>
             <div id="cloudSyncStatus" class="sync-status-box">Stare: neconfigurat</div>
             <label class="sync-label">Platformă</label>
@@ -2779,8 +2779,14 @@
             <input type="password" id="syncToken" class="sync-input" placeholder="GitHub classic: ghp_… (NU github_pat_)" autocomplete="off">
             <label class="sync-label">PIN sincronizare (min. 8 caractere, același peste tot)</label>
             <input type="password" id="syncPin" class="sync-input" placeholder="Același PIN pe toate dispozitivele" autocomplete="off">
-            <label class="sync-label">ID profil (doar pe al 2-lea dispozitiv — copiază de pe primul)</label>
-            <input type="text" id="syncRemoteId" class="sync-input" placeholder="Gist ID sau Snippet ID (opțional la prima activare)">
+            <label class="sync-label">ID profil (codul tău de legătură între dispozitive)</label>
+            <div style="display: flex; gap: 8px; align-items: stretch;">
+                <input type="text" id="syncRemoteId" class="sync-input" style="flex: 1;" placeholder="Apare automat după «Activează» pe primul PC — gol la prima activare" readonly>
+                <button type="button" class="btn-secondary" onclick="copySyncProfileId()" style="white-space: nowrap; padding: 8px 14px;">📋 Copiază</button>
+            </div>
+            <p id="syncIdHelp" class="sync-muted" style="font-size: 0.82em; margin-top: 6px;">
+                <strong>Unde îl iei?</strong> Doar de pe primul dispozitiv, după ce «Activează» reușește: apare aici, în caseta albastră de sus și în mesajul verde. Trimite-l pe WhatsApp/email pe telefon, apoi lipește-l aici.
+            </p>
             <div class="modal-buttons" style="margin-top: 16px; flex-wrap: wrap; gap: 8px;">
                 <button type="button" class="btn-primary" onclick="activateCloudSync()">✅ Activează / salvează</button>
                 <button type="button" class="btn-secondary" onclick="manualCloudPull()">⬇️ Descarcă acum</button>
@@ -5487,16 +5493,46 @@
         function updateCloudSyncStatusUi() {
             const el = document.getElementById('cloudSyncStatus');
             const btn = document.getElementById('cloudSyncButton');
+            const idInput = document.getElementById('syncRemoteId');
+            const idHelp = document.getElementById('syncIdHelp');
             if (!el) return;
             if (!window.HerculesCloudSync || !HerculesCloudSync.isSyncConfigured()) {
-                el.textContent = 'Stare: neconfigurat — apasă Activează și folosește același PIN pe toate dispozitivele.';
+                el.textContent = 'Stare: neconfigurat — pe PRIMUL dispozitiv: token + PIN → Activează (fără ID). Apoi copiază ID-ul generat.';
+                if (idInput) {
+                    idInput.value = '';
+                    idInput.removeAttribute('readonly');
+                    idInput.placeholder = 'La prima activare lasă gol — ID-ul apare după succes';
+                }
+                if (idHelp) idHelp.style.display = 'block';
                 if (btn) btn.style.boxShadow = '0 5px 20px rgba(14, 165, 233, 0.6)';
                 return;
             }
             const id = HerculesCloudSync.getRemoteId();
             const prov = HerculesCloudSync.getSyncProvider() === 'gitlab' ? 'GitLab' : 'GitHub';
-            el.textContent = 'Stare: activ (' + prov + '). ID profil: ' + id + ' — copiază acest ID pe celelalte dispozitive.';
+            el.innerHTML = '✅ <strong>Sincronizare activă</strong> (' + prov + ').<br>ID profil (copiază pe telefon/tabletă):<br><code style="font-size:1.05em;word-break:break-all;">' + escapeHtml(id) + '</code>';
+            if (idInput) {
+                idInput.value = id;
+                idInput.setAttribute('readonly', 'readonly');
+            }
+            if (idHelp) {
+                idHelp.innerHTML = 'Acesta e codul tău. Pe <strong>al doilea</strong> dispozitiv: lipește în câmpul de mai sus → Activează → Descarcă acum.';
+            }
             if (btn) btn.style.boxShadow = '0 5px 24px rgba(16, 185, 129, 0.85)';
+        }
+
+        function copySyncProfileId() {
+            const id = (document.getElementById('syncRemoteId') && document.getElementById('syncRemoteId').value.trim()) ||
+                (window.HerculesCloudSync && HerculesCloudSync.getRemoteId()) || '';
+            if (!id) {
+                showNotification('ℹ️ ID-ul apare după «Activează» pe primul PC (cu token ghp_ + gist)', 'info');
+                return;
+            }
+            navigator.clipboard.writeText(id).then(() => {
+                playSound('permanentSound', 0.35);
+                showNotification('📋 ID copiat! Lipește-l pe telefon la ☁️ → ID profil', 'success');
+            }).catch(() => {
+                prompt('Copiază manual acest ID:', id);
+            });
         }
 
         function openCloudSyncModal() {
