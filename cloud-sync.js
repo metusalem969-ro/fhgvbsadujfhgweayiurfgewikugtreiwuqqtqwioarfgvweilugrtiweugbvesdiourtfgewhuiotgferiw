@@ -364,6 +364,7 @@
         warnIfGitHubTokenUnsuitable(token.trim(), prov);
         const pinHash = await sha256Hex(pin);
         syncPinCache = pin;
+        saveSessionPin(pin);
         localStorage.setItem(SYNC_PROVIDER_KEY, provider === 'gitlab' ? 'gitlab' : 'github');
         localStorage.setItem(SYNC_TOKEN_KEY, token.trim());
         localStorage.setItem(SYNC_PIN_HASH_KEY, pinHash);
@@ -401,7 +402,43 @@
         localStorage.removeItem(SYNC_REMOTE_ID_KEY);
         localStorage.removeItem(SYNC_PIN_HASH_KEY);
         localStorage.removeItem(SYNC_LAST_PULL_KEY);
+        clearSessionPin();
         syncPinCache = null;
+    }
+
+    function saveSessionPin(pin) {
+        try {
+            if (pin) sessionStorage.setItem(SYNC_SESSION_PIN_KEY, pin);
+        } catch (e) {
+            /* sessionStorage indisponibil */
+        }
+    }
+
+    function clearSessionPin() {
+        try {
+            sessionStorage.removeItem(SYNC_SESSION_PIN_KEY);
+        } catch (e) {
+            /* ignore */
+        }
+    }
+
+    function getSessionPin() {
+        try {
+            return sessionStorage.getItem(SYNC_SESSION_PIN_KEY) || '';
+        } catch (e) {
+            return '';
+        }
+    }
+
+    async function tryRestoreSessionPin() {
+        const pin = getSessionPin();
+        if (!pin) return false;
+        if (!(await verifyPin(pin))) {
+            clearSessionPin();
+            return false;
+        }
+        syncPinCache = pin;
+        return true;
     }
 
     async function verifyPin(pin) {
@@ -412,29 +449,21 @@
     async function unlockSyncPin(pin) {
         if (!(await verifyPin(pin))) return false;
         syncPinCache = pin;
+        saveSessionPin(pin);
         return true;
     }
 
     function initCloudSync() {
         if (!isSyncConfigured()) return;
-        const askPin = () => {
-            const pin = prompt('Introdu PIN-ul de sincronizare (același pe toate dispozitivele):');
-            if (!pin) return;
-            unlockSyncPin(pin).then((ok) => {
-                if (!ok) {
-                    if (global.HerculesSyncDeps && global.HerculesSyncDeps.notify) {
-                        global.HerculesSyncDeps.notify('PIN incorect', 'error');
-                    }
-                    return;
+        // Fără prompt la refresh: PIN memorat doar în sesiunea tab-ului (până închizi browserul)
+        tryRestoreSessionPin().then((ok) => {
+            if (!ok) return;
+            pullFromCloud().then((r) => {
+                if (r.updated && global.HerculesSyncDeps && global.HerculesSyncDeps.notify) {
+                    global.HerculesSyncDeps.notify('☁️ Date actualizate din cloud', 'success');
                 }
-                pullFromCloud(pin).then((r) => {
-                    if (r.updated && global.HerculesSyncDeps && global.HerculesSyncDeps.notify) {
-                        global.HerculesSyncDeps.notify('☁️ Date sincronizate de pe alt dispozitiv', 'success');
-                    }
-                });
             });
-        };
-        setTimeout(askPin, 800);
+        });
         setInterval(() => {
             if (syncPinCache) pullFromCloud();
         }, 90000);
