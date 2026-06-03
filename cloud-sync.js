@@ -151,10 +151,14 @@
 
         const useRemoteFavorites = opts.force || opts.preferRemote;
         let mergedFavorites;
-        if (Array.isArray(remote.favorites)) {
+        if (Array.isArray(remote.favorites) && remote.favorites.length > 0) {
             mergedFavorites = useRemoteFavorites
                 ? remote.favorites
                 : mergeFavorites(deps.getFavorites(), remote.favorites);
+        } else if (Array.isArray(remote.favorites) && remote.favorites.length === 0 && useRemoteFavorites) {
+            mergedFavorites = deps.getFavorites();
+        } else if (Array.isArray(remote.favorites)) {
+            mergedFavorites = mergeFavorites(deps.getFavorites(), remote.favorites);
         } else {
             mergedFavorites = deps.getFavorites();
         }
@@ -407,10 +411,19 @@
         localStorage.setItem(SYNC_ENABLED_KEY, 'true');
 
         const trimmedRemote = remoteId ? String(remoteId).trim() : '';
+        const hadExistingRemote = !!(trimmedRemote || getRemoteId());
         if (trimmedRemote) {
             localStorage.setItem(SYNC_REMOTE_ID_KEY, trimmedRemote);
         }
-        // Fără ID în formular: păstrăm ID existent sau creăm gist/snippet nou la push (primul dispozitiv)
+
+        // Al 2-lea dispozitiv / pagina GitLab: MAI ÎNTÂI descarcă din cloud, apoi încarcă
+        // (altfel push-ul cu favoritele implicite locale șterge stelele de pe PC)
+        if (hadExistingRemote) {
+            const pullFirst = await pullFromCloud(pin, true);
+            if (!pullFirst.ok && pullFirst.error) {
+                console.warn('Pull înainte de activare:', pullFirst.error);
+            }
+        }
 
         const pushResult = await pushToCloud(pin, true);
         if (!pushResult.ok) {
@@ -424,9 +437,11 @@
             );
         }
 
-        const pullResult = await pullFromCloud(pin);
-        if (!pullResult.ok && pullResult.error && !pullResult.error.includes('Lipsește')) {
-            console.warn('Pull după activare:', pullResult.error);
+        if (!hadExistingRemote) {
+            const pullResult = await pullFromCloud(pin, true);
+            if (!pullResult.ok && pullResult.error && !pullResult.error.includes('Lipsește')) {
+                console.warn('Pull după activare:', pullResult.error);
+            }
         }
 
         return { remoteId: finalId };

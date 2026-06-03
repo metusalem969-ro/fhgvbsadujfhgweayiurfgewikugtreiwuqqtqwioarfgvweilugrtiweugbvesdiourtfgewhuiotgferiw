@@ -2763,7 +2763,8 @@
             <h2 style="margin-bottom: 12px; text-align: center;">☁️ Sincronizare dispozitive</h2>
             <p class="sync-muted" style="text-align: center; margin-bottom: 16px; font-size: 0.9em;">
                 <strong>1) Primul PC:</strong> token + PIN → «Activează» → apare <strong>ID profil</strong> (îl copiezi).<br>
-                <strong>2) Telefon:</strong> același token + PIN + <strong>lipești ID-ul</strong> → «Activează» → «Descarcă acum».
+                <strong>2) Telefon / alt link:</strong> același token + PIN + ID → «Activează» → «Descarcă acum».<br>
+                <strong>GitHub Pages și GitLab Pages</strong> sunt site-uri diferite — pe fiecare link configurezi o dată aceleași date (datele sunt în Gist, nu pe pagină).
             </p>
             <div id="cloudSyncStatus" class="sync-status-box">Stare: neconfigurat</div>
             <label class="sync-label">Platformă</label>
@@ -3972,7 +3973,17 @@
                     changed = true;
                 }
             });
-            if (changed) saveFavorites();
+            if (changed) saveFavorites(true);
+        }
+
+        function normalizeFavoritesToLinks() {
+            const normalized = new Set();
+            favorites.forEach((favUrl) => {
+                const match = links.find((l) => linkUrlMatches(l.url, favUrl));
+                if (match) normalized.add(match.url);
+                else normalized.add(favUrl);
+            });
+            favorites = normalized;
         }
 
 
@@ -5454,9 +5465,15 @@
                 notify: (msg, type) => showNotification(msg, type),
                 applyMerged: (merged) => {
                     const counts = { favorites: 0, searches: 0, passwords: 0, notes: 0, links: 0 };
-                    if (merged.favorites && Array.isArray(merged.favorites)) {
+                    if (merged.links && Array.isArray(merged.links) && merged.links.length > 0) {
+                        links = merged.links;
+                        counts.links = merged.links.length;
+                        saveAllLinks();
+                    }
+                    if (merged.favorites && Array.isArray(merged.favorites) && merged.favorites.length > 0) {
                         favorites = new Set(merged.favorites);
-                        counts.favorites = merged.favorites.length;
+                        normalizeFavoritesToLinks();
+                        counts.favorites = favorites.size;
                         saveFavorites(true);
                         ensureFavoriteDefaultLinks();
                     }
@@ -5473,11 +5490,6 @@
                     if (merged.notes && Array.isArray(merged.notes)) {
                         localStorage.setItem(NOTES_KEY, JSON.stringify(merged.notes));
                         counts.notes = merged.notes.length;
-                    }
-                    if (merged.links && Array.isArray(merged.links) && merged.links.length > 0) {
-                        links = merged.links;
-                        counts.links = merged.links.length;
-                        saveAllLinks();
                     }
                     if (merged.customOrder && Array.isArray(merged.customOrder)) {
                         customOrder = merged.customOrder;
