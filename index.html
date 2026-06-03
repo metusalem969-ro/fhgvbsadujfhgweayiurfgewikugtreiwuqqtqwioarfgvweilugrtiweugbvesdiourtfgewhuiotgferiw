@@ -2918,7 +2918,6 @@
             { name: "Filelist", url: "https://filelist.io/login.php", category: "fisiere", iconUrl: "icons/filelist.ico" },
             { name: "DivXFilme.org", url: "https://divxfilme.org/", category: "filme", iconUrl: "icons/divxfilme-org.png" },
             { name: "DivX Filme (.be)", url: "https://divxfilmeonline.be/", category: "filme", iconUrl: "icons/divxfilmeonline-be.png" },
-            { name: "DivX Filme (TV)", url: "https://divxfilmeonline.tv/filme-online/", category: "filme", iconUrl: "icons/divxfilmeonline-tv.png" },
             { name: "IMDB", url: "https://www.imdb.com/watchlist", category: "filme" },
             { name: "FilmeHD.to", url: "https://filmehd.to/", category: "filme", iconUrl: "icons/filmehd-to.svg" },
             { name: "FilmeHD.cc", url: "https://filmehd.cc/", category: "filme", iconUrl: "icons/filmehd-cc.svg" },
@@ -3035,9 +3034,6 @@
             'https://divxfilme.org/': 'icons/divxfilme-org.png',
             'https://divxfilmeonline.be': 'icons/divxfilmeonline-be.png',
             'https://divxfilmeonline.be/': 'icons/divxfilmeonline-be.png',
-            'https://divxfilmeonline.tv': 'icons/divxfilmeonline-tv.png',
-            'https://divxfilmeonline.tv/filme-online': 'icons/divxfilmeonline-tv.png',
-            'https://divxfilmeonline.tv/filme-online/': 'icons/divxfilmeonline-tv.png',
             'https://app.revolut.com': 'icons/revolut.png',
             'https://app.revolut.com/': 'icons/revolut.png',
             'https://revolut.com': 'icons/revolut.png',
@@ -3066,7 +3062,6 @@
             'bt.ro': 'icons/bt-bank.png',
             'divxfilme.org': 'icons/divxfilme-org.png',
             'divxfilmeonline.be': 'icons/divxfilmeonline-be.png',
-            'divxfilmeonline.tv': 'icons/divxfilmeonline-tv.png',
             'app.revolut.com': 'icons/revolut.png',
             'revolut.com': 'icons/revolut.png',
             'wise.com': 'icons/wise.png'
@@ -3202,8 +3197,7 @@
             'Wise': 'icons/wise.png',
             'DivXFilme.org': 'icons/divxfilme-org.png',
             'DivX Filme (.be)': 'icons/divxfilmeonline-be.png',
-            'DivX Filme (TV)': 'icons/divxfilmeonline-tv.png',
-            'DivX Filme': 'icons/divxfilmeonline-tv.png'
+            'DivX Filme': 'icons/divxfilmeonline-be.png'
         };
 
         function applyBuiltinIcons() {
@@ -3224,7 +3218,7 @@
         const DEFAULT_STARRED_SITE_NAMES = [
             'Yahoo', 'Gmail', 'YouTube', 'Facebook', 'WhatsApp',
             'eBay', 'eBay UK', 'Amazon UK', 'AliExpress',
-            'ClickSud', 'Filelist', 'DivXFilme.org', 'DivX Filme (.be)', 'DivX Filme (TV)', 'IMDB', 'Vox Filme',
+            'ClickSud', 'Filelist', 'DivXFilme.org', 'DivX Filme (.be)', 'IMDB', 'Vox Filme',
             'FilmeHD.to', 'FilmeHD.cc', 'OneMagia', 'JustWatch', 'Top Filme HD',
             'OpenAI', 'Gemini AI', 'Perplexity', 'Arduino', 'Control PC Mobil', 'Control PC Desktop'
         ];
@@ -3431,6 +3425,7 @@
             loadVisitStats();
             migrateLegacyFilmehdLinks();
             migrateBtBankUrl();
+            migrateDivxAndFinanceIcons();
             initOfflineDetection();
             adjustMobilePlaceholder();
             
@@ -3799,7 +3794,9 @@
             if (url.includes('portalultautv')) return true;
             if (url.includes('microsoft.com')) return true;
             if (url.includes('filmehd.se')) return true;
+            if (url.includes('divxfilmeonline.tv')) return true;
             if (name.includes('snake') || url.includes('joc-hercules')) return true;
+            if (name === 'DivX Filme (TV)') return true;
             return false;
         }
 
@@ -3887,6 +3884,21 @@
                 saveFavorites();
                 saveVisitStats();
                 showNotification('BT Bank: link actualizat la BT Pay Web', 'success');
+            }
+        }
+
+        function migrateDivxAndFinanceIcons() {
+            let changed = false;
+            links.forEach((link) => {
+                const forced = link.name && FORCED_ICON_BY_NAME[link.name];
+                if (forced && link.iconUrl !== forced) {
+                    link.iconUrl = forced;
+                    changed = true;
+                }
+            });
+            if (changed) {
+                saveAllLinks();
+                applyBuiltinIcons();
             }
         }
 
