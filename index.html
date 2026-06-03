@@ -5642,7 +5642,7 @@
             if (r.ok) {
                 if (r.remoteId) document.getElementById('syncRemoteId').value = r.remoteId;
                 updateCloudSyncStatusUi();
-                showNotification('⬆️ Date încărcate. ID profil: ' + (r.remoteId || HerculesCloudSync.getRemoteId()), 'success');
+                showNotification('☁️ ÎNCĂRCAT ÎN CLOUD. ID profil: ' + (r.remoteId || HerculesCloudSync.getRemoteId()), 'success');
             } else showNotification('❌ ' + (r.error || 'Eroare la încărcare'), 'error');
         }
 
