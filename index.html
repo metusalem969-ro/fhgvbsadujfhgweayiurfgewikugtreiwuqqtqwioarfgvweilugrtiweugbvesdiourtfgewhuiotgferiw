@@ -2768,11 +2768,15 @@
             <div id="cloudSyncStatus" class="sync-status-box">Stare: neconfigurat</div>
             <label class="sync-label">Platformă</label>
             <select id="syncProvider" class="sync-input">
-                <option value="github">GitHub Gist (recomandat)</option>
-                <option value="gitlab">GitLab Snippet</option>
+                <option value="github">GitHub Gist (token classic ghp_ + scope gist)</option>
+                <option value="gitlab">GitLab Snippet (token glpat- + scope api)</option>
             </select>
+            <p class="sync-muted" style="font-size: 0.82em; margin: 6px 0 10px;">
+                Eroare 403? Tokenul „fine-grained” (github_pat_) <strong>nu merge</strong> la Gist.
+                <a href="https://github.com/settings/tokens/new?scopes=gist&amp;description=Hercules-sync" target="_blank" rel="noopener" style="color: #7dd3fc;">Creează token classic (gist)</a>
+            </p>
             <label class="sync-label">Token API (salvat doar în acest browser)</label>
-            <input type="password" id="syncToken" class="sync-input" placeholder="GitHub: ghp_… / GitLab: glpat-…" autocomplete="off">
+            <input type="password" id="syncToken" class="sync-input" placeholder="GitHub classic: ghp_… (NU github_pat_)" autocomplete="off">
             <label class="sync-label">PIN sincronizare (min. 8 caractere, același peste tot)</label>
             <input type="password" id="syncPin" class="sync-input" placeholder="Același PIN pe toate dispozitivele" autocomplete="off">
             <label class="sync-label">ID profil (doar pe al 2-lea dispozitiv — copiază de pe primul)</label>
@@ -5530,7 +5534,8 @@
                 playSound('permanentSound', 0.4);
                 showNotification('☁️ Sincronizare activă! ID: ' + (result.remoteId || ''), 'success');
             } catch (e) {
-                showNotification('❌ Sync: ' + e.message, 'error');
+                const msg = e.message || String(e);
+                showNotification('❌ ' + msg, 'error');
             }
         }
 

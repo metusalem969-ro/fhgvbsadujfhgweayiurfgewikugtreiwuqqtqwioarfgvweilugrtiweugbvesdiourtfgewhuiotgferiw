@@ -160,6 +160,25 @@
         return true;
     }
 
+    function formatGitHubError(status, errText) {
+        const lower = (errText || '').toLowerCase();
+        if (status === 403 && (lower.includes('not accessible by personal access token') || lower.includes('resource not accessible'))) {
+            return (
+                'Token GitHub fără acces la Gist (403). Creează un token CLASIC (nu „fine-grained”): ' +
+                'GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token (classic) → ' +
+                'bifează DOAR «gist» → Generate. Tokenul începe cu ghp_ (nu github_pat_). ' +
+                'Sau folosește GitLab Snippet în dropdown.'
+            );
+        }
+        if (status === 401) {
+            return 'Token GitHub respins (401). Token expirat sau greșit — generează unul nou (classic, scope gist).';
+        }
+        if (status === 404) {
+            return 'Gist negăsit (404). Verifică ID profil sau reactivează pe primul dispozitiv.';
+        }
+        return 'GitHub ' + status + ': ' + (errText.slice(0, 100) || 'eroare API');
+    }
+
     async function githubFetch(path, options) {
         const token = getSyncToken();
         const headers = {
@@ -171,7 +190,7 @@
         const res = await fetch('https://api.github.com' + path, { ...options, headers });
         if (!res.ok) {
             const errText = await res.text().catch(() => '');
-            throw new Error('GitHub: ' + res.status + ' ' + (errText.slice(0, 120) || res.statusText));
+            throw new Error(formatGitHubError(res.status, errText));
         }
         return res.json();
     }
@@ -328,9 +347,20 @@
         }, 2500);
     }
 
+    function warnIfGitHubTokenUnsuitable(token, provider) {
+        if (provider !== 'gitlab' && token.startsWith('github_pat_')) {
+            throw new Error(
+                'Token „fine-grained” (github_pat_…) nu funcționează cu Gist. Folosește token CLASIC (ghp_…) cu scope «gist», ' +
+                'sau alege «GitLab Snippet» în Platformă.'
+            );
+        }
+    }
+
     async function setupCloudSync({ provider, token, pin, remoteId }) {
         if (!pin || pin.length < 8) throw new Error('PIN-ul trebuie să aibă minim 8 caractere');
         if (!token || token.length < 10) throw new Error('Token invalid — lipește token GitHub (ghp_…) sau GitLab (glpat-…)');
+        const prov = provider === 'gitlab' ? 'gitlab' : 'github';
+        warnIfGitHubTokenUnsuitable(token.trim(), prov);
         const pinHash = await sha256Hex(pin);
         syncPinCache = pin;
         localStorage.setItem(SYNC_PROVIDER_KEY, provider === 'gitlab' ? 'gitlab' : 'github');
