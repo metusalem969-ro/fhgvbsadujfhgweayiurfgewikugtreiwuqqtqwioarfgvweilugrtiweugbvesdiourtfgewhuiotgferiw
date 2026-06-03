@@ -1914,43 +1914,99 @@
             }
         }
 
-        /* PASSWORD GENERATOR & NOTES - DARK TEXT FIX */
+        /* PASSWORD GENERATOR — contrast pe toate temele */
         #passwordModal .modal-content {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.98) 0%, rgba(219, 39, 119, 0.98) 100%) !important;
+            background: linear-gradient(135deg, rgba(88, 28, 135, 0.98) 0%, rgba(157, 23, 77, 0.98) 100%) !important;
+            color: #ffffff;
         }
 
-        #passwordModal .modal-content * {
-            color: white !important;
+        #passwordModal .modal-content h2 {
+            color: #ffffff !important;
         }
 
-        #passwordModal input[type="text"] {
-            background: rgba(255, 255, 255, 0.2) !important;
-            border-color: rgba(255, 255, 255, 0.5) !important;
-            color: white !important;
+        #passwordModal .pwd-panel {
+            background: rgba(255, 255, 255, 0.12);
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            border-radius: 15px;
         }
 
-        #passwordModal input[type="text"]::placeholder {
-            color: rgba(255, 255, 255, 0.6) !important;
+        #passwordModal .pwd-label,
+        #passwordModal .pwd-muted {
+            color: #ffffff !important;
+            font-weight: 600;
         }
 
-        #passwordModal input[type="range"] {
-            background: rgba(255, 255, 255, 0.3) !important;
+        #passwordModal .pwd-muted {
+            color: rgba(255, 255, 255, 0.75) !important;
+            font-weight: 500;
         }
 
-        #passwordModal label {
-            color: white !important;
-            font-weight: 600 !important;
+        #passwordModal #generatedPassword {
+            color: #ffffff !important;
+            font-size: 1.35em;
+            font-weight: 700;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            min-height: 40px;
         }
 
         #passwordModal #lengthValue {
-            color: #00ffff !important;
-            text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+            color: #67e8f9 !important;
             font-weight: 900 !important;
         }
 
         #passwordModal #strengthText {
             font-weight: 700 !important;
-            text-shadow: 0 0 8px currentColor;
+        }
+
+        #passwordModal .pwd-strength-track {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        #passwordModal input[type="range"] {
+            accent-color: #a855f7;
+        }
+
+        #passwordModal label.pwd-check {
+            color: #ffffff !important;
+        }
+
+        /* Tema deschisă — text închis pe fundal deschis */
+        body[data-theme="light"] #passwordModal .modal-content {
+            background: linear-gradient(135deg, #ffffff 0%, #ede9fe 100%) !important;
+            border: 2px solid #7c3aed !important;
+            color: #0f172a !important;
+        }
+
+        body[data-theme="light"] #passwordModal .modal-content h2 {
+            color: #5b21b6 !important;
+        }
+
+        body[data-theme="light"] #passwordModal .pwd-panel {
+            background: #f8fafc !important;
+            border-color: #c4b5fd !important;
+        }
+
+        body[data-theme="light"] #passwordModal .pwd-label,
+        body[data-theme="light"] #passwordModal label.pwd-check {
+            color: #1e293b !important;
+        }
+
+        body[data-theme="light"] #passwordModal .pwd-muted {
+            color: #64748b !important;
+        }
+
+        body[data-theme="light"] #passwordModal #generatedPassword {
+            color: #0f172a !important;
+        }
+
+        body[data-theme="light"] #passwordModal #lengthValue {
+            color: #6d28d9 !important;
+            text-shadow: none !important;
+        }
+
+        body[data-theme="light"] #passwordModal .pwd-strength-track {
+            background: #e2e8f0 !important;
         }
 
         /* NOTES/TODO SYSTEM */
@@ -2458,11 +2514,11 @@
             <h2 style="margin-bottom: 20px; text-align: center;">🔐 Generator Parole Sigure</h2>
             
             <!-- Password Display -->
-            <div style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.2)); border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 15px; padding: 20px; margin-bottom: 20px; text-align: center; position: relative;">
-                <div id="generatedPassword" style="font-size: 1.5em; font-weight: 700; color: #fff; word-break: break-all; font-family: 'Courier New', monospace; min-height: 40px; display: flex; align-items: center; justify-content: center;">
+            <div class="pwd-panel" style="padding: 20px; margin-bottom: 20px; text-align: center; position: relative;">
+                <div id="generatedPassword" style="display: flex; align-items: center; justify-content: center;">
                     Click Generate pentru parolă
                 </div>
-                <button onclick="copyPassword()" style="position: absolute; top: 10px; right: 10px; background: rgba(16, 185, 129, 0.8); border: none; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9em; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(16, 185, 129, 1)'" onmouseout="this.style.background='rgba(16, 185, 129, 0.8)'">
+                <button onclick="copyPassword()" style="position: absolute; top: 10px; right: 10px; background: #059669; border: none; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9em; font-weight: 600;">
                     📋 Copy
                 </button>
             </div>
@@ -2470,35 +2526,35 @@
             <!-- Strength Indicator -->
             <div style="margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span style="color: white; font-size: 0.9em; font-weight: 600;">Putere parolă:</span>
-                    <span id="strengthText" style="color: #fbbf24; font-weight: 700;">-</span>
+                    <span class="pwd-label" style="font-size: 0.9em;">Putere parolă:</span>
+                    <span id="strengthText" style="color: #d97706; font-weight: 700;">-</span>
                 </div>
-                <div style="height: 8px; background: rgba(255, 255, 255, 0.2); border-radius: 10px; overflow: hidden;">
+                <div class="pwd-strength-track" style="height: 8px; border-radius: 10px; overflow: hidden;">
                     <div id="strengthBar" style="height: 100%; width: 0%; background: linear-gradient(135deg, #ef4444, #fbbf24); transition: all 0.3s ease; border-radius: 10px;"></div>
                 </div>
             </div>
             
             <!-- Options -->
-            <div style="background: rgba(255, 255, 255, 0.15); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
-                <label style="color: white; display: block; margin-bottom: 10px; font-weight: 600;">
-                    📏 Lungime: <span id="lengthValue" style="color: #00ffff; font-weight: 700;">16</span>
+            <div class="pwd-panel" style="padding: 20px; margin-bottom: 20px;">
+                <label class="pwd-label" style="display: block; margin-bottom: 10px;">
+                    📏 Lungime: <span id="lengthValue">16</span>
                 </label>
                 <input type="range" id="passwordLength" min="8" max="64" value="16" style="width: 100%; margin-bottom: 20px;" oninput="document.getElementById('lengthValue').textContent = this.value">
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <label style="color: white; display: flex; align-items: center; cursor: pointer; font-weight: 600;">
+                    <label class="pwd-check" style="display: flex; align-items: center; cursor: pointer;">
                         <input type="checkbox" id="includeUppercase" checked style="width: auto; margin-right: 10px; cursor: pointer;">
                         🔠 Litere mari (A-Z)
                     </label>
-                    <label style="color: white; display: flex; align-items: center; cursor: pointer; font-weight: 600;">
+                    <label class="pwd-check" style="display: flex; align-items: center; cursor: pointer;">
                         <input type="checkbox" id="includeLowercase" checked style="width: auto; margin-right: 10px; cursor: pointer;">
                         🔡 Litere mici (a-z)
                     </label>
-                    <label style="color: white; display: flex; align-items: center; cursor: pointer; font-weight: 600;">
+                    <label class="pwd-check" style="display: flex; align-items: center; cursor: pointer;">
                         <input type="checkbox" id="includeNumbers" checked style="width: auto; margin-right: 10px; cursor: pointer;">
                         🔢 Numere (0-9)
                     </label>
-                    <label style="color: white; display: flex; align-items: center; cursor: pointer; font-weight: 600;">
+                    <label class="pwd-check" style="display: flex; align-items: center; cursor: pointer;">
                         <input type="checkbox" id="includeSymbols" checked style="width: auto; margin-right: 10px; cursor: pointer;">
                         🔣 Simboluri (!@#$...)
                     </label>
@@ -2506,15 +2562,15 @@
             </div>
             
             <!-- History -->
-            <div style="background: rgba(255, 255, 255, 0.15); padding: 15px; border-radius: 15px; margin-bottom: 20px; max-height: 150px; overflow-y: auto;">
-                <div style="color: white; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+            <div class="pwd-panel" style="padding: 15px; margin-bottom: 20px; max-height: 150px; overflow-y: auto;">
+                <div class="pwd-label" style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
                     🕐 Istoric Recent
-                    <button onclick="clearPasswordHistory()" style="margin-left: auto; background: rgba(239, 68, 68, 0.3); border: 1px solid var(--danger); color: white; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8em;">
+                    <button onclick="clearPasswordHistory()" style="margin-left: auto; background: #fecaca; border: 1px solid #ef4444; color: #991b1b; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8em; font-weight: 600;">
                         🗑️ Șterge
                     </button>
                 </div>
                 <div id="passwordHistory" style="display: flex; flex-direction: column; gap: 8px; font-family: 'Courier New', monospace; font-size: 0.85em;">
-                    <div style="color: rgba(255, 255, 255, 0.6); text-align: center; padding: 10px;">Nicio parolă generată încă</div>
+                    <div class="pwd-muted" style="text-align: center; padding: 10px;">Nicio parolă generată încă</div>
                 </div>
             </div>
             
