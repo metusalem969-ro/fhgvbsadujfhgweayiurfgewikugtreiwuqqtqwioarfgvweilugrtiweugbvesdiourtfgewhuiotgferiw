@@ -2916,7 +2916,9 @@
             { name: "AliExpress", url: "https://www.aliexpress.com", category: "shopping" },
             { name: "ClickSud", url: "https://clicksud.co/", category: "filme" },
             { name: "Filelist", url: "https://filelist.io/login.php", category: "fisiere", iconUrl: "icons/filelist.ico" },
-            { name: "DivX Filme", url: "https://divxfilmeonline.tv/filme-online/", category: "filme" },
+            { name: "DivXFilme.org", url: "https://divxfilme.org/", category: "filme", iconUrl: "icons/divxfilme-org.png" },
+            { name: "DivX Filme (.be)", url: "https://divxfilmeonline.be/", category: "filme", iconUrl: "icons/divxfilmeonline-be.png" },
+            { name: "DivX Filme (TV)", url: "https://divxfilmeonline.tv/filme-online/", category: "filme", iconUrl: "icons/divxfilmeonline-tv.png" },
             { name: "IMDB", url: "https://www.imdb.com/watchlist", category: "filme" },
             { name: "FilmeHD.to", url: "https://filmehd.to/", category: "filme", iconUrl: "icons/filmehd-to.svg" },
             { name: "FilmeHD.cc", url: "https://filmehd.cc/", category: "filme", iconUrl: "icons/filmehd-cc.svg" },
@@ -2960,8 +2962,8 @@
             { name: "Virgin Media", url: "https://www.virginmedia.com", category: "services" },
             { name: "Lloyds Bank", url: "https://online.lloydsbank.co.uk/", category: "finance", iconUrl: "icons/lloyds.png" },
             { name: "BT Bank", url: "https://btpay.bancatransilvania.ro/", category: "finance", iconUrl: "icons/bt-bank.png" },
-            { name: "Revolut", url: "https://app.revolut.com/", category: "finance" },
-            { name: "Wise", url: "https://wise.com/", category: "finance" },
+            { name: "Revolut", url: "https://app.revolut.com/", category: "finance", iconUrl: "icons/revolut.png" },
+            { name: "Wise", url: "https://wise.com/", category: "finance", iconUrl: "icons/wise.png" },
             { name: "PayPal", url: "https://www.paypal.com", category: "finance" },
             { name: "Council Tax", url: "https://www.telford.gov.uk/info/20110/council_tax", category: "finance" },
             { name: "Standard Life", url: "https://www.standardlife.co.uk", category: "finance" },
@@ -3028,7 +3030,19 @@
             'https://www.bancatransilvania.ro': 'icons/bt-bank.png',
             'https://www.bancatransilvania.ro/': 'icons/bt-bank.png',
             'https://www.bt.ro': 'icons/bt-bank.png',
-            'https://www.bt.ro/': 'icons/bt-bank.png'
+            'https://www.bt.ro/': 'icons/bt-bank.png',
+            'https://divxfilme.org': 'icons/divxfilme-org.png',
+            'https://divxfilme.org/': 'icons/divxfilme-org.png',
+            'https://divxfilmeonline.be': 'icons/divxfilmeonline-be.png',
+            'https://divxfilmeonline.be/': 'icons/divxfilmeonline-be.png',
+            'https://divxfilmeonline.tv': 'icons/divxfilmeonline-tv.png',
+            'https://divxfilmeonline.tv/filme-online': 'icons/divxfilmeonline-tv.png',
+            'https://divxfilmeonline.tv/filme-online/': 'icons/divxfilmeonline-tv.png',
+            'https://app.revolut.com': 'icons/revolut.png',
+            'https://app.revolut.com/': 'icons/revolut.png',
+            'https://revolut.com': 'icons/revolut.png',
+            'https://wise.com': 'icons/wise.png',
+            'https://wise.com/': 'icons/wise.png'
         };
 
         const HOST_ICON_URLS = {
@@ -3049,7 +3063,13 @@
             'www.bancatransilvania.ro': 'icons/bt-bank.png',
             'bancatransilvania.ro': 'icons/bt-bank.png',
             'www.bt.ro': 'icons/bt-bank.png',
-            'bt.ro': 'icons/bt-bank.png'
+            'bt.ro': 'icons/bt-bank.png',
+            'divxfilme.org': 'icons/divxfilme-org.png',
+            'divxfilmeonline.be': 'icons/divxfilmeonline-be.png',
+            'divxfilmeonline.tv': 'icons/divxfilmeonline-tv.png',
+            'app.revolut.com': 'icons/revolut.png',
+            'revolut.com': 'icons/revolut.png',
+            'wise.com': 'icons/wise.png'
         };
 
         function normalizeLinkUrl(url) {
@@ -3177,7 +3197,13 @@
 
         const FORCED_ICON_BY_NAME = {
             'Lloyds Bank': 'icons/lloyds.png',
-            'BT Bank': 'icons/bt-bank.png'
+            'BT Bank': 'icons/bt-bank.png',
+            'Revolut': 'icons/revolut.png',
+            'Wise': 'icons/wise.png',
+            'DivXFilme.org': 'icons/divxfilme-org.png',
+            'DivX Filme (.be)': 'icons/divxfilmeonline-be.png',
+            'DivX Filme (TV)': 'icons/divxfilmeonline-tv.png',
+            'DivX Filme': 'icons/divxfilmeonline-tv.png'
         };
 
         function applyBuiltinIcons() {
@@ -3198,7 +3224,7 @@
         const DEFAULT_STARRED_SITE_NAMES = [
             'Yahoo', 'Gmail', 'YouTube', 'Facebook', 'WhatsApp',
             'eBay', 'eBay UK', 'Amazon UK', 'AliExpress',
-            'ClickSud', 'Filelist', 'DivX Filme', 'IMDB', 'Vox Filme',
+            'ClickSud', 'Filelist', 'DivXFilme.org', 'DivX Filme (.be)', 'DivX Filme (TV)', 'IMDB', 'Vox Filme',
             'FilmeHD.to', 'FilmeHD.cc', 'OneMagia', 'JustWatch', 'Top Filme HD',
             'OpenAI', 'Gemini AI', 'Perplexity', 'Arduino', 'Control PC Mobil', 'Control PC Desktop'
         ];
