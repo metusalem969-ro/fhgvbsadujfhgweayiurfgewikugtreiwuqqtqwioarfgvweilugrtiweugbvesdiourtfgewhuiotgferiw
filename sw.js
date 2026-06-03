@@ -1,5 +1,5 @@
 /* sw.js */
-const CACHE_VERSION = "2026-06-03_sync-favorites-search"; // bump la fiecare deploy important
+const CACHE_VERSION = "2026-06-03_cloud-pull-fix"; // bump la fiecare deploy important
 const CACHE_NAME = `cmd-center-${CACHE_VERSION}`;
 
 self.addEventListener("message", (event) => {

@@ -5453,25 +5453,30 @@
                 getZoomLevel: () => parseInt(localStorage.getItem(ZOOM_KEY) || String(getDefaultZoomLevel()), 10),
                 notify: (msg, type) => showNotification(msg, type),
                 applyMerged: (merged) => {
-                    const fromCloud = !!merged.fromCloud;
+                    const counts = { favorites: 0, searches: 0, passwords: 0, notes: 0, links: 0 };
                     if (merged.favorites && Array.isArray(merged.favorites)) {
                         favorites = new Set(merged.favorites);
+                        counts.favorites = merged.favorites.length;
                         saveFavorites(true);
                         ensureFavoriteDefaultLinks();
                     }
                     if (merged.searchHistory && Array.isArray(merged.searchHistory)) {
                         saveSearchHistory(merged.searchHistory);
                         renderSearchHistory();
+                        counts.searches = merged.searchHistory.length;
                     }
                     if (merged.passwordHistory && Array.isArray(merged.passwordHistory)) {
                         localStorage.setItem(PASSWORD_HISTORY_KEY, JSON.stringify(merged.passwordHistory));
                         renderPasswordHistory(merged.passwordHistory);
+                        counts.passwords = merged.passwordHistory.length;
                     }
                     if (merged.notes && Array.isArray(merged.notes)) {
                         localStorage.setItem(NOTES_KEY, JSON.stringify(merged.notes));
+                        counts.notes = merged.notes.length;
                     }
                     if (merged.links && Array.isArray(merged.links) && merged.links.length > 0) {
                         links = merged.links;
+                        counts.links = merged.links.length;
                         saveAllLinks();
                     }
                     if (merged.customOrder && Array.isArray(merged.customOrder)) {
@@ -5498,6 +5503,7 @@
                     }
                     renderLinks();
                     updateCloudSyncStatusUi();
+                    return counts;
                 }
             };
         }
@@ -5594,13 +5600,31 @@
                 showNotification('⚠️ Lipsește ID profil. Pe primul PC: «Activează» fără ID. Pe telefon: lipește ID-ul copiat.', 'error');
                 return;
             }
+            const tokenField = document.getElementById('syncToken').value.trim();
+            if (tokenField) localStorage.setItem('herculesSyncToken_v1', tokenField);
             const pin = document.getElementById('syncPin').value || prompt('PIN sincronizare:');
             if (!pin) return;
-            await HerculesCloudSync.unlockSyncPin(pin);
+            const pinOk = await HerculesCloudSync.unlockSyncPin(pin);
+            if (!pinOk) {
+                showNotification('❌ PIN greșit — același PIN ca pe dispozitivul 1', 'error');
+                return;
+            }
+            showNotification('☁️ Se descarcă din cloud…', 'info');
             const r = await HerculesCloudSync.pullFromCloud(pin, true);
-            if (r.ok && r.updated) showNotification('⬇️ Favorite, căutări, parole și note descărcate', 'success');
-            else if (r.ok) showNotification('ℹ️ Cloud deja la zi pe acest dispozitiv — pe PC apasă «Încarcă acum» apoi încearcă din nou', 'info');
-            else showNotification('❌ ' + (r.error || 'Eroare la descărcare'), 'error');
+            if (r.ok && r.applied && r.summary) {
+                const s = r.summary;
+                showNotification(
+                    '☁️ DESCĂRCAT DIN CLOUD: ' + s.favorites + ' favorite, ' + s.searches + ' căutări, ' +
+                    s.passwords + ' parole, ' + s.notes + ' note',
+                    'success'
+                );
+            } else if (r.ok && r.error) {
+                showNotification('☁️ ' + r.error, 'error');
+            } else if (r.ok) {
+                showNotification('☁️ Nu s-a putut citi cloud-ul. Pe PC: Încarcă acum, apoi Descarcă aici.', 'error');
+            } else {
+                showNotification('❌ Din cloud: ' + (r.error || 'eroare la descărcare'), 'error');
+            }
             updateCloudSyncStatusUi();
         }
 

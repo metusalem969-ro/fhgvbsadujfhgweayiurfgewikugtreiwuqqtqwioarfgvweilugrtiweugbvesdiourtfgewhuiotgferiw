@@ -144,33 +144,43 @@
     async function applyRemotePayload(remote, options) {
         const opts = options || {};
         const deps = global.HerculesSyncDeps;
-        if (!deps || !remote) return false;
+        if (!deps || !remote) return { applied: false, reason: 'empty' };
         const localTs = parseInt(localStorage.getItem(SYNC_LAST_PULL_KEY) || '0', 10);
         const remoteTs = remote.updatedAt || 0;
-        if (!opts.force && remoteTs <= localTs) return false;
+        if (!opts.force && remoteTs <= localTs) return { applied: false, reason: 'stale' };
 
         const useRemoteFavorites = opts.force || opts.preferRemote;
-        const mergedFavorites = useRemoteFavorites
-            ? (Array.isArray(remote.favorites) ? remote.favorites : [])
-            : mergeFavorites(deps.getFavorites(), remote.favorites);
+        let mergedFavorites;
+        if (Array.isArray(remote.favorites)) {
+            mergedFavorites = useRemoteFavorites
+                ? remote.favorites
+                : mergeFavorites(deps.getFavorites(), remote.favorites);
+        } else {
+            mergedFavorites = deps.getFavorites();
+        }
 
+        const mergedPayload = {
+            favorites: mergedFavorites,
+            passwordHistory: mergePasswordHistory(deps.getPasswordHistory(), remote.passwordHistory),
+            notes: remote.notes,
+            links: remote.links,
+            customOrder: remote.customOrder,
+            visitStats: remote.visitStats,
+            theme: remote.theme,
+            soundEnabled: remote.soundEnabled,
+            zoomLevel: remote.zoomLevel,
+            fromCloud: true
+        };
+        if (Array.isArray(remote.searchHistory)) {
+            mergedPayload.searchHistory = remote.searchHistory;
+        }
+
+        let summary = { favorites: 0, searches: 0, passwords: 0, notes: 0, links: 0 };
         if (deps.applyMerged) {
-            deps.applyMerged({
-                favorites: mergedFavorites,
-                searchHistory: remote.searchHistory,
-                passwordHistory: mergePasswordHistory(deps.getPasswordHistory(), remote.passwordHistory),
-                notes: remote.notes,
-                links: remote.links,
-                customOrder: remote.customOrder,
-                visitStats: remote.visitStats,
-                theme: remote.theme,
-                soundEnabled: remote.soundEnabled,
-                zoomLevel: remote.zoomLevel,
-                fromCloud: true
-            });
+            summary = deps.applyMerged(mergedPayload) || summary;
         }
         localStorage.setItem(SYNC_LAST_PULL_KEY, String(remoteTs || Date.now()));
-        return true;
+        return { applied: true, summary, remoteTs };
     }
 
     function formatGitHubError(status, errText) {
@@ -316,10 +326,24 @@
             const usePin = pin || syncPinCache;
             if (!usePin) return { ok: false, reason: 'no-pin' };
             const envelope = await remoteReadEnvelope();
-            if (!envelope) return { ok: true, updated: false };
+            if (!envelope) {
+                return {
+                    ok: true,
+                    applied: false,
+                    updated: false,
+                    error: 'Cloud gol. Pe dispozitivul 1: ☁️ → Încarcă acum, apoi încearcă din nou Descarcă.'
+                };
+            }
             const payload = await decryptJson(usePin, envelope);
-            const updated = await applyRemotePayload(payload, { force: !!force, preferRemote: !!force });
-            return { ok: true, updated };
+            const result = await applyRemotePayload(payload, { force: !!force, preferRemote: !!force });
+            const applied = !!(result && result.applied);
+            return {
+                ok: true,
+                applied,
+                updated: applied,
+                summary: result && result.summary ? result.summary : null,
+                fromCloud: true
+            };
         } catch (e) {
             console.warn('Cloud pull:', e);
             return { ok: false, error: e.message };
@@ -470,9 +494,13 @@
         // Fără prompt la refresh: PIN memorat doar în sesiunea tab-ului (până închizi browserul)
         tryRestoreSessionPin().then((ok) => {
             if (!ok) return;
-            pullFromCloud().then((r) => {
-                if (r.updated && global.HerculesSyncDeps && global.HerculesSyncDeps.notify) {
-                    global.HerculesSyncDeps.notify('☁️ Date actualizate din cloud', 'success');
+            pullFromCloud(null, false).then((r) => {
+                if (r.applied && r.summary && global.HerculesSyncDeps && global.HerculesSyncDeps.notify) {
+                    const s = r.summary;
+                    global.HerculesSyncDeps.notify(
+                        '☁️ Din cloud: ' + s.favorites + ' favorite, ' + s.searches + ' căutări, ' + s.passwords + ' parole',
+                        'success'
+                    );
                 }
             });
         });
