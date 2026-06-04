@@ -3113,6 +3113,11 @@
             { name: "ClickSud IN", url: "https://clicksud.com.in/", category: "filme", iconUrl: "icons/clicksud-clicksud-com-in.png" },
             { name: "ClickSud WTF", url: "https://clicksud.wtf/", category: "filme", iconUrl: "icons/clicksud-clicksud-wtf.png" },
             { name: "ClickSud NET", url: "https://click-sud.net/", category: "filme", iconUrl: "icons/clicksud-click-sud-net.png" },
+            { name: "ClickSud UK", url: "https://clicksud.org.uk/", category: "filme", iconUrl: "icons/clicksud-org-uk.png" },
+            { name: "ClickSud S", url: "https://click-suds.com/", category: "filme", iconUrl: "icons/click-suds-com.png" },
+            { name: "Vezi Aici", url: "https://veziaici.net/", category: "filme", iconUrl: "icons/veziaici-net.png" },
+            { name: "Focus Sat", url: "https://www.focussat.ro/", category: "filme", iconUrl: "icons/www-focussat-ro.png" },
+            { name: "Dailymotion", url: "https://www.dailymotion.com/", category: "filme", iconUrl: "icons/dailymotion.png" },
             { name: "Filelist", url: "https://filelist.io/login.php", category: "fisiere", iconUrl: "icons/filelist.ico" },
             { name: "DivXFilme.org", url: "https://divxfilme.org/", category: "filme", iconUrl: "icons/divxfilme-org.png" },
             { name: "DivX Filme (.be)", url: "https://divxfilmeonline.be/", category: "filme", iconUrl: "icons/divxfilmeonline-be.png" },
@@ -3243,6 +3248,18 @@
             'https://clicksud.wtf/': 'icons/clicksud-clicksud-wtf.png',
             'https://click-sud.net': 'icons/clicksud-click-sud-net.png',
             'https://click-sud.net/': 'icons/clicksud-click-sud-net.png',
+            'https://clicksud.org.uk': 'icons/clicksud-org-uk.png',
+            'https://clicksud.org.uk/': 'icons/clicksud-org-uk.png',
+            'https://click-suds.com': 'icons/click-suds-com.png',
+            'https://click-suds.com/': 'icons/click-suds-com.png',
+            'https://veziaici.net': 'icons/veziaici-net.png',
+            'https://veziaici.net/': 'icons/veziaici-net.png',
+            'https://www.focussat.ro': 'icons/www-focussat-ro.png',
+            'https://www.focussat.ro/': 'icons/www-focussat-ro.png',
+            'https://www.dailymotion.com': 'icons/dailymotion.png',
+            'https://www.dailymotion.com/': 'icons/dailymotion.png',
+            'https://dailymotion.com': 'icons/dailymotion.png',
+            'https://dailymotion.com/': 'icons/dailymotion.png',
             'https://app.revolut.com': 'icons/revolut.png',
             'https://app.revolut.com/': 'icons/revolut.png',
             'https://revolut.com': 'icons/revolut.png',
@@ -3278,7 +3295,14 @@
             'clicksud.co': 'icons/clicksud-clicksud-co.png',
             'clicksud.com.in': 'icons/clicksud-clicksud-com-in.png',
             'clicksud.wtf': 'icons/clicksud-clicksud-wtf.png',
-            'click-sud.net': 'icons/clicksud-click-sud-net.png'
+            'click-sud.net': 'icons/clicksud-click-sud-net.png',
+            'clicksud.org.uk': 'icons/clicksud-org-uk.png',
+            'click-suds.com': 'icons/click-suds-com.png',
+            'veziaici.net': 'icons/veziaici-net.png',
+            'www.focussat.ro': 'icons/www-focussat-ro.png',
+            'focussat.ro': 'icons/www-focussat-ro.png',
+            'dailymotion.com': 'icons/dailymotion.png',
+            'www.dailymotion.com': 'icons/dailymotion.png'
         };
 
         function normalizeLinkUrl(url) {
@@ -3416,7 +3440,12 @@
             'ClickSud': 'icons/clicksud-clicksud-co.png',
             'ClickSud IN': 'icons/clicksud-clicksud-com-in.png',
             'ClickSud WTF': 'icons/clicksud-clicksud-wtf.png',
-            'ClickSud NET': 'icons/clicksud-click-sud-net.png'
+            'ClickSud NET': 'icons/clicksud-click-sud-net.png',
+            'ClickSud UK': 'icons/clicksud-org-uk.png',
+            'ClickSud S': 'icons/click-suds-com.png',
+            'Vezi Aici': 'icons/veziaici-net.png',
+            'Focus Sat': 'icons/www-focussat-ro.png',
+            'Dailymotion': 'icons/dailymotion.png'
         };
 
         function applyBuiltinIcons() {
@@ -3437,7 +3466,8 @@
         const DEFAULT_STARRED_SITE_NAMES = [
             'Yahoo', 'Gmail', 'YouTube', 'Facebook', 'WhatsApp',
             'eBay', 'eBay UK', 'Amazon UK', 'AliExpress',
-            'ClickSud', 'ClickSud IN', 'ClickSud WTF', 'ClickSud NET', 'Filelist', 'DivXFilme.org', 'DivX Filme (.be)', 'DivX Filme (.art)', 'IMDB', 'Vox Filme',
+            'ClickSud', 'ClickSud IN', 'ClickSud WTF', 'ClickSud NET', 'ClickSud UK', 'ClickSud S', 'Vezi Aici', 'Focus Sat', 'Dailymotion',
+            'Filelist', 'DivXFilme.org', 'DivX Filme (.be)', 'DivX Filme (.art)', 'IMDB', 'Vox Filme',
             'FilmeHD.to', 'FilmeHD.cc', 'OneMagia', 'JustWatch', 'Top Filme HD',
             'OpenAI', 'Gemini AI', 'Perplexity', 'Arduino', 'Control PC Mobil', 'Control PC Desktop',
             'Bollywood Filme', 'Cinepub', 'Pluto TV', 'Despre Seriale', 'Voyo', 'Filmflix', 'Tubi', 'Roku', 'Octopus Energy'
@@ -3446,6 +3476,11 @@
             'https://clicksud.com.in/',
             'https://clicksud.wtf/',
             'https://click-sud.net/',
+            'https://clicksud.org.uk/',
+            'https://click-suds.com/',
+            'https://veziaici.net/',
+            'https://www.focussat.ro/',
+            'https://www.dailymotion.com/',
             'https://filmehd.to/',
             'https://filmehd.cc/',
             'https://onemagia.com/movies'
