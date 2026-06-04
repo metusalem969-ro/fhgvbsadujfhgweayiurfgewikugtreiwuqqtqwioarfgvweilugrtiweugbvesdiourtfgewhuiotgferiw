@@ -23,4 +23,4 @@ git push -u github main
 
 echo ""
 echo "Activează GitHub Pages: Settings → Pages → Source: Deploy from branch → main → / (root)"
-echo "Link: https://metusalem969-ro.github.io/bec-lampa/"
+echo "Link: https://metusalem969-ro.github.io/bec-lampa98/"
