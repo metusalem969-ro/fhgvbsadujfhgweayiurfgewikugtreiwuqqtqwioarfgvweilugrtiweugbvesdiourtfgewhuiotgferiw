@@ -3109,7 +3109,10 @@
             { name: "eBay UK", url: "https://www.ebay.co.uk", category: "shopping" },
             { name: "Amazon UK", url: "https://www.amazon.co.uk/", category: "shopping" },
             { name: "AliExpress", url: "https://www.aliexpress.com", category: "shopping" },
-            { name: "ClickSud", url: "https://clicksud.co/", category: "filme" },
+            { name: "ClickSud", url: "https://clicksud.co/", category: "filme", iconUrl: "icons/clicksud-clicksud-co.png" },
+            { name: "ClickSud IN", url: "https://clicksud.com.in/", category: "filme", iconUrl: "icons/clicksud-clicksud-com-in.png" },
+            { name: "ClickSud WTF", url: "https://clicksud.wtf/", category: "filme", iconUrl: "icons/clicksud-clicksud-wtf.png" },
+            { name: "ClickSud NET", url: "https://click-sud.net/", category: "filme", iconUrl: "icons/clicksud-click-sud-net.png" },
             { name: "Filelist", url: "https://filelist.io/login.php", category: "fisiere", iconUrl: "icons/filelist.ico" },
             { name: "DivXFilme.org", url: "https://divxfilme.org/", category: "filme", iconUrl: "icons/divxfilme-org.png" },
             { name: "DivX Filme (.be)", url: "https://divxfilmeonline.be/", category: "filme", iconUrl: "icons/divxfilmeonline-be.png" },
@@ -3232,6 +3235,14 @@
             'https://divxfilmeonline.be/': 'icons/divxfilmeonline-be.png',
             'https://divxfilmeonline.art': 'icons/divxfilmeonline-art.png',
             'https://divxfilmeonline.art/': 'icons/divxfilmeonline-art.png',
+            'https://clicksud.co': 'icons/clicksud-clicksud-co.png',
+            'https://clicksud.co/': 'icons/clicksud-clicksud-co.png',
+            'https://clicksud.com.in': 'icons/clicksud-clicksud-com-in.png',
+            'https://clicksud.com.in/': 'icons/clicksud-clicksud-com-in.png',
+            'https://clicksud.wtf': 'icons/clicksud-clicksud-wtf.png',
+            'https://clicksud.wtf/': 'icons/clicksud-clicksud-wtf.png',
+            'https://click-sud.net': 'icons/clicksud-click-sud-net.png',
+            'https://click-sud.net/': 'icons/clicksud-click-sud-net.png',
             'https://app.revolut.com': 'icons/revolut.png',
             'https://app.revolut.com/': 'icons/revolut.png',
             'https://revolut.com': 'icons/revolut.png',
@@ -3263,7 +3274,11 @@
             'divxfilmeonline.art': 'icons/divxfilmeonline-art.png',
             'app.revolut.com': 'icons/revolut.png',
             'revolut.com': 'icons/revolut.png',
-            'wise.com': 'icons/wise.png'
+            'wise.com': 'icons/wise.png',
+            'clicksud.co': 'icons/clicksud-clicksud-co.png',
+            'clicksud.com.in': 'icons/clicksud-clicksud-com-in.png',
+            'clicksud.wtf': 'icons/clicksud-clicksud-wtf.png',
+            'click-sud.net': 'icons/clicksud-click-sud-net.png'
         };
 
         function normalizeLinkUrl(url) {
@@ -3397,7 +3412,11 @@
             'DivXFilme.org': 'icons/divxfilme-org.png',
             'DivX Filme (.be)': 'icons/divxfilmeonline-be.png',
             'DivX Filme (.art)': 'icons/divxfilmeonline-art.png',
-            'DivX Filme': 'icons/divxfilmeonline-be.png'
+            'DivX Filme': 'icons/divxfilmeonline-be.png',
+            'ClickSud': 'icons/clicksud-clicksud-co.png',
+            'ClickSud IN': 'icons/clicksud-clicksud-com-in.png',
+            'ClickSud WTF': 'icons/clicksud-clicksud-wtf.png',
+            'ClickSud NET': 'icons/clicksud-click-sud-net.png'
         };
 
         function applyBuiltinIcons() {
@@ -3418,13 +3437,15 @@
         const DEFAULT_STARRED_SITE_NAMES = [
             'Yahoo', 'Gmail', 'YouTube', 'Facebook', 'WhatsApp',
             'eBay', 'eBay UK', 'Amazon UK', 'AliExpress',
-            'ClickSud', 'Filelist', 'DivXFilme.org', 'DivX Filme (.be)', 'DivX Filme (.art)', 'IMDB', 'Vox Filme',
+            'ClickSud', 'ClickSud IN', 'ClickSud WTF', 'ClickSud NET', 'Filelist', 'DivXFilme.org', 'DivX Filme (.be)', 'DivX Filme (.art)', 'IMDB', 'Vox Filme',
             'FilmeHD.to', 'FilmeHD.cc', 'OneMagia', 'JustWatch', 'Top Filme HD',
             'OpenAI', 'Gemini AI', 'Perplexity', 'Arduino', 'Control PC Mobil', 'Control PC Desktop',
             'Bollywood Filme', 'Cinepub', 'Pluto TV', 'Despre Seriale', 'Voyo', 'Filmflix', 'Tubi', 'Roku', 'Octopus Energy'
         ];
         const DEFAULT_FAVORITE_EXTRA_URLS = [
             'https://clicksud.com.in/',
+            'https://clicksud.wtf/',
+            'https://click-sud.net/',
             'https://filmehd.to/',
             'https://filmehd.cc/',
             'https://onemagia.com/movies'
