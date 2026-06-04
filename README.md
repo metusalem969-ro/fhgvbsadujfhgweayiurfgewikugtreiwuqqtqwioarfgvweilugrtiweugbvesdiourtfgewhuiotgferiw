@@ -6,10 +6,9 @@ Pagină principală: `index.html` (dashboard).
 
 Pagina cu becul e într-un **repo propriu**, cu link scurt:
 
-- **GitHub (funcționează acum):** https://metusalem969-ro.github.io/fhgvbsadujfhgweayiurfgewikugtreiwuqqtqwioarfgvweilugrtiweugbvesdiourtfgewhuiotgferiw/bec-lampa/
-- **GitHub (link scurt, după import repo):** https://metusalem969-ro.github.io/bec-lampa/
+- **GitHub (site live):** https://metusalem969-ro.github.io/bec-lampa98/
 - **GitLab:** https://bec-lampa-137011.gitlab.io
-- **Cod:** https://github.com/metusalem969-ro/bec-lampa · https://gitlab.com/Hercules-metusalem969/bec-lampa
+- **Cod:** https://github.com/metusalem969-ro/bec-lampa98 · https://gitlab.com/Hercules-metusalem969/bec-lampa
 
 `bulb.html` din acest repo doar redirecționează către adresa nouă.
 
