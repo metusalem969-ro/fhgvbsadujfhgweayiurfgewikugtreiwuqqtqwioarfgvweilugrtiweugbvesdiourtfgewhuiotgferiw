@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lampa Bec — Aprinde / Stinge</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --room-dark: #0a0a12;
+      --room-lit: #3d3528;
+      --glow-warm: rgba(255, 210, 120, 0.95);
+      --glow-soft: rgba(255, 180, 80, 0.45);
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--room-dark);
+      transition: background 0.6s ease;
+    }
+
+    body.lit {
+      background: radial-gradient(ellipse 120% 80% at 50% 35%, #5a4f3a 0%, var(--room-lit) 45%, #1a1814 100%);
+    }
+
+    .ambient {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      background: radial-gradient(
+        circle at 50% 32%,
+        rgba(255, 220, 140, 0.55) 0%,
+        rgba(255, 190, 90, 0.2) 25%,
+        transparent 55%
+      );
+      transition: opacity 0.55s ease;
+    }
+
+    body.lit .ambient { opacity: 1; }
+
+    .scene {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2.5rem;
+    }
+
+    h1 {
+      color: rgba(255, 255, 255, 0.35);
+      font-size: 1.1rem;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      transition: color 0.5s ease, text-shadow 0.5s ease;
+    }
+
+    body.lit h1 {
+      color: rgba(255, 240, 200, 0.85);
+      text-shadow: 0 0 20px rgba(255, 200, 100, 0.4);
+    }
+
+    .lamp-wrap {
+      position: relative;
+      width: 200px;
+      height: 340px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .cord {
+      width: 4px;
+      height: 70px;
+      background: linear-gradient(90deg, #1a1a1a, #333, #1a1a1a);
+      border-radius: 2px;
+      box-shadow: 1px 0 2px rgba(0,0,0,0.5);
+    }
+
+    .bulb-assembly {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .socket {
+      width: 52px;
+      height: 28px;
+      background: linear-gradient(180deg, #8a8a8a 0%, #4a4a4a 40%, #6a6a6a 70%, #3a3a3a 100%);
+      border-radius: 4px 4px 2px 2px;
+      position: relative;
+      z-index: 3;
+      box-shadow:
+        0 2px 4px rgba(0,0,0,0.6),
+        inset 0 1px 0 rgba(255,255,255,0.25);
+    }
+
+    .socket::before,
+    .socket::after {
+      content: "";
+      position: absolute;
+      left: 4px;
+      right: 4px;
+      height: 3px;
+      background: repeating-linear-gradient(
+        90deg,
+        #555 0px,
+        #555 4px,
+        #777 4px,
+        #777 8px
+      );
+      border-radius: 1px;
+    }
+
+    .socket::before { top: 8px; }
+    .socket::after { top: 16px; }
+
+    .bulb-glow {
+      position: absolute;
+      top: 95px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        rgba(255, 230, 150, 0.9) 0%,
+        rgba(255, 200, 100, 0.35) 30%,
+        transparent 65%
+      );
+      opacity: 0;
+      filter: blur(8px);
+      transition: opacity 0.5s ease;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body.lit .bulb-glow { opacity: 1; }
+
+    .bulb-glass {
+      position: relative;
+      width: 130px;
+      height: 155px;
+      margin-top: -2px;
+      z-index: 2;
+      cursor: default;
+    }
+
+    .glass-shape {
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(
+        ellipse 70% 75% at 40% 35%,
+        rgba(255, 255, 255, 0.12) 0%,
+        rgba(200, 200, 180, 0.06) 40%,
+        rgba(80, 75, 60, 0.15) 100%
+      );
+      border-radius: 50% 50% 48% 48% / 55% 55% 45% 45%;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow:
+        inset -8px -12px 24px rgba(0, 0, 0, 0.35),
+        inset 6px 8px 16px rgba(255, 255, 255, 0.06),
+        0 4px 20px rgba(0, 0, 0, 0.4);
+      transition:
+        background 0.5s ease,
+        box-shadow 0.5s ease,
+        border-color 0.5s ease;
+      overflow: hidden;
+    }
+
+    body.lit .glass-shape {
+      background: radial-gradient(
+        ellipse 65% 70% at 38% 32%,
+        rgba(255, 255, 220, 0.95) 0%,
+        rgba(255, 240, 180, 0.85) 25%,
+        rgba(255, 210, 120, 0.7) 55%,
+        rgba(255, 180, 80, 0.5) 100%
+      );
+      border-color: rgba(255, 240, 180, 0.35);
+      box-shadow:
+        inset -4px -8px 16px rgba(255, 200, 80, 0.3),
+        inset 8px 10px 20px rgba(255, 255, 255, 0.5),
+        0 0 40px var(--glow-soft),
+        0 0 80px rgba(255, 200, 100, 0.35),
+        0 0 120px rgba(255, 180, 60, 0.2);
+    }
+
+    .glass-shape::after {
+      content: "";
+      position: absolute;
+      top: 12%;
+      left: 18%;
+      width: 22%;
+      height: 45%;
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.5) 0%,
+        transparent 70%
+      );
+      border-radius: 50%;
+      transform: rotate(-15deg);
+      opacity: 0.35;
+      transition: opacity 0.5s ease;
+    }
+
+    body.lit .glass-shape::after { opacity: 0.85; }
+
+    .filament {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -45%);
+      width: 36px;
+      height: 52px;
+      opacity: 0.25;
+      transition: opacity 0.4s ease, filter 0.4s ease;
+    }
+
+    body.lit .filament {
+      opacity: 1;
+      filter: drop-shadow(0 0 6px #ffcc66) drop-shadow(0 0 14px #ff9933);
+      animation: flicker 4s ease-in-out infinite;
+    }
+
+    @keyframes flicker {
+      0%, 100% { opacity: 1; filter: drop-shadow(0 0 6px #ffcc66) drop-shadow(0 0 14px #ff9933); }
+      92% { opacity: 1; }
+      93% { opacity: 0.92; }
+      94% { opacity: 1; }
+      96% { opacity: 0.97; }
+    }
+
+    .filament svg { width: 100%; height: 100%; }
+
+    .filament path {
+      fill: none;
+      stroke: #4a4030;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      transition: stroke 0.4s ease;
+    }
+
+    body.lit .filament path {
+      stroke: #fff4c0;
+      stroke-width: 2;
+    }
+
+    .shadow {
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 18px;
+      background: radial-gradient(ellipse, rgba(0,0,0,0.5) 0%, transparent 70%);
+      border-radius: 50%;
+      transition: width 0.5s ease, opacity 0.5s ease;
+    }
+
+    body.lit .shadow {
+      width: 140px;
+      opacity: 0.35;
+    }
+
+    .controls {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    button {
+      font: inherit;
+      font-size: 0.95rem;
+      padding: 0.75rem 1.75rem;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+      letter-spacing: 0.04em;
+    }
+
+    button:active { transform: scale(0.97); }
+
+    #btn-on {
+      background: linear-gradient(180deg, #ffd86b, #e8a820);
+      color: #2a2008;
+      box-shadow: 0 4px 16px rgba(255, 180, 40, 0.35);
+    }
+
+    #btn-on:hover {
+      box-shadow: 0 6px 24px rgba(255, 180, 40, 0.5);
+    }
+
+    #btn-on:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    #btn-off {
+      background: linear-gradient(180deg, #3a3a45, #1e1e28);
+      color: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    #btn-off:hover {
+      background: linear-gradient(180deg, #4a4a55, #2a2a35);
+    }
+
+    #btn-off:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .status {
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.3);
+      transition: color 0.4s ease;
+    }
+
+    body.lit .status { color: rgba(255, 230, 180, 0.7); }
+  </style>
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"></div>
+
+  <main class="scene">
+    <h1>Lampa Bec</h1>
+
+    <div class="lamp-wrap">
+      <div class="cord" aria-hidden="true"></div>
+      <div class="bulb-assembly">
+        <div class="bulb-glow" aria-hidden="true"></div>
+        <div class="socket" aria-hidden="true"></div>
+        <div class="bulb-glass" role="img" aria-label="Bec">
+          <div class="glass-shape">
+            <div class="filament" aria-hidden="true">
+              <svg viewBox="0 0 40 52" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 8 C12 8 10 18 10 26 C10 34 14 38 20 44 C26 38 30 34 30 26 C30 18 28 8 20 8" />
+                <path d="M14 22 L26 22 M12 30 L28 30 M14 38 L26 38" />
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="shadow" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <p class="status" id="status">Stins</p>
+
+    <div class="controls">
+      <button type="button" id="btn-on" aria-pressed="false">Aprinde</button>
+      <button type="button" id="btn-off" disabled aria-pressed="true">Stinge</button>
+    </div>
+  </main>
+
+  <script>
+    const body = document.body;
+    const btnOn = document.getElementById('btn-on');
+    const btnOff = document.getElementById('btn-off');
+    const status = document.getElementById('status');
+
+    function setLit(on) {
+      body.classList.toggle('lit', on);
+      btnOn.disabled = on;
+      btnOff.disabled = !on;
+      btnOn.setAttribute('aria-pressed', String(on));
+      btnOff.setAttribute('aria-pressed', String(!on));
+      status.textContent = on ? 'Aprins' : 'Stins';
+    }
+
+    btnOn.addEventListener('click', () => setLit(true));
+    btnOff.addEventListener('click', () => setLit(false));
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        setLit(!body.classList.contains('lit'));
+      }
+    });
+  </script>
+</body>
+</html>
