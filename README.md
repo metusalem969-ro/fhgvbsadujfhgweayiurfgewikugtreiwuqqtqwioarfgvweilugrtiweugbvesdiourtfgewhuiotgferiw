@@ -2,11 +2,14 @@
 
 Pagină principală: `index.html` (dashboard).
 
-## Bec — aprindere / stingere
+## Lampa Bec (repository separat)
 
-Deschide **`bulb.html`** în browser: două butoane (**Aprinde** / **Stinge**) controlează un bec cu efecte de lumină, reflexie pe sticlă și filament animat.
+Pagina cu becul e într-un **repo propriu**, cu link scurt:
 
-- GitHub Pages: după deploy, `https://<user>.github.io/<repo>/bulb.html`
-- GitLab Pages: același fișier la calea `/bulb.html` după pipeline
+- **GitHub:** https://metusalem969-ro.github.io/bec-lampa/
+- **GitLab:** https://hercules-metusalem969.gitlab.io/bec-lampa/
+- **Cod:** https://github.com/metusalem969-ro/bec-lampa · https://gitlab.com/Hercules-metusalem969/bec-lampa
 
-Sincronizare GitHub ↔ GitLab: vezi `SYNC-GITLAB.md` și workflow-ul `.github/workflows/sync-to-gitlab.yml`.
+`bulb.html` din acest repo doar redirecționează către adresa nouă.
+
+Sincronizare dashboard GitHub ↔ GitLab: vezi `SYNC-GITLAB.md`.
