@@ -3031,11 +3031,19 @@
         // ===== AUDIO SYSTEM =====
         const SOUND_ENABLED_KEY = 'soundEnabled_v1';
         let soundEnabled = true;
+
+        function readSoundEnabledSetting() {
+            const saved = localStorage.getItem(SOUND_ENABLED_KEY);
+            return saved === null ? true : saved === 'true';
+        }
+
+        function writeSoundEnabledSetting(enabled) {
+            localStorage.setItem(SOUND_ENABLED_KEY, enabled ? 'true' : 'false');
+        }
         
         function loadSoundSettings() {
             try {
-                const saved = localStorage.getItem(SOUND_ENABLED_KEY);
-                soundEnabled = saved === null ? true : saved === 'true';
+                soundEnabled = readSoundEnabledSetting();
                 updateSoundButton();
             } catch (e) {
                 soundEnabled = true;
@@ -3044,7 +3052,8 @@
         
         function toggleSound() {
             soundEnabled = !soundEnabled;
-            localStorage.setItem(SOUND_ENABLED_KEY, soundEnabled.toString());
+            writeSoundEnabledSetting(soundEnabled);
+            if (soundEnabled) audioUnlocked = false;
             updateSoundButton();
             
             if (soundEnabled) {
@@ -3063,18 +3072,33 @@
             }
         }
         
+        function ensureAudioSource(audio, soundId) {
+            const file = SOUND_FILES[soundId];
+            if (!audio || !file) return;
+            const primary = resolveAssetUrl(file);
+            const cur = audio.currentSrc || audio.src || '';
+            const pageUrl = window.location.href.split('#')[0];
+            if (!cur || cur === pageUrl || (!cur.includes(file) && !cur.includes(encodeURIComponent(file)))) {
+                audio.src = primary;
+                const source = audio.querySelector('source');
+                if (source) source.src = primary;
+            }
+        }
+
         function playSound(soundId, volume = 0.5) {
             if (!soundEnabled) return;
-            unlockAudioOnGesture();
             try {
                 const sound = document.getElementById(soundId);
                 if (!sound) return;
-                if (!sound.src && SOUND_FILES[soundId]) {
-                    sound.src = resolveAssetUrl(SOUND_FILES[soundId]);
-                }
+                ensureAudioSource(sound, soundId);
                 sound.currentTime = 0;
                 sound.volume = volume;
-                sound.play().catch((e) => console.log('Sound play error:', e));
+                const playPromise = sound.play();
+                if (playPromise && typeof playPromise.catch === 'function') {
+                    playPromise.catch((e) => {
+                        console.log('Sound play error:', soundId, e.message || e);
+                    });
+                }
             } catch (e) {
                 console.error('Error playing sound:', e);
             }
@@ -3120,22 +3144,31 @@
 
         function unlockAudioOnGesture() {
             if (audioUnlocked || !soundEnabled) return;
-            audioUnlocked = true;
-            Object.keys(SOUND_FILES).forEach((id) => {
-                const audio = document.getElementById(id);
-                if (!audio) return;
-                const prevVolume = audio.volume;
-                audio.volume = 0.01;
-                const p = audio.play();
-                if (p && typeof p.then === 'function') {
-                    p.then(() => {
-                        audio.pause();
-                        audio.currentTime = 0;
-                        audio.volume = prevVolume;
-                    }).catch(() => {
-                        audio.volume = prevVolume;
-                    });
-                }
+            const prime = document.getElementById('clickSound');
+            if (!prime) {
+                audioUnlocked = true;
+                return;
+            }
+            ensureAudioSource(prime, 'clickSound');
+            const prevVolume = prime.volume;
+            prime.volume = 0.01;
+            const p = prime.play();
+            if (!p || typeof p.then !== 'function') {
+                prime.volume = prevVolume;
+                audioUnlocked = true;
+                return;
+            }
+            p.then(() => {
+                prime.pause();
+                prime.currentTime = 0;
+                prime.volume = prevVolume;
+                audioUnlocked = true;
+                Object.keys(SOUND_FILES).forEach((id) => {
+                    const audio = document.getElementById(id);
+                    if (audio) ensureAudioSource(audio, id);
+                });
+            }).catch(() => {
+                prime.volume = prevVolume;
             });
         }
 
@@ -3156,7 +3189,7 @@
                     audio.dataset.fallbackTried = '1';
                     applySrc(fallback);
                     audio.load();
-                });
+                }, { once: true });
             });
         }
 
@@ -3737,8 +3770,8 @@
             loadSoundSettings();
             initAudioElements();
             initSoundListeners();
-            document.addEventListener('click', unlockAudioOnGesture, { once: true, passive: true });
-            document.addEventListener('touchstart', unlockAudioOnGesture, { once: true, passive: true });
+            document.addEventListener('click', unlockAudioOnGesture, { capture: true, passive: true });
+            document.addEventListener('touchstart', unlockAudioOnGesture, { capture: true, passive: true });
             
             try {
             const linksLoaded = loadAllLinks();
@@ -4979,7 +5012,7 @@
                     notes: getNotes(),
                     passwordHistory: JSON.parse(localStorage.getItem(PASSWORD_HISTORY_KEY) || '[]'),
                     theme: localStorage.getItem(THEME_KEY) || 'purple',
-                    soundEnabled: localStorage.getItem(SOUND_ENABLED_KEY) === 'true',
+                    soundEnabled: readSoundEnabledSetting(),
                     zoomLevel: parseInt(localStorage.getItem(ZOOM_KEY) || String(getDefaultZoomLevel()), 10)
                 };
                 
@@ -5134,7 +5167,7 @@
                 notes: JSON.parse(localStorage.getItem('notes_v1') || '[]'),
                 passwords: JSON.parse(localStorage.getItem('passwordHistory_v1') || '[]'),
                 theme: localStorage.getItem('selectedTheme_v1') || 'purple',
-                soundEnabled: localStorage.getItem('soundEnabled_v1') === 'true',
+                soundEnabled: readSoundEnabledSetting(),
                 zoomLevel: parseInt(localStorage.getItem('zoomLevel_v1') || '100')
             };
             
@@ -5632,7 +5665,7 @@
                 getCustomOrder: () => customOrder,
                 getVisitStats: () => ({ ...visitStats }),
                 getTheme: () => localStorage.getItem(THEME_KEY) || 'purple',
-                getSoundEnabled: () => localStorage.getItem(SOUND_ENABLED_KEY) === 'true',
+                getSoundEnabled: () => readSoundEnabledSetting(),
                 getZoomLevel: () => parseInt(localStorage.getItem(ZOOM_KEY) || String(getDefaultZoomLevel()), 10),
                 notify: (msg, type) => showNotification(msg, type),
                 applyMerged: (merged) => {

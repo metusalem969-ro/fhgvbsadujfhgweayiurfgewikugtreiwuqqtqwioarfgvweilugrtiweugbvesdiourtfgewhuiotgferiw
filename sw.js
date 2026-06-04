@@ -1,5 +1,5 @@
 /* sw.js */
-const CACHE_VERSION = "2026-06-03_last-clicked-highlight"; // bump la fiecare deploy important
+const CACHE_VERSION = "2026-06-04_sound-fix"; // bump la fiecare deploy important
 const CACHE_NAME = `cmd-center-${CACHE_VERSION}`;
 
 self.addEventListener("message", (event) => {
@@ -53,7 +53,15 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 2) Same-origin static => cache first, fallback network
+  // 2) Sunete — mereu rețea întâi (evită MP3 lipsă/corupt din cache)
+  if (url.origin === location.origin && /\.(mp3|wav|ogg)$/i.test(url.pathname)) {
+    event.respondWith(
+      fetch(req).catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // 3) Same-origin static => cache first, fallback network
   if (url.origin === location.origin) {
     event.respondWith((async () => {
       const cached = await caches.match(req);
