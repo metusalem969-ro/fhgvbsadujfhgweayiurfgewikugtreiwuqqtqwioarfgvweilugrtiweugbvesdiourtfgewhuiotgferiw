@@ -1437,77 +1437,107 @@
         }
 
         .link-card.last-clicked {
-            border-width: 3px;
+            border-width: 4px;
             border-color: #fbbf24 !important;
-            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.5), 0 12px 36px rgba(251, 191, 36, 0.4);
-            background: rgba(255, 255, 255, 0.55);
-            transform: scale(1.05);
+            box-shadow:
+                0 0 0 4px rgba(251, 191, 36, 0.65),
+                0 0 28px rgba(251, 191, 36, 0.75),
+                0 14px 40px rgba(251, 191, 36, 0.5);
+            background: rgba(255, 255, 255, 0.62);
+            transform: scale(1.07);
             z-index: 3;
+            animation: lastClickedGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes lastClickedGlow {
+            0%, 100% {
+                box-shadow:
+                    0 0 0 4px rgba(251, 191, 36, 0.65),
+                    0 0 28px rgba(251, 191, 36, 0.75),
+                    0 14px 40px rgba(251, 191, 36, 0.5);
+            }
+            50% {
+                box-shadow:
+                    0 0 0 6px rgba(251, 191, 36, 0.85),
+                    0 0 36px rgba(251, 191, 36, 0.95),
+                    0 16px 48px rgba(251, 191, 36, 0.65);
+            }
         }
 
         .link-card.last-clicked .link-name {
             font-weight: 800;
             color: #fef3c7;
-            text-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+            text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
         }
 
-        .last-clicked-badge {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            font-size: 0.65em;
-            font-weight: 800;
-            letter-spacing: 0.02em;
-            padding: 3px 7px;
-            border-radius: 8px;
-            background: linear-gradient(135deg, #fbbf24, #f59e0b);
-            color: #1c1917;
-            box-shadow: 0 2px 10px rgba(251, 191, 36, 0.6);
-            z-index: 11;
-            pointer-events: none;
-            animation: lastClickedPulse 1.8s ease-in-out infinite;
-        }
-
-        @keyframes lastClickedPulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.85; transform: scale(1.06); }
+        .link-card.last-clicked img {
+            filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.9));
         }
 
         body[data-theme="neon"] .link-card.last-clicked {
             border-color: #34d399 !important;
-            box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.55), 0 12px 36px rgba(16, 185, 129, 0.5);
-            background: rgba(16, 185, 129, 0.45);
+            animation-name: lastClickedGlowNeon;
         }
 
-        body[data-theme="neon"] .last-clicked-badge {
-            background: linear-gradient(135deg, #34d399, #10b981);
-            color: #022c22;
+        @keyframes lastClickedGlowNeon {
+            0%, 100% {
+                box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.7), 0 0 28px rgba(16, 185, 129, 0.8), 0 14px 40px rgba(16, 185, 129, 0.55);
+            }
+            50% {
+                box-shadow: 0 0 0 6px rgba(52, 211, 153, 0.9), 0 0 36px rgba(16, 185, 129, 1), 0 16px 48px rgba(16, 185, 129, 0.7);
+            }
+        }
+
+        body[data-theme="neon"] .link-card.last-clicked {
+            background: rgba(16, 185, 129, 0.5);
         }
 
         body[data-theme="sunset"] .link-card.last-clicked {
             border-color: #fde047 !important;
-            box-shadow: 0 0 0 3px rgba(253, 224, 71, 0.55), 0 12px 36px rgba(255, 81, 47, 0.45);
+            animation-name: lastClickedGlowSunset;
+        }
+
+        @keyframes lastClickedGlowSunset {
+            0%, 100% {
+                box-shadow: 0 0 0 4px rgba(253, 224, 71, 0.7), 0 0 28px rgba(255, 81, 47, 0.65), 0 14px 40px rgba(255, 81, 47, 0.45);
+            }
+            50% {
+                box-shadow: 0 0 0 6px rgba(253, 224, 71, 0.9), 0 0 36px rgba(255, 81, 47, 0.85), 0 16px 48px rgba(255, 81, 47, 0.6);
+            }
         }
 
         body[data-theme="ocean"] .link-card.last-clicked {
             border-color: #67e8f9 !important;
-            box-shadow: 0 0 0 3px rgba(103, 232, 249, 0.55), 0 12px 36px rgba(14, 165, 233, 0.45);
+            animation-name: lastClickedGlowOcean;
+        }
+
+        @keyframes lastClickedGlowOcean {
+            0%, 100% {
+                box-shadow: 0 0 0 4px rgba(103, 232, 249, 0.7), 0 0 28px rgba(14, 165, 233, 0.75), 0 14px 40px rgba(14, 165, 233, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 0 6px rgba(103, 232, 249, 0.9), 0 0 36px rgba(14, 165, 233, 0.95), 0 16px 48px rgba(14, 165, 233, 0.65);
+            }
         }
 
         body[data-theme="light"] .link-card.last-clicked {
             border-color: #2563eb !important;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35), 0 12px 28px rgba(59, 130, 246, 0.25);
             background: #fff;
+            animation-name: lastClickedGlowLight;
+        }
+
+        @keyframes lastClickedGlowLight {
+            0%, 100% {
+                box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.45), 0 0 24px rgba(59, 130, 246, 0.5), 0 12px 32px rgba(59, 130, 246, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.6), 0 0 32px rgba(59, 130, 246, 0.65), 0 14px 40px rgba(59, 130, 246, 0.4);
+            }
         }
 
         body[data-theme="light"] .link-card.last-clicked .link-name {
             color: #1d4ed8;
             text-shadow: none;
-        }
-
-        body[data-theme="light"] .last-clicked-badge {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: #fff;
         }
 
         .link-card img {
@@ -4064,7 +4094,6 @@
                 `;
                 
                 card.innerHTML = `
-                    ${isLastClicked ? '<div class="last-clicked-badge" title="Ultimul site deschis">ULTIMUL</div>' : ''}
                     ${isFavorite ? '<div class="favorite-star">⭐</div>' : ''}
                     <div class="link-edit-btn" title="Editează" data-edit-index="${linkIndex}">✏️</div>
                     <img src="${escapeHtml(iconUrl)}" 
@@ -4138,15 +4167,6 @@
                 const cardUrl = card.dataset.url || '';
                 const isLast = cardUrl === clickedUrl || linkUrlMatches(cardUrl, clickedUrl);
                 card.classList.toggle('last-clicked', isLast);
-                const badge = card.querySelector('.last-clicked-badge');
-                if (badge) badge.remove();
-                if (isLast) {
-                    const el = document.createElement('div');
-                    el.className = 'last-clicked-badge';
-                    el.title = 'Ultimul site deschis';
-                    el.textContent = 'ULTIMUL';
-                    card.insertBefore(el, card.firstChild);
-                }
             });
         }
 
