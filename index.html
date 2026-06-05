@@ -3739,6 +3739,7 @@
         }
         let visitStats = {};
         let keyboardFocusCardIndex = -1;
+        let visitResortTimer = null;
 
         const CATEGORIES = [
             { key: "all", label: "All", icon: "fa-th" },
@@ -4098,23 +4099,56 @@
             }
         }
 
+        function isLinkFavorite(url) {
+            if (!url) return false;
+            return favorites.has(url) || [...favorites].some((f) => linkUrlMatches(f, url));
+        }
+
+        function getVisitStatsForUrl(url) {
+            if (!url) return { count: 0, lastVisit: 0 };
+            if (visitStats[url]) {
+                return {
+                    count: visitStats[url].count || 0,
+                    lastVisit: visitStats[url].lastVisit || 0
+                };
+            }
+            for (const [key, stats] of Object.entries(visitStats)) {
+                if (linkUrlMatches(key, url)) {
+                    return {
+                        count: stats.count || 0,
+                        lastVisit: stats.lastVisit || 0
+                    };
+                }
+            }
+            return { count: 0, lastVisit: 0 };
+        }
+
         function compareLinkSortOrder(a, b) {
             const aUrl = a.url;
             const bUrl = b.url;
-            const aOrder = customOrder.indexOf(aUrl);
-            const bOrder = customOrder.indexOf(bUrl);
+            const aFav = isLinkFavorite(aUrl);
+            const bFav = isLinkFavorite(bUrl);
 
-            if (aOrder !== -1 && bOrder !== -1) {
-                return aOrder - bOrder;
-            }
-
-            const aFav = favorites.has(aUrl);
-            const bFav = favorites.has(bUrl);
             if (aFav && !bFav) return -1;
             if (!aFav && bFav) return 1;
 
+            if (aFav && bFav) {
+                const aStats = getVisitStatsForUrl(aUrl);
+                const bStats = getVisitStatsForUrl(bUrl);
+                if (bStats.count !== aStats.count) return bStats.count - aStats.count;
+                if (bStats.lastVisit !== aStats.lastVisit) return bStats.lastVisit - aStats.lastVisit;
+                return a.name.localeCompare(b.name, 'ro');
+            }
+
+            const aOrder = customOrder.indexOf(aUrl);
+            const bOrder = customOrder.indexOf(bUrl);
+            if (aOrder !== -1 && bOrder !== -1) return aOrder - bOrder;
             if (aOrder !== -1) return -1;
             if (bOrder !== -1) return 1;
+
+            const aStats = getVisitStatsForUrl(aUrl);
+            const bStats = getVisitStatsForUrl(bUrl);
+            if (bStats.count !== aStats.count) return bStats.count - aStats.count;
             return 0;
         }
 
@@ -4142,7 +4176,7 @@
                     console.warn('Invalid link URL skipped:', link.url);
                     return;
                 }
-                const isFavorite = favorites.has(link.url) || [...favorites].some((f) => linkUrlMatches(f, link.url));
+                const isFavorite = isLinkFavorite(link.url);
                 const isLastClicked = isLastClickedLink(link.url);
                 
                 const iconUrl = getSafeIconUrl(link, domain);
@@ -4463,6 +4497,13 @@
             });
         }
 
+        function scheduleLinksResortByVisits() {
+            clearTimeout(visitResortTimer);
+            visitResortTimer = setTimeout(() => {
+                renderLinks();
+            }, 400);
+        }
+
         function trackVisit(url) {
             if (!visitStats[url]) {
                 visitStats[url] = { count: 0, lastVisit: null };
@@ -4472,6 +4513,9 @@
             saveVisitStats();
             saveLastClickedUrl(url);
             updateLastClickedHighlight(url);
+            if (isLinkFavorite(url)) {
+                scheduleLinksResortByVisits();
+            }
         }
 
         function loadFavorites() {

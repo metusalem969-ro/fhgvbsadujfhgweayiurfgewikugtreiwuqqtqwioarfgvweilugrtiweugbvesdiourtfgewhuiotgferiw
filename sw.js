@@ -1,5 +1,5 @@
 /* sw.js */
-const CACHE_VERSION = "2026-06-04_card-insert-reorder"; // bump la fiecare deploy important
+const CACHE_VERSION = "2026-06-04_favorites-by-visits"; // bump la fiecare deploy important
 const CACHE_NAME = `cmd-center-${CACHE_VERSION}`;
 
 self.addEventListener("message", (event) => {
