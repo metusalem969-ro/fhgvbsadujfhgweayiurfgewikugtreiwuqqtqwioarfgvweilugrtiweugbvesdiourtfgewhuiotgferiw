@@ -3657,6 +3657,7 @@
         ];
         const CUSTOM_ORDER_KEY = 'customOrder_v1';
         const VISIT_STATS_KEY = 'visitStats_v1';
+        const LAST_CLICKED_URL_KEY = 'lastClickedUrl_v1';
         let favorites = new Set();
         let customOrder = [];
         let draggedElement = null;
@@ -4126,6 +4127,45 @@
             });
         }
 
+        function loadLastClickedUrl() {
+            try {
+                return localStorage.getItem(LAST_CLICKED_URL_KEY) || null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function saveLastClickedUrl(url) {
+            if (!url) return;
+            try {
+                localStorage.setItem(LAST_CLICKED_URL_KEY, url);
+            } catch (e) {
+                console.error('Error saving last clicked url:', e);
+            }
+        }
+
+        function mergeVisitStats(local, remote) {
+            const merged = { ...(local || {}) };
+            Object.entries(remote || {}).forEach(([url, rStats]) => {
+                const lStats = merged[url] || { count: 0, lastVisit: null };
+                merged[url] = {
+                    count: (lStats.count || 0) + (rStats?.count || 0),
+                    lastVisit: Math.max(lStats.lastVisit || 0, rStats?.lastVisit || 0) || null
+                };
+            });
+            return merged;
+        }
+
+        function pickLastClickedUrl(localUrl, remoteUrl, stats) {
+            if (!localUrl) return remoteUrl || null;
+            if (!remoteUrl) return localUrl;
+            const localT = (stats[localUrl]?.lastVisit) || 0;
+            let remoteT = (stats[remoteUrl]?.lastVisit) || 0;
+            if (!remoteT && linkUrlMatches(remoteUrl, localUrl)) remoteT = localT;
+            if (remoteT > localT) return remoteUrl;
+            return localUrl;
+        }
+
         function loadVisitStats() {
             try {
                 const saved = localStorage.getItem(VISIT_STATS_KEY);
@@ -4144,6 +4184,8 @@
         }
         
         function getLastClickedUrl() {
+            const saved = loadLastClickedUrl();
+            if (saved) return saved;
             let bestUrl = null;
             let bestTime = 0;
             Object.entries(visitStats).forEach(([url, stats]) => {
@@ -4177,6 +4219,7 @@
             visitStats[url].count++;
             visitStats[url].lastVisit = Date.now();
             saveVisitStats();
+            saveLastClickedUrl(url);
             updateLastClickedHighlight(url);
         }
 
@@ -4307,6 +4350,14 @@
                     changed = true;
                 }
             });
+            const lastClicked = loadLastClickedUrl();
+            if (lastClicked) {
+                const fixedLast = fixOutboundLinkUrl(lastClicked);
+                if (fixedLast !== lastClicked) {
+                    saveLastClickedUrl(fixedLast);
+                    changed = true;
+                }
+            }
             if (changed) {
                 saveAllLinks();
                 saveFavorites();
@@ -5684,6 +5735,7 @@
                 getLinks: () => links,
                 getCustomOrder: () => customOrder,
                 getVisitStats: () => ({ ...visitStats }),
+                getLastClickedUrl: () => loadLastClickedUrl(),
                 getTheme: () => localStorage.getItem(THEME_KEY) || 'purple',
                 getSoundEnabled: () => readSoundEnabledSetting(),
                 getZoomLevel: () => parseInt(localStorage.getItem(ZOOM_KEY) || String(getDefaultZoomLevel()), 10),
@@ -5721,8 +5773,16 @@
                         saveCustomOrder();
                     }
                     if (merged.visitStats && typeof merged.visitStats === 'object') {
-                        visitStats = merged.visitStats;
+                        visitStats = mergeVisitStats(visitStats, merged.visitStats);
                         saveVisitStats();
+                    }
+                    if (merged.lastClickedUrl) {
+                        const picked = pickLastClickedUrl(
+                            loadLastClickedUrl(),
+                            merged.lastClickedUrl,
+                            visitStats
+                        );
+                        if (picked) saveLastClickedUrl(picked);
                     }
                     if (merged.theme && THEMES.includes(merged.theme)) {
                         localStorage.setItem(THEME_KEY, merged.theme);

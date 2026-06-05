@@ -117,6 +117,7 @@
             links: deps.getLinks ? deps.getLinks() : [],
             customOrder: deps.getCustomOrder ? deps.getCustomOrder() : [],
             visitStats: deps.getVisitStats ? deps.getVisitStats() : {},
+            lastClickedUrl: deps.getLastClickedUrl ? deps.getLastClickedUrl() : null,
             theme: deps.getTheme ? deps.getTheme() : null,
             soundEnabled: deps.getSoundEnabled ? deps.getSoundEnabled() : null,
             zoomLevel: deps.getZoomLevel ? deps.getZoomLevel() : null
@@ -141,6 +142,26 @@
         return [...set];
     }
 
+    function mergeVisitStats(local, remote) {
+        const merged = { ...(local || {}) };
+        Object.entries(remote || {}).forEach(([url, rStats]) => {
+            const lStats = merged[url] || { count: 0, lastVisit: null };
+            merged[url] = {
+                count: (lStats.count || 0) + (rStats?.count || 0),
+                lastVisit: Math.max(lStats.lastVisit || 0, rStats?.lastVisit || 0) || null
+            };
+        });
+        return merged;
+    }
+
+    function pickLastClickedUrl(localUrl, remoteUrl, stats) {
+        if (!localUrl) return remoteUrl || null;
+        if (!remoteUrl) return localUrl;
+        const localT = (stats[localUrl] && stats[localUrl].lastVisit) || 0;
+        const remoteT = (stats[remoteUrl] && stats[remoteUrl].lastVisit) || 0;
+        return remoteT > localT ? remoteUrl : localUrl;
+    }
+
     async function applyRemotePayload(remote, options) {
         const opts = options || {};
         const deps = global.HerculesSyncDeps;
@@ -163,13 +184,23 @@
             mergedFavorites = deps.getFavorites();
         }
 
+        const mergedVisitStats = mergeVisitStats(
+            deps.getVisitStats ? deps.getVisitStats() : {},
+            remote.visitStats
+        );
+
         const mergedPayload = {
             favorites: mergedFavorites,
             passwordHistory: mergePasswordHistory(deps.getPasswordHistory(), remote.passwordHistory),
             notes: remote.notes,
             links: remote.links,
             customOrder: remote.customOrder,
-            visitStats: remote.visitStats,
+            visitStats: mergedVisitStats,
+            lastClickedUrl: pickLastClickedUrl(
+                deps.getLastClickedUrl ? deps.getLastClickedUrl() : null,
+                remote.lastClickedUrl || null,
+                mergedVisitStats
+            ),
             theme: remote.theme,
             soundEnabled: remote.soundEnabled,
             zoomLevel: remote.zoomLevel,
