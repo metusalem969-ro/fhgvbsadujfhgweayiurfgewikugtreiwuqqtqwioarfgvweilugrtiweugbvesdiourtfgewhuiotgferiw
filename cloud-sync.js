@@ -234,6 +234,10 @@
             mergedFavorites = deps.getFavorites();
         }
 
+        if (deps.filterSyncFavorites && Array.isArray(mergedFavorites)) {
+            mergedFavorites = deps.filterSyncFavorites(mergedFavorites);
+        }
+
         const mergedVisitStats = mergeVisitStats(
             deps.getVisitStats ? deps.getVisitStats() : {},
             remote.visitStats
