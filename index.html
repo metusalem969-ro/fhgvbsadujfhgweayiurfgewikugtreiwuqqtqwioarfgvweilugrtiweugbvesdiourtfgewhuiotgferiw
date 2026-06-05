@@ -2309,11 +2309,15 @@
         }
 
         #cloudSyncModal .sync-form-compact {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            flex: 1 1 auto;
             min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 4px;
+        }
+
+        #cloudSyncModal .sync-modal-top {
+            flex-shrink: 0;
         }
 
         #cloudSyncModal .sync-modal-panel h2 {
@@ -2380,40 +2384,46 @@
 
         #cloudSyncModal .sync-id-row {
             display: flex;
-            gap: 6px;
+            flex-direction: column;
+            gap: 8px;
             align-items: stretch;
         }
 
         #cloudSyncModal .sync-id-row .sync-input {
-            flex: 1;
+            width: 100%;
             min-width: 0;
+            box-sizing: border-box;
         }
 
         #cloudSyncModal .sync-copy-btn {
-            white-space: nowrap;
+            width: 100%;
+            box-sizing: border-box;
             padding: 11px 12px;
             font-size: 0.85em;
-        }
-
-        #cloudSyncModal .sync-btn-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: auto;
-            padding-top: 18px;
             flex-shrink: 0;
         }
 
-        #cloudSyncModal .sync-btn-grid button {
-            flex: 1 1 calc(50% - 10px);
+        #cloudSyncModal .sync-btn-grid.modal-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: auto;
+            padding-top: 12px;
+            flex-shrink: 0;
+        }
+
+        #cloudSyncModal .sync-btn-grid.modal-buttons button {
+            flex: none;
+            width: 100%;
             min-width: 0;
-            padding: 13px 10px;
-            font-size: 0.82em;
+            padding: 12px 8px;
+            font-size: 0.8em;
             margin: 0;
+            box-sizing: border-box;
         }
 
         #cloudSyncModal .sync-btn-grid .sync-btn-wide {
-            flex: 1 1 100%;
+            grid-column: 1 / -1;
         }
 
         @media (max-width: 640px) {
@@ -2452,14 +2462,9 @@
                 font-size: 0.88em;
             }
 
-            #cloudSyncModal .sync-btn-grid {
-                gap: 8px;
-                padding-top: 14px;
-            }
-
-            #cloudSyncModal .sync-btn-grid button {
-                padding: 12px 6px;
-                font-size: 0.76em;
+            #cloudSyncModal .sync-btn-grid.modal-buttons button {
+                padding: 11px 6px;
+                font-size: 0.74em;
             }
         }
 
@@ -3122,6 +3127,7 @@
     <!-- Cloud Sync Modal -->
     <div class="modal" id="cloudSyncModal" onclick="if(event.target===this) closeCloudSyncModal()">
         <div class="modal-content sync-modal-panel" style="max-width: 520px;">
+            <div class="sync-modal-top">
             <h2 style="text-align: center;">☁️ Sincronizare</h2>
             <p class="sync-intro-oneline sync-muted">Token + PIN + același ID profil pe telefon și PC.</p>
             <details class="sync-help-details sync-muted">
@@ -3131,6 +3137,7 @@
                 <p style="margin: 0;">GitHub Pages și GitLab Pages = configurezi separat, aceleași date în Gist.</p>
             </details>
             <div id="cloudSyncStatus" class="sync-status-box">Stare: neconfigurat</div>
+            </div>
             <div class="sync-form-compact">
                 <label class="sync-label">Platformă</label>
                 <select id="syncProvider" class="sync-input">
@@ -3148,8 +3155,8 @@
                 <input type="password" id="syncPin" class="sync-input" placeholder="Același PIN peste tot" autocomplete="off">
                 <label class="sync-label">ID profil</label>
                 <div class="sync-id-row">
-                    <input type="text" id="syncRemoteId" class="sync-input" placeholder="Gol la prima activare" readonly>
-                    <button type="button" class="btn-secondary sync-copy-btn" onclick="copySyncProfileId()">📋</button>
+                    <input type="text" id="syncRemoteId" class="sync-input" placeholder="Gol la prima activare" readonly autocomplete="off">
+                    <button type="button" class="btn-secondary sync-copy-btn" onclick="copySyncProfileId()">📋 Copiază ID</button>
                 </div>
             </div>
             <div class="sync-btn-grid modal-buttons">
