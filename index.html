@@ -2288,40 +2288,37 @@
             color: #0c4a6e;
         }
 
-        /* Cloud sync modal — chenar full screen + spațiu jos sub butoane */
+        /* Cloud sync modal — panou compact centrat, fără spațiu gol */
         #cloudSyncModal.modal {
-            padding: 0;
+            padding: 8px;
             box-sizing: border-box;
-            align-items: stretch;
-            justify-content: stretch;
+            align-items: center;
+            justify-content: center;
             inset: 0;
-            height: 100%;
-            min-height: 100vh;
-            min-height: 100dvh;
         }
 
         #cloudSyncModal .modal-content.sync-modal-panel {
-            max-height: none;
-            overflow: hidden;
             width: min(520px, 100%);
-            flex: 1;
-            min-height: 100vh;
-            min-height: 100dvh;
-            height: 100%;
-            max-height: none;
+            max-width: 100%;
+            height: auto;
+            max-height: calc(100dvh - 16px);
+            min-height: 0;
+            flex: none;
             display: flex;
             flex-direction: column;
-            padding: 14px 14px calc(36px + env(safe-area-inset-bottom, 0px));
-            margin: 0 auto;
+            overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 14px 14px calc(14px + env(safe-area-inset-bottom, 0px));
+            margin: 0;
             box-sizing: border-box;
-            border-radius: 0;
+            border-radius: 16px;
         }
 
         #cloudSyncModal .sync-form-compact {
-            flex: 1 1 auto;
-            min-height: 0;
+            flex: 0 0 auto;
             overflow: visible;
-            padding-bottom: 8px;
+            padding-bottom: 4px;
         }
 
         #cloudSyncModal .sync-modal-top {
@@ -2417,9 +2414,8 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
-            margin-top: auto;
-            padding-top: 14px;
-            padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+            margin-top: 12px;
+            padding-top: 0;
             flex-shrink: 0;
         }
 
@@ -2438,16 +2434,15 @@
         }
 
         @media (max-width: 640px) {
+            #cloudSyncModal.modal {
+                padding: 8px;
+            }
+
             #cloudSyncModal .modal-content.sync-modal-panel {
                 width: 100%;
-                max-width: 100%;
-                min-height: 100vh;
-                min-height: 100dvh;
-                height: 100%;
-                padding: 12px 12px calc(52px + env(safe-area-inset-bottom, 12px));
-                border-radius: 0;
-                border-left: none;
-                border-right: none;
+                max-height: calc(100dvh - 16px);
+                padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 8px));
+                border-radius: 14px;
             }
 
             #cloudSyncModal .sync-modal-panel h2 {
@@ -2456,8 +2451,7 @@
 
             #cloudSyncModal .sync-btn-grid.modal-buttons {
                 gap: 10px;
-                padding-top: 16px;
-                padding-bottom: calc(16px + env(safe-area-inset-bottom, 16px));
+                margin-top: 10px;
             }
 
             #cloudSyncModal .sync-btn-grid.modal-buttons button {
@@ -2471,11 +2465,9 @@
             }
 
             #cloudSyncModal .modal-content.sync-modal-panel {
-                min-height: auto;
-                max-height: min(96dvh, 820px);
-                height: auto;
+                max-height: min(calc(100dvh - 24px), 820px);
                 border-radius: 18px;
-                padding: 20px 18px 22px;
+                padding: 20px 18px calc(20px + env(safe-area-inset-bottom, 0px));
             }
         }
 
