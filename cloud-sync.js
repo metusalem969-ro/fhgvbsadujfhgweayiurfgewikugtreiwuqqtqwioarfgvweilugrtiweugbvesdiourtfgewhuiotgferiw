@@ -15,6 +15,23 @@
     const SYNC_SESSION_PIN_KEY = 'herculesSyncSessionPin_v1';
     const SYNC_FILE_NAME = 'hercules-sync.enc.json';
     const PASSWORD_HISTORY_MAX = 30;
+    const MAX_VISIT_COUNT = 50000;
+
+    function clampVisitCount(n) {
+        const v = Number(n);
+        if (!Number.isFinite(v) || v < 0) return 0;
+        return Math.min(Math.floor(v), MAX_VISIT_COUNT);
+    }
+
+    function stripLegacyFromByDevice(byDevice) {
+        const out = {};
+        Object.entries(byDevice || {}).forEach(([id, n]) => {
+            if (id === '_legacy') return;
+            const c = clampVisitCount(n);
+            if (c > 0) out[id] = c;
+        });
+        return out;
+    }
 
     let syncPinCache = null;
     let pushTimer = null;
@@ -145,43 +162,44 @@
     function visitStatsToByDevice(stats) {
         if (!stats) return {};
         if (stats.byDevice && typeof stats.byDevice === 'object') {
-            return { ...stats.byDevice };
-        }
-        if (stats.count) {
-            return { _legacy: stats.count };
+            return stripLegacyFromByDevice(stats.byDevice);
         }
         return {};
     }
 
-    function sumByDevice(byDevice) {
-        return Object.values(byDevice).reduce((sum, n) => sum + (Number(n) || 0), 0);
-    }
-
     function computeVisitTotal(byDevice) {
-        const vals = Object.values(byDevice)
-            .map((n) => Number(n) || 0)
+        const vals = Object.values(stripLegacyFromByDevice(byDevice))
             .filter((n) => n > 0);
         if (vals.length === 0) return 0;
         if (vals.length === 1) return vals[0];
         const max = Math.max(...vals);
         const sum = vals.reduce((a, b) => a + b, 0);
         if (vals.every((v) => v === max)) return max;
-        return sum;
+        return clampVisitCount(sum);
     }
 
     function mergeByDeviceMaps(localMap, remoteMap) {
-        const merged = { ...remoteMap };
-        Object.entries(localMap).forEach(([devId, count]) => {
-            merged[devId] = Math.max(Number(merged[devId]) || 0, Number(count) || 0);
+        const merged = {};
+        const keys = new Set([
+            ...Object.keys(localMap || {}),
+            ...Object.keys(remoteMap || {})
+        ]);
+        keys.forEach((devId) => {
+            if (devId === '_legacy') return;
+            merged[devId] = clampVisitCount(Math.max(
+                Number(localMap?.[devId]) || 0,
+                Number(remoteMap?.[devId]) || 0
+            ));
         });
         return merged;
     }
 
     function buildVisitStatEntry(byDevice, lastVisit) {
+        const clean = stripLegacyFromByDevice(byDevice);
         return {
-            count: computeVisitTotal(byDevice),
+            count: computeVisitTotal(clean),
             lastVisit: lastVisit || null,
-            byDevice
+            byDevice: clean
         };
     }
 

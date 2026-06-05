@@ -2979,6 +2979,7 @@
                 <button type="button" class="btn-primary" onclick="activateCloudSync()">✅ Activează / salvează</button>
                 <button type="button" class="btn-secondary" onclick="manualCloudPull()">⬇️ Descarcă acum</button>
                 <button type="button" class="btn-secondary" onclick="manualCloudPush()">⬆️ Încarcă acum</button>
+                <button type="button" class="btn-secondary" onclick="resetAllVisitStats()" title="Șterge contoarele corupte">🔄 Reset vizite</button>
                 <button type="button" class="btn-secondary" onclick="disableCloudSyncUi()">🚫 Dezactivează</button>
                 <button type="button" class="btn-secondary" onclick="closeCloudSyncModal()">❌ Închide</button>
             </div>
@@ -3742,6 +3743,7 @@
         const VISIT_STATS_KEY = 'visitStats_v1';
         const LAST_CLICKED_URL_KEY = 'lastClickedUrl_v1';
         const DEVICE_ID_KEY = 'hercules_device_id_v1';
+        const MAX_VISIT_COUNT = 50000;
         let favorites = new Set();
         let customOrder = [];
         let draggedElement = null;
@@ -4134,7 +4136,7 @@
             if (!url) return { count: 0, lastVisit: 0 };
             if (visitStats[url]) {
                 return {
-                    count: visitStats[url].count || 0,
+                    count: clampVisitCount(visitStats[url].count || 0),
                     lastVisit: visitStats[url].lastVisit || 0
                 };
             }
@@ -4142,7 +4144,7 @@
             for (const [key, stats] of Object.entries(visitStats)) {
                 if (normalizeLinkUrl(key) === normalized) {
                     return {
-                        count: stats.count || 0,
+                        count: clampVisitCount(stats.count || 0),
                         lastVisit: stats.lastVisit || 0
                     };
                 }
@@ -4229,11 +4231,13 @@
                 });
                 
                 const stats = getVisitStatsForUrl(link.url);
+                const visitCountLabel = formatVisitCount(stats.count);
+                const visitWord = stats.count === 1 ? 'vizită' : 'vizite';
                 const lastVisitText = stats.lastVisit 
                     ? new Date(stats.lastVisit).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
                     : 'Niciodată';
                 const visitBadge = isFavorite
-                    ? `<div class="link-visit-badge" title="Vizite: ${stats.count}">${stats.count} ${stats.count === 1 ? 'vizită' : 'vizite'}</div>`
+                    ? `<div class="link-visit-badge" title="Vizite: ${visitCountLabel}">${visitCountLabel} ${visitWord}</div>`
                     : '';
                 
                 const previewHTML = `
@@ -4242,7 +4246,7 @@
                         <div class="preview-stats">
                             <div class="preview-stat">
                                 <span class="preview-stat-label">Vizite</span>
-                                <span class="preview-stat-value">${stats.count}</span>
+                                <span class="preview-stat-value">${visitCountLabel}</span>
                             </div>
                             <div class="preview-stat">
                                 <span class="preview-stat-label">Ultima vizită</span>
@@ -4476,44 +4480,67 @@
         function visitStatsToByDevice(stats) {
             if (!stats) return {};
             if (stats.byDevice && typeof stats.byDevice === 'object') {
-                return { ...stats.byDevice };
-            }
-            if (stats.count) {
-                return { _legacy: stats.count };
+                return stripLegacyFromByDevice(stats.byDevice);
             }
             return {};
         }
 
-        function sumByDevice(byDevice) {
-            return Object.values(byDevice).reduce((sum, n) => sum + (Number(n) || 0), 0);
+        function clampVisitCount(n) {
+            const v = Number(n);
+            if (!Number.isFinite(v) || v < 0) return 0;
+            return Math.min(Math.floor(v), MAX_VISIT_COUNT);
         }
 
+        function formatVisitCount(n) {
+            const v = clampVisitCount(n);
+            if (v >= 1000000) return (v / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+            if (v >= 10000) return (v / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+            return String(v);
+        }
+
+        function stripLegacyFromByDevice(byDevice) {
+            const out = {};
+            Object.entries(byDevice || {}).forEach(([id, n]) => {
+                if (id === '_legacy') return;
+                const c = clampVisitCount(n);
+                if (c > 0) out[id] = c;
+            });
+            return out;
+        }
         /** Evită 60+60=120 când același total vechi era copiat pe telefon și PC */
         function computeVisitTotal(byDevice) {
-            const vals = Object.values(byDevice)
-                .map((n) => Number(n) || 0)
+            const vals = Object.values(stripLegacyFromByDevice(byDevice))
                 .filter((n) => n > 0);
             if (vals.length === 0) return 0;
             if (vals.length === 1) return vals[0];
             const max = Math.max(...vals);
             const sum = vals.reduce((a, b) => a + b, 0);
             if (vals.every((v) => v === max)) return max;
-            return sum;
+            return clampVisitCount(sum);
         }
 
         function mergeByDeviceMaps(localMap, remoteMap) {
-            const merged = { ...remoteMap };
-            Object.entries(localMap).forEach(([devId, count]) => {
-                merged[devId] = Math.max(Number(merged[devId]) || 0, Number(count) || 0);
+            const merged = {};
+            const keys = new Set([
+                ...Object.keys(localMap || {}),
+                ...Object.keys(remoteMap || {})
+            ]);
+            keys.forEach((devId) => {
+                if (devId === '_legacy') return;
+                merged[devId] = clampVisitCount(Math.max(
+                    Number(localMap?.[devId]) || 0,
+                    Number(remoteMap?.[devId]) || 0
+                ));
             });
             return merged;
         }
 
         function buildVisitStatEntry(byDevice, lastVisit) {
+            const clean = stripLegacyFromByDevice(byDevice);
             return {
-                count: computeVisitTotal(byDevice),
+                count: computeVisitTotal(clean),
                 lastVisit: lastVisit || null,
-                byDevice
+                byDevice: clean
             };
         }
 
@@ -4533,12 +4560,22 @@
             const s = visitStats[url];
             if (!s.byDevice || typeof s.byDevice !== 'object') {
                 s.byDevice = {};
-                if (s.count) {
-                    s.byDevice[devId] = s.count;
+                const legacyCount = clampVisitCount(s.count);
+                if (legacyCount > 0 && legacyCount <= 5000) {
+                    s.byDevice[devId] = legacyCount;
                 }
-            } else if (s.byDevice._legacy && !s.byDevice[devId]) {
-                s.byDevice[devId] = Math.max(Number(s.byDevice[devId]) || 0, Number(s.byDevice._legacy) || 0);
-                delete s.byDevice._legacy;
+            } else {
+                if (s.byDevice._legacy != null) {
+                    const legacy = clampVisitCount(s.byDevice._legacy);
+                    if (legacy > 0) {
+                        s.byDevice[devId] = clampVisitCount(Math.max(
+                            Number(s.byDevice[devId]) || 0,
+                            legacy
+                        ));
+                    }
+                    delete s.byDevice._legacy;
+                }
+                s.byDevice = stripLegacyFromByDevice(s.byDevice);
             }
             s.count = computeVisitTotal(s.byDevice);
         }
@@ -4585,7 +4622,16 @@
         }
 
         /** Mai multe site-uri cu același total = date corupte (ex. Gmail+Yahoo 434, patru site-uri 62) */
+        function hasAbsurdVisitStats() {
+            for (const link of links) {
+                const c = getVisitCountForLink(link.url);
+                if (!Number.isFinite(c) || c > MAX_VISIT_COUNT) return true;
+            }
+            return false;
+        }
+
         function detectVisitStatsCorruption() {
+            if (hasAbsurdVisitStats()) return true;
             const tally = new Map();
             links.forEach((link) => {
                 const c = getVisitCountForLink(link.url);
@@ -4630,6 +4676,12 @@
 
         function sanitizeVisitStatsAfterSync() {
             normalizeAllVisitStats();
+            if (hasAbsurdVisitStats()) {
+                resetAllVisitStatsInternal(true);
+                saveVisitStats(false);
+                showNotification('📊 Vizite resetate după sync — date corupte în cloud', 'warning');
+                return true;
+            }
             if (!detectVisitStatsCorruption()) return false;
             rebuildVisitStatsFromDevices({ deviceOnly: true });
             saveVisitStats(false);
@@ -4637,12 +4689,33 @@
             return true;
         }
 
+        function resetAllVisitStatsInternal(skipCloudSync) {
+            visitStats = {};
+            links.forEach((link) => {
+                visitStats[link.url] = buildVisitStatEntry({}, null);
+            });
+            saveVisitStats(!!skipCloudSync);
+            renderLinks();
+        }
+
+        function resetAllVisitStats() {
+            if (!confirm('Resetezi toate contoarele de vizite la 0?\n\nFolosește asta dacă vezi numere ciudate (ex. 1e+22).')) return;
+            resetAllVisitStatsInternal(false);
+            showNotification('📊 Contoare vizite resetate la 0', 'info');
+        }
+
         function repairVisitStatsCorruption() {
-            if (localStorage.getItem('visitStats_repair_v5') === 'done') return;
+            if (hasAbsurdVisitStats()) {
+                resetAllVisitStatsInternal(true);
+                saveVisitStats(false);
+                showNotification('📊 Contoare resetate — erau stricate de sync (numere uriașe)', 'warning');
+                return;
+            }
+            if (localStorage.getItem('visitStats_repair_v6') === 'done') return;
             const corrupted = detectVisitStatsCorruption();
             rebuildVisitStatsFromDevices({ deviceOnly: corrupted });
             saveVisitStats(true);
-            localStorage.setItem('visitStats_repair_v5', 'done');
+            localStorage.setItem('visitStats_repair_v6', 'done');
             if (corrupted) {
                 showNotification('📊 Contoare vizite corectate — fiecare site are numărul lui', 'info');
             }
@@ -4708,7 +4781,8 @@
         function trackVisit(url) {
             normalizeVisitStatsEntry(url);
             const devId = getDeviceId();
-            visitStats[url].byDevice[devId] = (Number(visitStats[url].byDevice[devId]) || 0) + 1;
+            const current = clampVisitCount(Number(visitStats[url].byDevice[devId]) || 0);
+            visitStats[url].byDevice[devId] = Math.min(current + 1, MAX_VISIT_COUNT);
             visitStats[url].count = computeVisitTotal(visitStats[url].byDevice);
             visitStats[url].lastVisit = Date.now();
             saveVisitStats();
