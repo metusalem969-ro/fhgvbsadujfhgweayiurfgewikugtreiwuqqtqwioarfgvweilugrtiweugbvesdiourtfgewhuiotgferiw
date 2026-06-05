@@ -1436,6 +1436,22 @@
             display: none;
         }
 
+        .link-card.keyboard-focus {
+            outline: 3px solid rgba(251, 146, 60, 0.95);
+            outline-offset: 3px;
+            border-color: rgba(251, 191, 36, 0.95) !important;
+            transform: translateY(-8px) scale(1.06);
+            box-shadow:
+                0 0 0 4px rgba(251, 191, 36, 0.45),
+                0 14px 36px rgba(251, 146, 60, 0.55);
+            z-index: 4;
+        }
+
+        body[data-theme="light"] .link-card.keyboard-focus {
+            outline-color: rgba(234, 88, 12, 0.95);
+            border-color: rgba(234, 88, 12, 0.85) !important;
+        }
+
         .link-card.last-clicked {
             border-width: 4px;
             border-color: #fbbf24 !important;
@@ -3663,6 +3679,7 @@
         let draggedElement = null;
         let draggedIndex = null;
         let visitStats = {};
+        let keyboardFocusCardIndex = -1;
 
         const CATEGORIES = [
             { key: "all", label: "All", icon: "fa-th" },
@@ -3827,6 +3844,7 @@
             createParticles();
             populateCategorySelect();
             renderLinks();
+            initLinkCardKeyboardNav();
             renderSearchHistory();
             updateClock();
             setInterval(updateClock, 1000);
@@ -3871,6 +3889,11 @@
             // GLOBAL ESC - Închide modale și șterge input activ
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
+                    if (keyboardFocusCardIndex >= 0 && isCardKeyboardNavContext()) {
+                        clearKeyboardCardFocus();
+                        playSound('thudSound', 0.2);
+                        return;
+                    }
                     // Închide toate modalele
                     document.querySelectorAll('.modal.show').forEach(modal => {
                         modal.classList.remove('show');
@@ -3916,6 +3939,8 @@
                 if (isInModal || isInInput) return;
                 if (e.ctrlKey || e.metaKey || e.altKey) return;
                 if (e.key.length !== 1) return;
+
+                clearKeyboardCardFocus();
 
                 const googleInput = document.getElementById('googleSearchInput');
                 if (!googleInput) return;
@@ -4016,6 +4041,7 @@
 
         function renderLinks() {
             const grid = document.getElementById('linksGrid');
+            const restoreFocusUrl = getKeyboardFocusedUrl();
             grid.innerHTML = '';
 
             let filtered = currentFilter === 'all' 
@@ -4124,6 +4150,147 @@
                     return false;
                 });
                 grid.appendChild(card);
+            });
+            if (restoreFocusUrl) {
+                restoreKeyboardFocusByUrl(restoreFocusUrl);
+            }
+        }
+
+        function getVisibleLinkCards() {
+            return [...document.querySelectorAll('#linksGrid .link-card:not(.hidden)')];
+        }
+
+        function getKeyboardFocusedUrl() {
+            const cards = getVisibleLinkCards();
+            if (keyboardFocusCardIndex >= 0 && cards[keyboardFocusCardIndex]) {
+                return cards[keyboardFocusCardIndex].dataset.url;
+            }
+            return null;
+        }
+
+        function clearKeyboardCardFocus() {
+            keyboardFocusCardIndex = -1;
+            document.querySelectorAll('.link-card.keyboard-focus').forEach((card) => {
+                card.classList.remove('keyboard-focus');
+                card.removeAttribute('tabindex');
+            });
+        }
+
+        function applyKeyboardCardFocus(idx) {
+            const cards = getVisibleLinkCards();
+            clearKeyboardCardFocus();
+            if (!cards.length) {
+                keyboardFocusCardIndex = -1;
+                return;
+            }
+            const clamped = ((idx % cards.length) + cards.length) % cards.length;
+            keyboardFocusCardIndex = clamped;
+            const card = cards[clamped];
+            card.classList.add('keyboard-focus');
+            card.setAttribute('tabindex', '-1');
+            card.focus({ preventScroll: false });
+            card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+
+        function restoreKeyboardFocusByUrl(url) {
+            if (!url) return;
+            const cards = getVisibleLinkCards();
+            const idx = cards.findIndex((c) => c.dataset.url === url || linkUrlMatches(c.dataset.url, url));
+            if (idx >= 0) applyKeyboardCardFocus(idx);
+            else clearKeyboardCardFocus();
+        }
+
+        function moveKeyboardCardFocus(direction) {
+            const cards = getVisibleLinkCards();
+            if (!cards.length) return;
+
+            if (keyboardFocusCardIndex < 0) {
+                const last = getLastClickedUrl();
+                let start = 0;
+                if (last) {
+                    const found = cards.findIndex((c) => isLastClickedLink(c.dataset.url));
+                    if (found >= 0) start = found;
+                }
+                applyKeyboardCardFocus(start);
+                playSound('clickSound', 0.15);
+                return;
+            }
+
+            const current = cards[keyboardFocusCardIndex];
+            const curRect = current.getBoundingClientRect();
+            const cx = curRect.left + curRect.width / 2;
+            const cy = curRect.top + curRect.height / 2;
+            let bestIdx = -1;
+            let bestDist = Infinity;
+
+            cards.forEach((card, i) => {
+                if (i === keyboardFocusCardIndex) return;
+                const r = card.getBoundingClientRect();
+                const tx = r.left + r.width / 2;
+                const ty = r.top + r.height / 2;
+                const dx = tx - cx;
+                const dy = ty - cy;
+                const colThreshold = Math.max(curRect.width * 0.55, 40);
+                let ok = false;
+                if (direction === 'right' && dx > 8 && Math.abs(dy) < colThreshold) ok = true;
+                if (direction === 'left' && dx < -8 && Math.abs(dy) < colThreshold) ok = true;
+                if (direction === 'down' && dy > 8) ok = true;
+                if (direction === 'up' && dy < -8) ok = true;
+                if (!ok) return;
+                const dist = dx * dx + dy * dy;
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestIdx = i;
+                }
+            });
+
+            if (bestIdx >= 0) {
+                applyKeyboardCardFocus(bestIdx);
+            } else {
+                const step = (direction === 'left' || direction === 'up') ? -1 : 1;
+                applyKeyboardCardFocus(keyboardFocusCardIndex + step);
+            }
+            playSound('clickSound', 0.15);
+        }
+
+        function activateKeyboardFocusedCard() {
+            const cards = getVisibleLinkCards();
+            if (keyboardFocusCardIndex < 0 || !cards[keyboardFocusCardIndex]) return;
+            cards[keyboardFocusCardIndex].click();
+        }
+
+        function isCardKeyboardNavContext() {
+            const active = document.activeElement;
+            const inModal = document.querySelector('.modal.show') !== null;
+            const inInput = active && (
+                active.tagName === 'INPUT'
+                || active.tagName === 'TEXTAREA'
+                || active.tagName === 'SELECT'
+            );
+            return !inModal && !inInput;
+        }
+
+        function initLinkCardKeyboardNav() {
+            document.addEventListener('keydown', (e) => {
+                if (!isCardKeyboardNavContext()) return;
+
+                const arrowMap = {
+                    ArrowRight: 'right',
+                    ArrowLeft: 'left',
+                    ArrowDown: 'down',
+                    ArrowUp: 'up'
+                };
+
+                if (arrowMap[e.key]) {
+                    e.preventDefault();
+                    moveKeyboardCardFocus(arrowMap[e.key]);
+                    return;
+                }
+
+                if (e.key === 'Enter' && keyboardFocusCardIndex >= 0) {
+                    e.preventDefault();
+                    activateKeyboardFocusedCard();
+                }
             });
         }
 
@@ -4634,6 +4801,12 @@
                     card.classList.add('hidden');
                 }
             });
+
+            const focusUrl = getKeyboardFocusedUrl();
+            if (focusUrl) {
+                const stillVisible = getVisibleLinkCards().some((c) => c.dataset.url === focusUrl);
+                if (!stillVisible) clearKeyboardCardFocus();
+            }
         }
 
         function filterLinks(category) {
