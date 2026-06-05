@@ -157,6 +157,18 @@
         return Object.values(byDevice).reduce((sum, n) => sum + (Number(n) || 0), 0);
     }
 
+    function computeVisitTotal(byDevice) {
+        const vals = Object.values(byDevice)
+            .map((n) => Number(n) || 0)
+            .filter((n) => n > 0);
+        if (vals.length === 0) return 0;
+        if (vals.length === 1) return vals[0];
+        const max = Math.max(...vals);
+        const sum = vals.reduce((a, b) => a + b, 0);
+        if (vals.every((v) => v === max)) return max;
+        return sum;
+    }
+
     function mergeByDeviceMaps(localMap, remoteMap) {
         const merged = { ...remoteMap };
         Object.entries(localMap).forEach(([devId, count]) => {
@@ -167,7 +179,7 @@
 
     function buildVisitStatEntry(byDevice, lastVisit) {
         return {
-            count: sumByDevice(byDevice),
+            count: computeVisitTotal(byDevice),
             lastVisit: lastVisit || null,
             byDevice
         };
