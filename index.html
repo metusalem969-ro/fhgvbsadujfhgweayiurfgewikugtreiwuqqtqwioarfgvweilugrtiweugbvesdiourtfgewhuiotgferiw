@@ -1574,7 +1574,30 @@
             word-break: break-word;
         }
 
-        /* Favorite Star */
+        /* Favorite toggle button */
+        .link-fav-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 28px;
+            height: 28px;
+            font-size: 1.1em;
+            line-height: 28px;
+            text-align: center;
+            z-index: 11;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+            pointer-events: auto;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            cursor: pointer;
+        }
+
+        .link-fav-btn.is-favorite {
+            animation: starPulse 2s infinite;
+        }
+
+        /* Legacy star badge (desktop hover only) */
         .favorite-star {
             position: absolute;
             top: 8px;
@@ -1649,7 +1672,7 @@
                 justify-content: center;
                 font-size: 0.75em;
                 color: white;
-                z-index: 10;
+                z-index: 11;
                 cursor: pointer;
                 opacity: 1;
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -1658,6 +1681,12 @@
                 -webkit-user-select: none;
                 -webkit-tap-highlight-color: rgba(251, 146, 60, 0.3);
                 touch-action: manipulation;
+            }
+
+            .link-card {
+                -webkit-touch-callout: none;
+                user-select: none;
+                -webkit-user-select: none;
             }
 
             .link-edit-btn:active {
@@ -3699,7 +3728,8 @@
             moved: false,
             startX: 0,
             startY: 0,
-            suppressClick: false
+            suppressClick: false,
+            blockContextMenu: false
         };
 
         function isTouchLikeDevice() {
@@ -4153,7 +4183,7 @@
                 `;
                 
                 card.innerHTML = `
-                    ${isFavorite ? '<div class="favorite-star">⭐</div>' : ''}
+                    <div class="link-fav-btn${isFavorite ? ' is-favorite' : ''}" title="Favorite" aria-label="Favorite">${isFavorite ? '⭐' : '☆'}</div>
                     <div class="link-edit-btn" title="Editează" data-edit-index="${linkIndex}">✏️</div>
                     <img src="${escapeHtml(iconUrl)}" 
                          alt="${escapeHtml(link.name)}" 
@@ -4170,6 +4200,18 @@
                         openEditModal(linkIndex);
                     });
                 }
+
+                const favBtn = card.querySelector('.link-fav-btn');
+                if (favBtn) {
+                    favBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleFavorite(link.url);
+                    });
+                    favBtn.addEventListener('touchend', (e) => {
+                        e.stopPropagation();
+                    }, { passive: true });
+                }
                 
                 card.addEventListener('dragstart', handleDragStart);
                 card.addEventListener('dragover', handleDragOver);
@@ -4179,6 +4221,9 @@
                 
                 card.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
+                    if (isTouchLikeDevice() || touchReorderState.blockContextMenu || touchReorderState.active) {
+                        return false;
+                    }
                     toggleFavorite(link.url);
                     return false;
                 });
@@ -4777,6 +4822,7 @@
 
             card.addEventListener('touchstart', (e) => {
                 if (e.touches.length !== 1) return;
+                if (e.target.closest('.link-edit-btn, .link-fav-btn')) return;
                 resetTouchReorderState();
                 touchReorderState.card = card;
                 touchReorderState.startX = e.touches[0].clientX;
@@ -4784,6 +4830,7 @@
                 touchReorderState.timer = setTimeout(() => {
                     if (touchReorderState.moved || touchReorderState.card !== card) return;
                     touchReorderState.active = true;
+                    touchReorderState.blockContextMenu = true;
                     card.classList.add('touch-dragging');
                     playSound('clickSound', 0.2);
                     if (navigator.vibrate) navigator.vibrate(35);
@@ -4827,12 +4874,15 @@
                     if (target && target !== touchReorderState.card) {
                         swapped = swapLinkCardOrder(draggedUrl, target.dataset.url);
                     }
-                    touchReorderState.suppressClick = true;
                 }
 
                 resetTouchReorderState();
-                if (wasActive && !swapped) {
+                if (wasActive) {
                     touchReorderState.suppressClick = true;
+                    touchReorderState.blockContextMenu = true;
+                    setTimeout(() => {
+                        touchReorderState.blockContextMenu = false;
+                    }, 500);
                 }
             }, { passive: true });
 
