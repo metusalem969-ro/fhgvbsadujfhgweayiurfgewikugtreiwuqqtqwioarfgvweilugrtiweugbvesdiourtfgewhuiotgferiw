@@ -4335,7 +4335,8 @@
 
         function isLinkFavorite(url) {
             if (!url) return false;
-            return favorites.has(url) || [...favorites].some((f) => linkUrlMatches(f, url));
+            if (favorites.has(url)) return true;
+            return [...favorites].some((f) => sameLinkUrl(f, url));
         }
 
         function getVisitStatsForUrl(url) {
@@ -4347,7 +4348,7 @@
                 };
             }
             for (const [key, stats] of Object.entries(visitStats)) {
-                if (linkUrlMatches(key, url)) {
+                if (sameLinkUrl(key, url)) {
                     return {
                         count: stats.count || 0,
                         lastVisit: stats.lastVisit || 0
@@ -4551,7 +4552,7 @@
         function restoreKeyboardFocusByUrl(url) {
             if (!url) return;
             const cards = getVisibleLinkCards();
-            const idx = cards.findIndex((c) => c.dataset.url === url || linkUrlMatches(c.dataset.url, url));
+            const idx = cards.findIndex((c) => sameLinkUrl(c.dataset.url, url));
             if (idx >= 0) applyKeyboardCardFocus(idx);
             else clearKeyboardCardFocus();
         }
@@ -4976,7 +4977,7 @@
         function normalizeFavoritesToLinks() {
             const normalized = new Set();
             favorites.forEach((favUrl) => {
-                const match = links.find((l) => linkUrlMatches(l.url, favUrl));
+                const match = links.find((l) => sameLinkUrl(l.url, favUrl));
                 if (match) normalized.add(match.url);
                 else normalized.add(favUrl);
             });
@@ -5159,8 +5160,8 @@
             let changed = false;
             const addedNames = [];
             favorites.forEach((favUrl) => {
-                if (links.some((l) => linkUrlMatches(l.url, favUrl))) return;
-                const fromDefault = DEFAULT_LINKS.find((l) => linkUrlMatches(l.url, favUrl));
+                if (links.some((l) => sameLinkUrl(l.url, favUrl))) return;
+                const fromDefault = DEFAULT_LINKS.find((l) => sameLinkUrl(l.url, favUrl));
                 if (!fromDefault) return;
                 links.push({
                     name: fromDefault.name,
