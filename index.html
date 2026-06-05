@@ -4137,8 +4137,9 @@
                     lastVisit: visitStats[url].lastVisit || 0
                 };
             }
+            const normalized = normalizeLinkUrl(url);
             for (const [key, stats] of Object.entries(visitStats)) {
-                if (linkUrlMatches(key, url)) {
+                if (normalizeLinkUrl(key) === normalized) {
                     return {
                         count: stats.count || 0,
                         lastVisit: stats.lastVisit || 0
