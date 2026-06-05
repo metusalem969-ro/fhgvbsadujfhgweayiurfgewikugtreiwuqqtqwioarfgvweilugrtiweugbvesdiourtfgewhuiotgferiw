@@ -3742,6 +3742,7 @@
         const VISIT_STATS_KEY = 'visitStats_v1';
         const LAST_CLICKED_URL_KEY = 'lastClickedUrl_v1';
         const DEVICE_ID_KEY = 'hercules_device_id_v1';
+        const AUTO_FAVORITE_VISIT_THRESHOLD = 3;
         let favorites = new Set();
         let customOrder = [];
         let draggedElement = null;
@@ -4633,8 +4634,25 @@
             }, 400);
         }
 
+        function maybeAutoFavorite(url, previousCount) {
+            if (!url || isLinkFavorite(url)) return false;
+            const newCount = visitStats[url]?.count || 0;
+            if (newCount <= AUTO_FAVORITE_VISIT_THRESHOLD) return false;
+            if (previousCount > AUTO_FAVORITE_VISIT_THRESHOLD) return false;
+
+            favorites.add(url);
+            saveFavorites();
+            ensureFavoriteDefaultLinks();
+            playSound('permanentSound', 0.4);
+            showNotification('⭐ Adăugat automat la favorite (folosit des)', 'success');
+            scheduleLinksResortByVisits();
+            renderLinks();
+            return true;
+        }
+
         function trackVisit(url) {
             normalizeVisitStatsEntry(url);
+            const previousCount = visitStats[url].count || 0;
             const devId = getDeviceId();
             visitStats[url].byDevice[devId] = (Number(visitStats[url].byDevice[devId]) || 0) + 1;
             visitStats[url].count = sumByDevice(visitStats[url].byDevice);
@@ -4642,6 +4660,7 @@
             saveVisitStats();
             saveLastClickedUrl(url);
             updateLastClickedHighlight(url);
+            maybeAutoFavorite(url, previousCount);
             if (isLinkFavorite(url)) {
                 scheduleLinksResortByVisits();
             }
