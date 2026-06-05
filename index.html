@@ -3725,10 +3725,15 @@
             }
         }
 
-        function linkUrlMatches(a, b) {
+        function sameLinkUrl(a, b) {
             if (!a || !b) return false;
             if (a === b) return true;
-            if (normalizeLinkUrl(a) === normalizeLinkUrl(b)) return true;
+            return normalizeLinkUrl(a) === normalizeLinkUrl(b);
+        }
+
+        function linkUrlMatches(a, b) {
+            if (!a || !b) return false;
+            if (sameLinkUrl(a, b)) return true;
             try {
                 const hostA = new URL(a).hostname.replace(/^www\./i, '').split('.')[0];
                 const hostB = new URL(b).hostname.replace(/^www\./i, '').split('.')[0];
@@ -4819,14 +4824,13 @@
         function isLastClickedLink(url) {
             const last = getLastClickedUrl();
             if (!last || !url) return false;
-            return url === last || linkUrlMatches(url, last);
+            return sameLinkUrl(url, last);
         }
 
         function updateLastClickedHighlight(clickedUrl) {
             document.querySelectorAll('.link-card').forEach((card) => {
                 const cardUrl = card.dataset.url || '';
-                const isLast = cardUrl === clickedUrl || linkUrlMatches(cardUrl, clickedUrl);
-                card.classList.toggle('last-clicked', isLast);
+                card.classList.toggle('last-clicked', sameLinkUrl(cardUrl, clickedUrl));
             });
         }
 
