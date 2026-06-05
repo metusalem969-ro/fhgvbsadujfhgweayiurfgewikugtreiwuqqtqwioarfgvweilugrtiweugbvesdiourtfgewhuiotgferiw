@@ -289,9 +289,9 @@
             }
             
             .search-box input {
-                font-size: 1.5em;
-                padding: 16px 20px;
-                padding-right: calc(3.4em + 6px);
+                font-size: clamp(0.92rem, 3.6vw, 1.1rem);
+                padding: 12px 14px;
+                padding-right: calc(3em + 6px);
                 font-weight: 700;
             }
             
@@ -372,9 +372,9 @@
             }
             
             .search-box input {
-                padding: 12px 16px !important;
-                padding-right: calc(3.2em + 6px) !important;
-                font-size: 1.4em !important;
+                padding: 11px 12px !important;
+                padding-right: calc(2.8em + 6px) !important;
+                font-size: clamp(0.88rem, 3.4vw, 1rem) !important;
                 font-weight: 700 !important;
             }
         }
@@ -1253,6 +1253,7 @@
             color: rgba(255, 255, 255, 0.95);
             font-weight: 700;
             font-size: 1em;
+            opacity: 1;
         }
 
         .search-box input:focus {
@@ -2637,22 +2638,23 @@
             }
         }
 
-        /* Pe mobil reducem padding-ul intern uriaș al căsuței de căutare Google (150px),
-           altfel zona de text rămâne minusculă. Folosim ID-ul ca să batem regula #googleSearchInput. */
+        /* Pe mobil: font mai mic + padding redus ca placeholder-ul să nu fie tăiat cu … */
         @media (max-width: 768px) {
             #googleSearchInput {
-                padding-right: calc(3.3em + 6px);
-                padding-left: 18px;
+                padding-left: 14px;
+                padding-right: calc(4.2em + 2.6em + 8px);
             }
-            .search-submit-btn { min-width: 6em; font-size: 1.1em; margin: 2px; }
-            .search-box:has(.search-submit-btn) .input-clear-btn { margin-right: calc(6em + 6px); }
-            #googleSearchInput { padding-right: calc(6em + 3.3em + 10px); }
+            .search-submit-btn { min-width: 4.2em; max-width: 4.8em; font-size: 0.88em; margin: 2px; padding: 0 0.5em; }
+            .search-box:has(.search-submit-btn) .input-clear-btn { margin-right: calc(4.2em + 6px); }
             .input-clear-btn,
             .filter-clear-btn {
-                width: 3.3em;
-                min-width: 3.3em;
-                font-size: 0.95em;
+                width: 2.6em;
+                min-width: 2.6em;
+                font-size: 0.85em;
                 margin: 2px 2px 2px 0;
+            }
+            #filterInput {
+                padding-right: calc(2.6em + 6px);
             }
             /* Detaliile datei pe mobil: layout curat, fără înghesuire */
             .enhanced-clock-container {
@@ -4118,7 +4120,7 @@
             migrateBtBankUrl();
             migrateDivxAndFinanceIcons();
             initOfflineDetection();
-            adjustMobilePlaceholder();
+            adjustMobileSearchPlaceholders();
             
             createParticles();
             populateCategorySelect();
@@ -4284,26 +4286,34 @@
             });
         }
 
-        function adjustMobilePlaceholder() {
+        function adjustMobileSearchPlaceholders() {
+            const googleInput = document.getElementById('googleSearchInput');
             const filterInput = document.getElementById('filterInput');
-            if (!filterInput) return;
-            
-            const isMobile = window.innerWidth <= 768 || 
-                           ('ontouchstart' in window) || 
-                           (navigator.maxTouchPoints > 0);
-            
-            if (isMobile) {
-                filterInput.placeholder = '🔍 Caută (ex: youtube, email)...';
-            }
-            
-            window.addEventListener('resize', () => {
-                const isMobileNow = window.innerWidth <= 768;
-                if (isMobileNow) {
-                    filterInput.placeholder = '🔍 Caută (ex: youtube, email)...';
-                } else {
-                    filterInput.placeholder = '🔍 Caută site sau categorie (ex: email, filme, youtube)...';
-                }
-            });
+            if (!googleInput && !filterInput) return;
+
+            const w = window.innerWidth;
+            const isNarrow = w <= 480;
+            const isMobile = w <= 768 || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+            const googlePh = isNarrow
+                ? '🔍 Google / URL'
+                : isMobile
+                    ? '🔍 Google sau URL'
+                    : '🔍 Caută pe Google sau introdu URL...';
+
+            const filterPh = isNarrow
+                ? '🔍 Caută site…'
+                : isMobile
+                    ? '🔍 Site sau categorie'
+                    : '🔍 Caută site sau categorie (ex: email, filme, youtube)...';
+
+            if (googleInput) googleInput.placeholder = googlePh;
+            if (filterInput) filterInput.placeholder = filterPh;
+        }
+
+        if (!window.__searchPlaceholderResizeBound) {
+            window.__searchPlaceholderResizeBound = true;
+            window.addEventListener('resize', adjustMobileSearchPlaceholders);
         }
 
         function createParticles() {
