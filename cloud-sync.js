@@ -96,8 +96,35 @@
         return localStorage.getItem(SYNC_PROVIDER_KEY) || 'github';
     }
 
+    function sanitizeSyncToken(raw) {
+        if (raw == null) return '';
+        return String(raw)
+            .replace(/^\uFEFF/, '')
+            .replace(/[\u200B-\u200D\uFEFF\u00A0]/g, '')
+            .replace(/\s+/g, '')
+            .replace(/[^\x21-\x7E]/g, '');
+    }
+
+    function assertAsciiHeaderValue(value, label) {
+        if (!value) return '';
+        for (let i = 0; i < value.length; i++) {
+            if (value.charCodeAt(i) > 255) {
+                throw new Error(
+                    label + ' conține caractere invalide (spațiu invizibil la copy-paste). ' +
+                    'Șterge câmpul, copiază din nou tokenul (ghp_… sau glpat-…) și lipește.'
+                );
+            }
+        }
+        return value;
+    }
+
     function getSyncToken() {
-        return localStorage.getItem(SYNC_TOKEN_KEY) || '';
+        const raw = localStorage.getItem(SYNC_TOKEN_KEY) || '';
+        const clean = sanitizeSyncToken(raw);
+        if (clean && clean !== raw) {
+            localStorage.setItem(SYNC_TOKEN_KEY, clean);
+        }
+        return clean;
     }
 
     function getRemoteId() {
@@ -288,14 +315,25 @@
     }
 
     async function githubFetch(path, options) {
-        const token = getSyncToken();
+        const token = assertAsciiHeaderValue(getSyncToken(), 'Token API');
         const headers = {
             Accept: 'application/vnd.github+json',
             'X-GitHub-Api-Version': '2022-11-28',
             ...(options && options.headers ? options.headers : {})
         };
         if (token) headers.Authorization = 'Bearer ' + token;
-        const res = await fetch('https://api.github.com' + path, { ...options, headers });
+        let res;
+        try {
+            res = await fetch('https://api.github.com' + path, { ...options, headers });
+        } catch (fetchErr) {
+            const msg = fetchErr && fetchErr.message ? fetchErr.message : String(fetchErr);
+            if (/ISO-8859-1|non.*code point/i.test(msg)) {
+                throw new Error(
+                    'Token API invalid (caractere invizibile). Șterge tokenul, copiază din nou din GitHub (ghp_…) și lipește.'
+                );
+            }
+            throw fetchErr;
+        }
         if (!res.ok) {
             const errText = await res.text().catch(() => '');
             throw new Error(formatGitHubError(res.status, errText));
@@ -304,12 +342,23 @@
     }
 
     async function gitlabFetch(path, options) {
-        const token = getSyncToken();
+        const token = assertAsciiHeaderValue(getSyncToken(), 'Token API');
         const headers = {
             ...(options && options.headers ? options.headers : {})
         };
         if (token) headers['PRIVATE-TOKEN'] = token;
-        const res = await fetch('https://gitlab.com/api/v4' + path, { ...options, headers });
+        let res;
+        try {
+            res = await fetch('https://gitlab.com/api/v4' + path, { ...options, headers });
+        } catch (fetchErr) {
+            const msg = fetchErr && fetchErr.message ? fetchErr.message : String(fetchErr);
+            if (/ISO-8859-1|non.*code point/i.test(msg)) {
+                throw new Error(
+                    'Token API invalid (caractere invizibile). Șterge tokenul, copiază din nou din GitLab (glpat-…) și lipește.'
+                );
+            }
+            throw fetchErr;
+        }
         if (!res.ok) {
             const errText = await res.text().catch(() => '');
             throw new Error('GitLab: ' + res.status + ' ' + (errText.slice(0, 120) || res.statusText));
@@ -480,14 +529,17 @@
 
     async function setupCloudSync({ provider, token, pin, remoteId }) {
         if (!pin || pin.length < 8) throw new Error('PIN-ul trebuie să aibă minim 8 caractere');
-        if (!token || token.length < 10) throw new Error('Token invalid — lipește token GitHub (ghp_…) sau GitLab (glpat-…)');
+        const cleanToken = sanitizeSyncToken(token);
+        if (!cleanToken || cleanToken.length < 10) {
+            throw new Error('Token invalid — lipește token GitHub (ghp_…) sau GitLab (glpat-…), fără spații');
+        }
         const prov = provider === 'gitlab' ? 'gitlab' : 'github';
-        warnIfGitHubTokenUnsuitable(token.trim(), prov);
+        warnIfGitHubTokenUnsuitable(cleanToken, prov);
         const pinHash = await sha256Hex(pin);
         syncPinCache = pin;
         saveSessionPin(pin);
         localStorage.setItem(SYNC_PROVIDER_KEY, provider === 'gitlab' ? 'gitlab' : 'github');
-        localStorage.setItem(SYNC_TOKEN_KEY, token.trim());
+        localStorage.setItem(SYNC_TOKEN_KEY, cleanToken);
         localStorage.setItem(SYNC_PIN_HASH_KEY, pinHash);
         localStorage.setItem(SYNC_ENABLED_KEY, 'true');
 
@@ -625,6 +677,7 @@
         unlockSyncPin,
         getRemoteId,
         getSyncProvider,
+        sanitizeSyncToken,
         PASSWORD_HISTORY_MAX
     };
 })(typeof window !== 'undefined' ? window : globalThis);
