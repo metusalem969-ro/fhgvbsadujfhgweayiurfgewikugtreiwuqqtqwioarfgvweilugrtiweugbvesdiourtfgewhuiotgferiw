@@ -1,5 +1,5 @@
 /* sw.js */
-const CACHE_VERSION = "2026-06-04_visit-stats-cloud-persist"; // bump la fiecare deploy important
+const CACHE_VERSION = "2026-06-04_visit-stats-sum-devices"; // bump la fiecare deploy important
 const CACHE_NAME = `cmd-center-${CACHE_VERSION}`;
 
 self.addEventListener("message", (event) => {
