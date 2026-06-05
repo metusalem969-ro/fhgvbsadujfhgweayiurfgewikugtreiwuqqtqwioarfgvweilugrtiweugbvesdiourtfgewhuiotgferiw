@@ -4225,10 +4225,13 @@
                     trackVisit(link.url);
                 });
                 
-                const stats = visitStats[link.url] || { count: 0, lastVisit: null };
+                const stats = getVisitStatsForUrl(link.url);
                 const lastVisitText = stats.lastVisit 
                     ? new Date(stats.lastVisit).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
                     : 'Niciodată';
+                const visitBadge = isFavorite
+                    ? `<div class="link-visit-badge" title="Vizite: ${stats.count}">${stats.count} ${stats.count === 1 ? 'vizită' : 'vizite'}</div>`
+                    : '';
                 
                 const previewHTML = `
                     <div class="link-card-preview">
@@ -4253,6 +4256,7 @@
                          alt="${escapeHtml(link.name)}" 
                          onerror="handleLinkIconError(this)">
                     <div class="link-name">${escapeHtml(link.name)}</div>
+                    ${visitBadge}
                     ${previewHTML}
                 `;
 
@@ -4454,11 +4458,16 @@
         }
 
         function mergeVisitStats(local, remote) {
-            const merged = { ...(local || {}) };
-            Object.entries(remote || {}).forEach(([url, rStats]) => {
+            const localObj = local || {};
+            const remoteObj = remote || {};
+            if (Object.keys(localObj).length === 0) {
+                return { ...remoteObj };
+            }
+            const merged = { ...localObj };
+            Object.entries(remoteObj).forEach(([url, rStats]) => {
                 const lStats = merged[url] || { count: 0, lastVisit: null };
                 merged[url] = {
-                    count: (lStats.count || 0) + (rStats?.count || 0),
+                    count: Math.max(lStats.count || 0, rStats?.count || 0),
                     lastVisit: Math.max(lStats.lastVisit || 0, rStats?.lastVisit || 0) || null
                 };
             });
@@ -4484,9 +4493,12 @@
             }
         }
         
-        function saveVisitStats() {
+        function saveVisitStats(skipCloudSync) {
             try {
                 localStorage.setItem(VISIT_STATS_KEY, JSON.stringify(visitStats));
+                if (!skipCloudSync && window.HerculesCloudSync) {
+                    HerculesCloudSync.scheduleCloudSyncPush();
+                }
             } catch (e) {
                 console.error('Error saving visit stats:', e);
             }
@@ -6197,7 +6209,7 @@
                 getZoomLevel: () => parseInt(localStorage.getItem(ZOOM_KEY) || String(getDefaultZoomLevel()), 10),
                 notify: (msg, type) => showNotification(msg, type),
                 applyMerged: (merged) => {
-                    const counts = { favorites: 0, searches: 0, passwords: 0, notes: 0, links: 0 };
+                    const counts = { favorites: 0, searches: 0, passwords: 0, notes: 0, links: 0, visits: 0 };
                     if (merged.links && Array.isArray(merged.links) && merged.links.length > 0) {
                         links = merged.links;
                         counts.links = merged.links.length;
@@ -6230,7 +6242,8 @@
                     }
                     if (merged.visitStats && typeof merged.visitStats === 'object') {
                         visitStats = mergeVisitStats(visitStats, merged.visitStats);
-                        saveVisitStats();
+                        saveVisitStats(true);
+                        counts.visits = Object.keys(visitStats).length;
                     }
                     if (merged.lastClickedUrl) {
                         const picked = pickLastClickedUrl(
@@ -6280,7 +6293,7 @@
             }
             const id = HerculesCloudSync.getRemoteId();
             const prov = HerculesCloudSync.getSyncProvider() === 'gitlab' ? 'GitLab' : 'GitHub';
-            el.innerHTML = '✅ <strong>Sincronizare activă</strong> (' + prov + ').<br>ID profil (copiază pe telefon/tabletă):<br><code style="font-size:1.05em;word-break:break-all;">' + escapeHtml(id) + '</code>';
+            el.innerHTML = '✅ <strong>Sincronizare activă</strong> (' + prov + '). Vizitele se salvează în cloud — revin după ștergere cache dacă refaci sync cu același ID + PIN.<br>ID profil (copiază pe telefon/tabletă):<br><code style="font-size:1.05em;word-break:break-all;">' + escapeHtml(id) + '</code>';
             if (idInput) {
                 idInput.value = id;
                 idInput.setAttribute('readonly', 'readonly');
