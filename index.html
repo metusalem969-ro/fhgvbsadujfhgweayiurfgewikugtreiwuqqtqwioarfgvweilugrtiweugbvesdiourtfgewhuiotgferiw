@@ -6459,7 +6459,12 @@
                 return;
             }
             const tokenField = document.getElementById('syncToken').value.trim();
-            if (tokenField) localStorage.setItem('herculesSyncToken_v1', tokenField);
+            if (tokenField) {
+                const clean = HerculesCloudSync.sanitizeSyncToken
+                    ? HerculesCloudSync.sanitizeSyncToken(tokenField)
+                    : tokenField.replace(/\s+/g, '');
+                localStorage.setItem('herculesSyncToken_v1', clean);
+            }
             const pin = document.getElementById('syncPin').value || prompt('PIN sincronizare:');
             if (!pin) return;
             const pinOk = await HerculesCloudSync.unlockSyncPin(pin);
@@ -6488,7 +6493,10 @@
 
         async function manualCloudPush() {
             if (!window.HerculesCloudSync) return;
-            const token = document.getElementById('syncToken').value.trim() || localStorage.getItem('herculesSyncToken_v1');
+            const rawToken = document.getElementById('syncToken').value.trim() || localStorage.getItem('herculesSyncToken_v1');
+            const token = HerculesCloudSync.sanitizeSyncToken
+                ? HerculesCloudSync.sanitizeSyncToken(rawToken)
+                : (rawToken || '').replace(/\s+/g, '');
             if (!token) {
                 showNotification('⚠️ Lipsește token API. Completează token-ul și apasă «Activează».', 'error');
                 return;
