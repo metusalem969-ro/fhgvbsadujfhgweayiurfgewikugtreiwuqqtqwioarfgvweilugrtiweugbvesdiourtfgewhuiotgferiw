@@ -2976,7 +2976,7 @@
     </div>
 
     <!-- Password Generator Modal -->
-    <div class="modal" id="passwordModal">
+    <div class="modal" id="passwordModal" onclick="if(event.target===this) closePasswordGenerator()">
         <div class="modal-content" style="max-width: 600px;">
             <h2 style="margin-bottom: 20px; text-align: center;">🔐 Generator Parole Sigure</h2>
             
@@ -3049,7 +3049,7 @@
     </div>
 
     <!-- Notes/Todo Modal -->
-    <div class="modal" id="notesModal">
+    <div class="modal" id="notesModal" onclick="if(event.target===this) closeNotesModal()">
         <div class="modal-content" style="max-width: 700px;">
             <h2 style="margin-bottom: 20px; text-align: center;">📝 Notes & Todo List</h2>
             

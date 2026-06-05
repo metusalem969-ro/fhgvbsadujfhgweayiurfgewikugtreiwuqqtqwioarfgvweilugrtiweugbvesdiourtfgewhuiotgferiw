@@ -1,5 +1,5 @@
 /* sw.js */
-const CACHE_VERSION = "2026-06-05_sync-modal-balanced-v2"; // bump la fiecare deploy important
+const CACHE_VERSION = "2026-06-05_modal-backdrop-close"; // bump la fiecare deploy important
 const CACHE_NAME = `cmd-center-${CACHE_VERSION}`;
 
 self.addEventListener("message", (event) => {
