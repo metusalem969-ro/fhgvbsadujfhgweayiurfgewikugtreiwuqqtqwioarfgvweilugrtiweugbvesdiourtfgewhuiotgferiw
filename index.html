@@ -3920,6 +3920,7 @@
             applyBuiltinIcons();
             loadCustomOrder();
             loadVisitStats();
+            repairVisitStatsCorruption();
             migrateLegacyFilmehdLinks();
             migrateBtBankUrl();
             migrateDivxAndFinanceIcons();
@@ -4577,6 +4578,76 @@
             return localUrl;
         }
 
+        function getVisitCountForLink(url) {
+            const stats = visitStats[url];
+            if (!stats) return 0;
+            return computeVisitTotal(stats.byDevice || {});
+        }
+
+        /** Mai multe site-uri cu același total = date corupte (ex. Gmail+Yahoo 434, patru site-uri 62) */
+        function detectVisitStatsCorruption() {
+            const tally = new Map();
+            links.forEach((link) => {
+                const c = getVisitCountForLink(link.url);
+                if (c > 0) tally.set(c, (tally.get(c) || 0) + 1);
+            });
+            for (const [count, n] of tally) {
+                if (n >= 2 && count >= 20) return true;
+            }
+            return false;
+        }
+
+        function rebuildVisitStatsFromDevices(options) {
+            const opts = options || {};
+            const devId = getDeviceId();
+            const repaired = {};
+
+            links.forEach((link) => {
+                const url = link.url;
+                const raw = visitStats[url];
+                let byDevice = {};
+                let lastVisit = null;
+
+                if (raw && raw.byDevice && typeof raw.byDevice === 'object') {
+                    if (opts.deviceOnly) {
+                        const local = Number(raw.byDevice[devId]) || 0;
+                        if (local > 0) byDevice[devId] = local;
+                    } else {
+                        byDevice = { ...raw.byDevice };
+                        delete byDevice._legacy;
+                    }
+                    lastVisit = raw.lastVisit || null;
+                } else if (raw && raw.count && !opts.deviceOnly) {
+                    byDevice[devId] = Number(raw.count) || 0;
+                    lastVisit = raw.lastVisit || null;
+                }
+
+                repaired[url] = buildVisitStatEntry(byDevice, lastVisit);
+            });
+
+            visitStats = repaired;
+        }
+
+        function sanitizeVisitStatsAfterSync() {
+            normalizeAllVisitStats();
+            if (!detectVisitStatsCorruption()) return false;
+            rebuildVisitStatsFromDevices({ deviceOnly: true });
+            saveVisitStats(false);
+            showNotification('📊 Vizite corectate după sync — numere reale per site', 'info');
+            return true;
+        }
+
+        function repairVisitStatsCorruption() {
+            if (localStorage.getItem('visitStats_repair_v5') === 'done') return;
+            const corrupted = detectVisitStatsCorruption();
+            rebuildVisitStatsFromDevices({ deviceOnly: corrupted });
+            saveVisitStats(true);
+            localStorage.setItem('visitStats_repair_v5', 'done');
+            if (corrupted) {
+                showNotification('📊 Contoare vizite corectate — fiecare site are numărul lui', 'info');
+            }
+        }
+
         function loadVisitStats() {
             try {
                 const saved = localStorage.getItem(VISIT_STATS_KEY);
@@ -4638,7 +4709,7 @@
             normalizeVisitStatsEntry(url);
             const devId = getDeviceId();
             visitStats[url].byDevice[devId] = (Number(visitStats[url].byDevice[devId]) || 0) + 1;
-            visitStats[url].count = sumByDevice(visitStats[url].byDevice);
+            visitStats[url].count = computeVisitTotal(visitStats[url].byDevice);
             visitStats[url].lastVisit = Date.now();
             saveVisitStats();
             saveLastClickedUrl(url);
@@ -6335,6 +6406,7 @@
                             visitStats = mergeVisitStats(visitStats, merged.visitStats);
                         }
                         normalizeAllVisitStats();
+                        sanitizeVisitStatsAfterSync();
                         saveVisitStats(true);
                         counts.visits = Object.keys(visitStats).length;
                     }
