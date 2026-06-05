@@ -2288,6 +2288,145 @@
             color: #0c4a6e;
         }
 
+        /* Cloud sync modal — compact pe mobil, fără scroll */
+        #cloudSyncModal.modal {
+            padding: 6px;
+            box-sizing: border-box;
+        }
+
+        #cloudSyncModal .sync-modal-panel {
+            max-height: calc(100dvh - 12px);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 14px 16px;
+            margin: auto;
+        }
+
+        #cloudSyncModal .sync-modal-panel h2 {
+            margin: 0 0 6px;
+            font-size: 1.15em;
+            line-height: 1.2;
+        }
+
+        #cloudSyncModal .sync-intro-oneline {
+            text-align: center;
+            margin: 0 0 8px;
+            font-size: 0.82em;
+            line-height: 1.3;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        body[data-theme="light"] #cloudSyncModal .sync-intro-oneline {
+            color: #475569;
+        }
+
+        #cloudSyncModal .sync-help-details {
+            margin: 0 0 8px;
+            font-size: 0.78em;
+            line-height: 1.35;
+        }
+
+        #cloudSyncModal .sync-help-details summary {
+            cursor: pointer;
+            color: #7dd3fc;
+            font-weight: 600;
+            list-style: none;
+        }
+
+        #cloudSyncModal .sync-help-details summary::-webkit-details-marker {
+            display: none;
+        }
+
+        body[data-theme="light"] #cloudSyncModal .sync-help-details summary {
+            color: #0284c7;
+        }
+
+        #cloudSyncModal .sync-help-details[open] summary {
+            margin-bottom: 6px;
+        }
+
+        #cloudSyncModal .sync-status-box {
+            margin-bottom: 6px;
+            flex-shrink: 0;
+        }
+
+        #cloudSyncModal .sync-form-compact .sync-label {
+            margin: 5px 0 2px;
+            font-size: 0.78em;
+        }
+
+        #cloudSyncModal .sync-form-compact .sync-input {
+            padding: 8px 10px;
+            font-size: 0.85em;
+        }
+
+        #cloudSyncModal .sync-id-row {
+            display: flex;
+            gap: 6px;
+            align-items: stretch;
+        }
+
+        #cloudSyncModal .sync-id-row .sync-input {
+            flex: 1;
+            min-width: 0;
+        }
+
+        #cloudSyncModal .sync-copy-btn {
+            white-space: nowrap;
+            padding: 8px 10px;
+            font-size: 0.8em;
+        }
+
+        #cloudSyncModal .sync-btn-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+            flex-shrink: 0;
+        }
+
+        #cloudSyncModal .sync-btn-grid button {
+            flex: 1 1 calc(50% - 6px);
+            min-width: 0;
+            padding: 9px 8px;
+            font-size: 0.78em;
+            margin: 0;
+        }
+
+        #cloudSyncModal .sync-btn-grid .sync-btn-wide {
+            flex: 1 1 100%;
+        }
+
+        @media (max-width: 640px) {
+            #cloudSyncModal .sync-modal-panel {
+                padding: 10px 12px;
+                width: 100%;
+                max-width: 100%;
+                border-radius: 14px;
+            }
+
+            #cloudSyncModal .sync-modal-panel h2 {
+                font-size: 1em;
+            }
+
+            #cloudSyncModal .sync-status-box {
+                font-size: 0.72em;
+                padding: 6px 8px;
+                line-height: 1.3;
+            }
+
+            #cloudSyncModal .sync-form-compact .sync-input {
+                padding: 7px 8px;
+                font-size: 0.8em;
+            }
+
+            #cloudSyncModal .sync-btn-grid button {
+                padding: 8px 5px;
+                font-size: 0.7em;
+            }
+        }
+
         /* NOTES/TODO SYSTEM */
         #notesModal .modal-content {
             background: linear-gradient(135deg, rgba(139, 92, 246, 0.95) 0%, rgba(219, 39, 119, 0.95) 100%) !important;
@@ -2945,43 +3084,45 @@
     </div>
 
     <!-- Cloud Sync Modal -->
-    <div class="modal" id="cloudSyncModal">
+    <div class="modal" id="cloudSyncModal" onclick="if(event.target===this) closeCloudSyncModal()">
         <div class="modal-content sync-modal-panel" style="max-width: 520px;">
-            <h2 style="margin-bottom: 12px; text-align: center;">☁️ Sincronizare dispozitive</h2>
-            <p class="sync-muted" style="text-align: center; margin-bottom: 16px; font-size: 0.9em;">
-                <strong>1) Primul PC:</strong> token + PIN → «Activează» → apare <strong>ID profil</strong> (îl copiezi).<br>
-                <strong>2) Telefon / alt link:</strong> același token + PIN + ID → «Activează» → «Descarcă acum».<br>
-                <strong>GitHub Pages și GitLab Pages</strong> sunt site-uri diferite — pe fiecare link configurezi o dată aceleași date (datele sunt în Gist, nu pe pagină).
-            </p>
+            <h2 style="text-align: center;">☁️ Sincronizare</h2>
+            <p class="sync-intro-oneline sync-muted">Token + PIN + același ID profil pe telefon și PC.</p>
+            <details class="sync-help-details sync-muted">
+                <summary>ℹ️ Ajutor configurare</summary>
+                <p style="margin: 0 0 6px;"><strong>1) Primul PC:</strong> token + PIN → «Activează» → copiază ID profil.</p>
+                <p style="margin: 0 0 6px;"><strong>2) Telefon:</strong> același token + PIN + ID → «Activează» → «Descarcă acum».</p>
+                <p style="margin: 0;">GitHub Pages și GitLab Pages = configurezi separat, aceleași date în Gist.</p>
+            </details>
             <div id="cloudSyncStatus" class="sync-status-box">Stare: neconfigurat</div>
-            <label class="sync-label">Platformă</label>
-            <select id="syncProvider" class="sync-input">
-                <option value="github">GitHub Gist (token classic ghp_ + scope gist)</option>
-                <option value="gitlab">GitLab Snippet (token glpat- + scope api)</option>
-            </select>
-            <p class="sync-muted" style="font-size: 0.82em; margin: 6px 0 10px;">
-                Eroare 403? Tokenul „fine-grained” (github_pat_) <strong>nu merge</strong> la Gist.
-                <a href="https://github.com/settings/tokens/new?scopes=gist&amp;description=Hercules-sync" target="_blank" rel="noopener" style="color: #7dd3fc;">Creează token classic (gist)</a>
-            </p>
-            <label class="sync-label">Token API (salvat doar în acest browser)</label>
-            <input type="password" id="syncToken" class="sync-input" placeholder="GitHub classic: ghp_… (NU github_pat_)" autocomplete="off">
-            <label class="sync-label">PIN sincronizare (min. 8 caractere, același peste tot)</label>
-            <input type="password" id="syncPin" class="sync-input" placeholder="Același PIN pe toate dispozitivele" autocomplete="off">
-            <label class="sync-label">ID profil (codul tău de legătură între dispozitive)</label>
-            <div style="display: flex; gap: 8px; align-items: stretch;">
-                <input type="text" id="syncRemoteId" class="sync-input" style="flex: 1;" placeholder="Apare automat după «Activează» pe primul PC — gol la prima activare" readonly>
-                <button type="button" class="btn-secondary" onclick="copySyncProfileId()" style="white-space: nowrap; padding: 8px 14px;">📋 Copiază</button>
+            <div class="sync-form-compact">
+                <label class="sync-label">Platformă</label>
+                <select id="syncProvider" class="sync-input">
+                    <option value="github">GitHub Gist (ghp_ + gist)</option>
+                    <option value="gitlab">GitLab Snippet (glpat-)</option>
+                </select>
+                <details class="sync-help-details sync-muted">
+                    <summary>Token 403 / fine-grained?</summary>
+                    <p style="margin: 0;">Tokenul github_pat_ nu merge la Gist. Folosește classic ghp_:
+                    <a href="https://github.com/settings/tokens/new?scopes=gist&amp;description=Hercules-sync" target="_blank" rel="noopener" style="color: #7dd3fc;">creează token</a></p>
+                </details>
+                <label class="sync-label">Token API</label>
+                <input type="password" id="syncToken" class="sync-input" placeholder="ghp_… (salvat în browser)" autocomplete="off">
+                <label class="sync-label">PIN (min. 8 caractere)</label>
+                <input type="password" id="syncPin" class="sync-input" placeholder="Același PIN peste tot" autocomplete="off">
+                <label class="sync-label">ID profil</label>
+                <div class="sync-id-row">
+                    <input type="text" id="syncRemoteId" class="sync-input" placeholder="Gol la prima activare" readonly>
+                    <button type="button" class="btn-secondary sync-copy-btn" onclick="copySyncProfileId()">📋</button>
+                </div>
             </div>
-            <p id="syncIdHelp" class="sync-muted" style="font-size: 0.82em; margin-top: 6px;">
-                <strong>Unde îl iei?</strong> Doar de pe primul dispozitiv, după ce «Activează» reușește: apare aici, în caseta albastră de sus și în mesajul verde. Trimite-l pe WhatsApp/email pe telefon, apoi lipește-l aici.
-            </p>
-            <div class="modal-buttons" style="margin-top: 16px; flex-wrap: wrap; gap: 8px;">
-                <button type="button" class="btn-primary" onclick="activateCloudSync()">✅ Activează / salvează</button>
-                <button type="button" class="btn-secondary" onclick="manualCloudPull()">⬇️ Descarcă acum</button>
-                <button type="button" class="btn-secondary" onclick="manualCloudPush()">⬆️ Încarcă acum</button>
-                <button type="button" class="btn-secondary" onclick="stripDefaultFavoritesUi()">⭐ Scoate favorite implicite</button>
+            <div class="sync-btn-grid modal-buttons">
+                <button type="button" class="btn-primary" onclick="activateCloudSync()">✅ Activează</button>
+                <button type="button" class="btn-secondary" onclick="manualCloudPull()">⬇️ Descarcă</button>
+                <button type="button" class="btn-secondary" onclick="manualCloudPush()">⬆️ Încarcă</button>
+                <button type="button" class="btn-secondary" onclick="stripDefaultFavoritesUi()">⭐ Scoate implicite</button>
                 <button type="button" class="btn-secondary" onclick="disableCloudSyncUi()">🚫 Dezactivează</button>
-                <button type="button" class="btn-secondary" onclick="closeCloudSyncModal()">❌ Închide</button>
+                <button type="button" class="btn-secondary sync-btn-wide" onclick="closeCloudSyncModal()">❌ Închide</button>
             </div>
         </div>
     </div>
@@ -6487,28 +6628,23 @@
             const el = document.getElementById('cloudSyncStatus');
             const btn = document.getElementById('cloudSyncButton');
             const idInput = document.getElementById('syncRemoteId');
-            const idHelp = document.getElementById('syncIdHelp');
             if (!el) return;
             if (!window.HerculesCloudSync || !HerculesCloudSync.isSyncConfigured()) {
-                el.textContent = 'Stare: neconfigurat — pe PRIMUL dispozitiv: token + PIN → Activează (fără ID). Apoi copiază ID-ul generat.';
+                el.textContent = 'Neconfigurat — token + PIN → Activează (fără ID la prima activare).';
                 if (idInput) {
                     idInput.value = '';
                     idInput.removeAttribute('readonly');
-                    idInput.placeholder = 'La prima activare lasă gol — ID-ul apare după succes';
+                    idInput.placeholder = 'Gol la prima activare';
                 }
-                if (idHelp) idHelp.style.display = 'block';
                 if (btn) btn.style.boxShadow = '0 5px 20px rgba(14, 165, 233, 0.6)';
                 return;
             }
             const id = HerculesCloudSync.getRemoteId();
             const prov = HerculesCloudSync.getSyncProvider() === 'gitlab' ? 'GitLab' : 'GitHub';
-            el.innerHTML = '✅ <strong>Sincronizare activă</strong> (' + prov + '). Vizitele se salvează în cloud — revin după ștergere cache dacă refaci sync cu același ID + PIN.<br>ID profil (copiază pe telefon/tabletă):<br><code style="font-size:1.05em;word-break:break-all;">' + escapeHtml(id) + '</code>';
+            el.textContent = '✅ Activ (' + prov + ') — ID în câmpul de jos. Copiază 📋 pe telefon.';
             if (idInput) {
                 idInput.value = id;
                 idInput.setAttribute('readonly', 'readonly');
-            }
-            if (idHelp) {
-                idHelp.innerHTML = 'Acesta e codul tău. Pe <strong>al doilea</strong> dispozitiv: lipește în câmpul de mai sus → Activează → Descarcă acum.';
             }
             if (btn) btn.style.boxShadow = '0 5px 24px rgba(16, 185, 129, 0.85)';
         }
