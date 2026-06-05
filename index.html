@@ -2979,6 +2979,7 @@
                 <button type="button" class="btn-primary" onclick="activateCloudSync()">✅ Activează / salvează</button>
                 <button type="button" class="btn-secondary" onclick="manualCloudPull()">⬇️ Descarcă acum</button>
                 <button type="button" class="btn-secondary" onclick="manualCloudPush()">⬆️ Încarcă acum</button>
+                <button type="button" class="btn-secondary" onclick="stripDefaultFavoritesUi()">⭐ Scoate favorite implicite</button>
                 <button type="button" class="btn-secondary" onclick="disableCloudSyncUi()">🚫 Dezactivează</button>
                 <button type="button" class="btn-secondary" onclick="closeCloudSyncModal()">❌ Închide</button>
             </div>
@@ -3683,17 +3684,18 @@
 
         const FAVORITES_KEY = 'favoriteLinks_v1';
         const FAVORITES_PURGE_DEFAULTS_KEY = 'favorites_purge_defaults_v1';
-        /** Listă veche — folosită o singură dată ca să scoată stelele puse automat */
+        /** Nume site-uri care aveau stea implicită (potrivire și după nume) */
+        const LEGACY_DEFAULT_FAVORITE_NAMES = [
+            'Yahoo', 'Gmail', 'YouTube', 'Facebook', 'WhatsApp',
+            'eBay', 'eBay UK', 'Amazon UK', 'AliExpress',
+            'ClickSud', 'ClickSud IN', 'ClickSud WTF', 'ClickSud NET', 'ClickSud UK', 'ClickSud S', 'Vezi Aici', 'Focus Sat', 'Dailymotion',
+            'Filelist', 'DivXFilme.org', 'DivX Filme (.be)', 'DivX Filme (.art)', 'IMDB', 'Vox Filme',
+            'FilmeHD.to', 'FilmeHD.cc', 'OneMagia', 'JustWatch', 'Top Filme HD',
+            'OpenAI', 'Gemini AI', 'Perplexity', 'Arduino', 'Control PC Mobil', 'Control PC Desktop',
+            'Bollywood Filme', 'Cinepub', 'Pluto TV', 'Despre Seriale', 'Voyo', 'Filmflix', 'Tubi', 'Roku', 'Octopus Energy'
+        ];
+        /** Listă veche — URL-uri care aveau stea implicită */
         const LEGACY_DEFAULT_FAVORITE_URLS = (() => {
-            const starredNames = [
-                'Yahoo', 'Gmail', 'YouTube', 'Facebook', 'WhatsApp',
-                'eBay', 'eBay UK', 'Amazon UK', 'AliExpress',
-                'ClickSud', 'ClickSud IN', 'ClickSud WTF', 'ClickSud NET', 'ClickSud UK', 'ClickSud S', 'Vezi Aici', 'Focus Sat', 'Dailymotion',
-                'Filelist', 'DivXFilme.org', 'DivX Filme (.be)', 'DivX Filme (.art)', 'IMDB', 'Vox Filme',
-                'FilmeHD.to', 'FilmeHD.cc', 'OneMagia', 'JustWatch', 'Top Filme HD',
-                'OpenAI', 'Gemini AI', 'Perplexity', 'Arduino', 'Control PC Mobil', 'Control PC Desktop',
-                'Bollywood Filme', 'Cinepub', 'Pluto TV', 'Despre Seriale', 'Voyo', 'Filmflix', 'Tubi', 'Roku', 'Octopus Energy'
-            ];
             const extraUrls = [
                 'https://clicksud.com.in/',
                 'https://clicksud.wtf/',
@@ -3708,7 +3710,7 @@
                 'https://onemagia.com/movies'
             ];
             const urls = new Set(extraUrls);
-            starredNames.forEach((name) => {
+            LEGACY_DEFAULT_FAVORITE_NAMES.forEach((name) => {
                 const entry = DEFAULT_LINKS.find((l) => l.name === name);
                 if (entry) urls.add(entry.url);
             });
@@ -4679,30 +4681,40 @@
 
         function isLegacyDefaultFavorite(url) {
             if (!url) return false;
-            return LEGACY_DEFAULT_FAVORITE_URLS.some((legacy) => linkUrlMatches(legacy, url));
+            const normalized = normalizeLinkUrl(url);
+            if (LEGACY_DEFAULT_FAVORITE_URLS.some((legacy) => normalizeLinkUrl(legacy) === normalized)) {
+                return true;
+            }
+            const link = links.find((l) => l.url === url || normalizeLinkUrl(l.url) === normalized);
+            if (link && LEGACY_DEFAULT_FAVORITE_NAMES.includes(link.name)) return true;
+            return false;
         }
 
-        function shouldKeepLegacyFavorite(url) {
-            if (!isLegacyDefaultFavorite(url)) return true;
-            return getVisitStatsForUrl(url).count > AUTO_FAVORITE_VISIT_THRESHOLD;
+        function filterOutLegacyDefaultFavorites(favList) {
+            return (favList || []).filter((url) => !isLegacyDefaultFavorite(url));
         }
 
         function stripLegacyDefaultFavorites(options) {
             const opts = options || {};
-            let changed = false;
-            [...favorites].forEach((favUrl) => {
-                if (!shouldKeepLegacyFavorite(favUrl)) {
-                    favorites.delete(favUrl);
-                    changed = true;
-                }
-            });
-            if (!changed) return false;
+            const before = favorites.size;
+            favorites = new Set(filterOutLegacyDefaultFavorites([...favorites]));
+            if (favorites.size === before) return false;
             saveFavorites(opts.skipCloudSync === true);
             if (opts.notifyOnce && localStorage.getItem(FAVORITES_PURGE_DEFAULTS_KEY) !== 'done') {
                 localStorage.setItem(FAVORITES_PURGE_DEFAULTS_KEY, 'done');
                 showNotification('⭐ Favorite implicite scoase — alege tu cu steaua sau folosind des', 'info');
+            } else if (opts.notify) {
+                showNotification('⭐ Favorite implicite scoase (' + (before - favorites.size) + ')', 'info');
             }
             return true;
+        }
+
+        function stripDefaultFavoritesUi() {
+            const removed = stripLegacyDefaultFavorites({ notify: true });
+            if (!removed) {
+                showNotification('ℹ️ Nu mai sunt favorite implicite de scos', 'info');
+            }
+            renderLinks();
         }
 
         function normalizeFavoritesToLinks() {
@@ -6321,7 +6333,8 @@
         // ===== CLOUD SYNC UI =====
         function initHerculesCloudSyncBridge() {
             window.HerculesSyncDeps = {
-                getFavorites: () => [...favorites],
+                getFavorites: () => filterOutLegacyDefaultFavorites([...favorites]),
+                filterSyncFavorites: (arr) => filterOutLegacyDefaultFavorites(arr),
                 getSearchHistory: () => getSearchHistory(),
                 getPasswordHistory: () => JSON.parse(localStorage.getItem(PASSWORD_HISTORY_KEY) || '[]'),
                 getNotes: () => getNotes(),
