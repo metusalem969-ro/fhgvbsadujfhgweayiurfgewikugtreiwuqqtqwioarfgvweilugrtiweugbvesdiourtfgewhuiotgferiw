@@ -3916,7 +3916,7 @@
             purgeRemovedLinks();
             
             loadFavorites();
-            purgeLegacyDefaultFavorites();
+            stripLegacyDefaultFavorites({ notifyOnce: true });
             ensureBuiltinLinks();
             ensureMissingDefaultLinks();
             ensureFavoriteDefaultLinks();
@@ -4682,20 +4682,27 @@
             return LEGACY_DEFAULT_FAVORITE_URLS.some((legacy) => linkUrlMatches(legacy, url));
         }
 
-        function purgeLegacyDefaultFavorites() {
-            if (localStorage.getItem(FAVORITES_PURGE_DEFAULTS_KEY) === 'done') return;
+        function shouldKeepLegacyFavorite(url) {
+            if (!isLegacyDefaultFavorite(url)) return true;
+            return getVisitStatsForUrl(url).count > AUTO_FAVORITE_VISIT_THRESHOLD;
+        }
+
+        function stripLegacyDefaultFavorites(options) {
+            const opts = options || {};
             let changed = false;
             [...favorites].forEach((favUrl) => {
-                if (isLegacyDefaultFavorite(favUrl)) {
+                if (!shouldKeepLegacyFavorite(favUrl)) {
                     favorites.delete(favUrl);
                     changed = true;
                 }
             });
-            localStorage.setItem(FAVORITES_PURGE_DEFAULTS_KEY, 'done');
-            if (changed) {
-                saveFavorites();
+            if (!changed) return false;
+            saveFavorites(opts.skipCloudSync === true);
+            if (opts.notifyOnce && localStorage.getItem(FAVORITES_PURGE_DEFAULTS_KEY) !== 'done') {
+                localStorage.setItem(FAVORITES_PURGE_DEFAULTS_KEY, 'done');
                 showNotification('⭐ Favorite implicite scoase — alege tu cu steaua sau folosind des', 'info');
             }
+            return true;
         }
 
         function normalizeFavoritesToLinks() {
@@ -6337,7 +6344,6 @@
                         favorites = new Set(merged.favorites);
                         normalizeFavoritesToLinks();
                         counts.favorites = favorites.size;
-                        saveFavorites(true);
                         ensureFavoriteDefaultLinks();
                     }
                     if (merged.searchHistory && Array.isArray(merged.searchHistory)) {
@@ -6389,6 +6395,9 @@
                         const index = ZOOM_LEVELS.indexOf(merged.zoomLevel);
                         currentZoomIndex = index;
                         applyZoom(merged.zoomLevel);
+                    }
+                    if (stripLegacyDefaultFavorites()) {
+                        counts.favorites = favorites.size;
                     }
                     renderLinks();
                     updateCloudSyncStatusUi();
