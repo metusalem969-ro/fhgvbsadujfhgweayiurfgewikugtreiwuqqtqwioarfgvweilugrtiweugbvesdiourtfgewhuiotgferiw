@@ -3729,7 +3729,9 @@
             startX: 0,
             startY: 0,
             suppressClick: false,
-            blockContextMenu: false
+            blockContextMenu: false,
+            lastTargetUrl: null,
+            didReorder: false
         };
 
         function isTouchLikeDevice() {
@@ -4096,35 +4098,39 @@
             }
         }
 
+        function compareLinkSortOrder(a, b) {
+            const aUrl = a.url;
+            const bUrl = b.url;
+            const aOrder = customOrder.indexOf(aUrl);
+            const bOrder = customOrder.indexOf(bUrl);
+
+            if (aOrder !== -1 && bOrder !== -1) {
+                return aOrder - bOrder;
+            }
+
+            const aFav = favorites.has(aUrl);
+            const bFav = favorites.has(bUrl);
+            if (aFav && !bFav) return -1;
+            if (!aFav && bFav) return 1;
+
+            if (aOrder !== -1) return -1;
+            if (bOrder !== -1) return 1;
+            return 0;
+        }
+
+        function getSortedFilteredLinks() {
+            let filtered = currentFilter === 'all'
+                ? [...links]
+                : links.filter((link) => link.category === currentFilter);
+            return filtered.sort(compareLinkSortOrder);
+        }
+
         function renderLinks() {
             const grid = document.getElementById('linksGrid');
             const restoreFocusUrl = getKeyboardFocusedUrl();
             grid.innerHTML = '';
 
-            let filtered = currentFilter === 'all' 
-                ? links 
-                : links.filter(link => link.category === currentFilter);
-
-            filtered = filtered.sort((a, b) => {
-                const aUrl = a.url;
-                const bUrl = b.url;
-                const aFav = favorites.has(aUrl);
-                const bFav = favorites.has(bUrl);
-                
-                if (aFav && !bFav) return -1;
-                if (!aFav && bFav) return 1;
-                
-                const aOrder = customOrder.indexOf(aUrl);
-                const bOrder = customOrder.indexOf(bUrl);
-                
-                if (aOrder !== -1 && bOrder !== -1) {
-                    return aOrder - bOrder;
-                }
-                if (aOrder !== -1) return -1;
-                if (bOrder !== -1) return 1;
-                
-                return 0;
-            });
+            const filtered = getSortedFilteredLinks();
 
             filtered.forEach((link) => {
                 const linkIndex = links.indexOf(link);
@@ -4774,25 +4780,44 @@
             }
         }
         
-        function swapLinkCardOrder(draggedUrl, targetUrl) {
+        function moveLinkCardToPosition(draggedUrl, targetUrl, options) {
+            const opts = options || {};
             if (!draggedUrl || !targetUrl || draggedUrl === targetUrl) return false;
 
-            if (!customOrder.includes(draggedUrl)) {
-                customOrder.push(draggedUrl);
-            }
-            if (!customOrder.includes(targetUrl)) {
-                customOrder.push(targetUrl);
-            }
+            const sorted = getSortedFilteredLinks();
+            const urls = sorted.map((l) => l.url);
+            const fromIdx = urls.indexOf(draggedUrl);
+            let toIdx = urls.indexOf(targetUrl);
+            if (fromIdx === -1 || toIdx === -1) return false;
 
-            const draggedOrderIndex = customOrder.indexOf(draggedUrl);
-            const targetOrderIndex = customOrder.indexOf(targetUrl);
-            customOrder[draggedOrderIndex] = targetUrl;
-            customOrder[targetOrderIndex] = draggedUrl;
+            urls.splice(fromIdx, 1);
+            if (fromIdx < toIdx) toIdx -= 1;
+            urls.splice(toIdx, 0, draggedUrl);
+
+            const visibleSet = new Set(urls);
+            const remaining = links.map((l) => l.url).filter((u) => !visibleSet.has(u));
+            customOrder = [...urls, ...remaining];
 
             saveCustomOrder();
             renderLinks();
-            playSound('toggleSound', 0.3);
+
+            if (!opts.silent) {
+                playSound('toggleSound', 0.3);
+            }
             return true;
+        }
+
+        function refreshTouchDraggingCard(draggedUrl) {
+            if (!touchReorderState.active || !draggedUrl) return;
+            const card = getVisibleLinkCards().find((c) => c.dataset.url === draggedUrl);
+            if (card) {
+                touchReorderState.card = card;
+                card.classList.add('touch-dragging');
+            }
+        }
+
+        function swapLinkCardOrder(draggedUrl, targetUrl) {
+            return moveLinkCardToPosition(draggedUrl, targetUrl);
         }
 
         function clearTouchDropTargets() {
@@ -4815,6 +4840,7 @@
             touchReorderState.card = null;
             touchReorderState.active = false;
             touchReorderState.moved = false;
+            touchReorderState.lastTargetUrl = null;
         }
 
         function initCardTouchReorder(card) {
@@ -4830,6 +4856,8 @@
                 touchReorderState.timer = setTimeout(() => {
                     if (touchReorderState.moved || touchReorderState.card !== card) return;
                     touchReorderState.active = true;
+                    touchReorderState.didReorder = false;
+                    touchReorderState.lastTargetUrl = null;
                     touchReorderState.blockContextMenu = true;
                     card.classList.add('touch-dragging');
                     playSound('clickSound', 0.2);
@@ -4858,21 +4886,30 @@
                 const target = el && el.closest('.link-card');
                 if (target && target !== touchReorderState.card) {
                     target.classList.add('touch-drop-target');
+                    const draggedUrl = touchReorderState.card.dataset.url;
+                    const targetUrl = target.dataset.url;
+                    if (targetUrl && targetUrl !== touchReorderState.lastTargetUrl) {
+                        touchReorderState.lastTargetUrl = targetUrl;
+                        if (moveLinkCardToPosition(draggedUrl, targetUrl, { silent: true })) {
+                            touchReorderState.didReorder = true;
+                            refreshTouchDraggingCard(draggedUrl);
+                        }
+                    }
                 }
             }, { passive: false });
 
             card.addEventListener('touchend', (e) => {
                 if (!touchReorderState.card) return;
                 const wasActive = touchReorderState.active;
-                const draggedUrl = touchReorderState.card.dataset.url;
-                let swapped = false;
 
-                if (wasActive) {
+                if (wasActive && touchReorderState.didReorder) {
+                    playSound('toggleSound', 0.3);
+                } else if (wasActive) {
                     const touch = e.changedTouches[0];
                     const el = document.elementFromPoint(touch.clientX, touch.clientY);
                     const target = el && el.closest('.link-card');
                     if (target && target !== touchReorderState.card) {
-                        swapped = swapLinkCardOrder(draggedUrl, target.dataset.url);
+                        moveLinkCardToPosition(touchReorderState.card.dataset.url, target.dataset.url);
                     }
                 }
 
