@@ -5,7 +5,7 @@
 (function (global) {
     'use strict';
 
-    const SYNC_VERSION = 4;
+    const SYNC_VERSION = 5;
     const SYNC_PROVIDER_KEY = 'herculesSyncProvider_v1';
     const SYNC_TOKEN_KEY = 'herculesSyncToken_v1';
     const SYNC_REMOTE_ID_KEY = 'herculesSyncRemoteId_v1';
@@ -111,6 +111,7 @@
             version: SYNC_VERSION,
             updatedAt: Date.now(),
             favorites: deps.getFavorites ? deps.getFavorites() : [],
+            explicitFavorites: deps.getExplicitFavorites ? deps.getExplicitFavorites() : [],
             searchHistory: deps.getSearchHistory ? deps.getSearchHistory() : [],
             passwordHistory: deps.getPasswordHistory ? deps.getPasswordHistory() : [],
             notes: deps.getNotes ? deps.getNotes() : [],
@@ -238,6 +239,18 @@
             mergedFavorites = deps.filterSyncFavorites(mergedFavorites);
         }
 
+        let mergedExplicitFavorites;
+        if (Array.isArray(remote.explicitFavorites) && remote.explicitFavorites.length > 0) {
+            mergedExplicitFavorites = mergeFavorites(
+                deps.getExplicitFavorites ? deps.getExplicitFavorites() : [],
+                remote.explicitFavorites
+            );
+        } else if (Array.isArray(remote.explicitFavorites)) {
+            mergedExplicitFavorites = deps.getExplicitFavorites ? deps.getExplicitFavorites() : [];
+        } else {
+            mergedExplicitFavorites = deps.getExplicitFavorites ? deps.getExplicitFavorites() : [];
+        }
+
         const mergedVisitStats = mergeVisitStats(
             deps.getVisitStats ? deps.getVisitStats() : {},
             remote.visitStats
@@ -245,6 +258,7 @@
 
         const mergedPayload = {
             favorites: mergedFavorites,
+            explicitFavorites: mergedExplicitFavorites,
             passwordHistory: mergePasswordHistory(deps.getPasswordHistory(), remote.passwordHistory),
             notes: remote.notes,
             links: remote.links,

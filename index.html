@@ -3683,6 +3683,7 @@
         }
 
         const FAVORITES_KEY = 'favoriteLinks_v1';
+        const EXPLICIT_FAVORITES_KEY = 'explicitFavorites_v1';
         const FAVORITES_PURGE_DEFAULTS_KEY = 'favorites_purge_defaults_v1';
         /** Nume site-uri care aveau stea implicită (potrivire și după nume) */
         const LEGACY_DEFAULT_FAVORITE_NAMES = [
@@ -3747,6 +3748,7 @@
         const DEVICE_ID_KEY = 'hercules_device_id_v1';
         const AUTO_FAVORITE_VISIT_THRESHOLD = 3;
         let favorites = new Set();
+        let explicitFavorites = new Set();
         let customOrder = [];
         let draggedElement = null;
         let draggedIndex = null;
@@ -3918,6 +3920,8 @@
             purgeRemovedLinks();
             
             loadFavorites();
+            loadExplicitFavorites();
+            migrateExistingFavoritesToExplicit();
             stripLegacyDefaultFavorites({ notifyOnce: true });
             ensureBuiltinLinks();
             ensureMissingDefaultLinks();
@@ -4645,6 +4649,7 @@
             if (previousCount > AUTO_FAVORITE_VISIT_THRESHOLD) return false;
 
             favorites.add(url);
+            markExplicitFavorite(url);
             saveFavorites();
             ensureFavoriteDefaultLinks();
             playSound('permanentSound', 0.4);
@@ -4679,7 +4684,59 @@
             }
         }
 
+        function loadExplicitFavorites() {
+            try {
+                const saved = localStorage.getItem(EXPLICIT_FAVORITES_KEY);
+                explicitFavorites = saved ? new Set(JSON.parse(saved)) : new Set();
+            } catch (e) {
+                explicitFavorites = new Set();
+            }
+        }
+
+        function saveExplicitFavorites() {
+            try {
+                localStorage.setItem(EXPLICIT_FAVORITES_KEY, JSON.stringify([...explicitFavorites]));
+            } catch (e) {
+                console.error('Error saving explicit favorites:', e);
+            }
+        }
+
+        function markExplicitFavorite(url) {
+            if (!url) return;
+            explicitFavorites.add(url);
+            saveExplicitFavorites();
+        }
+
+        function unmarkExplicitFavorite(url) {
+            if (!url) return;
+            const normalized = normalizeLinkUrl(url);
+            [...explicitFavorites].forEach((favUrl) => {
+                if (favUrl === url || normalizeLinkUrl(favUrl) === normalized) {
+                    explicitFavorites.delete(favUrl);
+                }
+            });
+            saveExplicitFavorites();
+        }
+
+        function isExplicitFavorite(url) {
+            if (!url) return false;
+            const normalized = normalizeLinkUrl(url);
+            for (const favUrl of explicitFavorites) {
+                if (favUrl === url || normalizeLinkUrl(favUrl) === normalized) return true;
+            }
+            return false;
+        }
+
+        /** Favorite existente devin «alese de tine» ca să nu fie șterse la refresh */
+        function migrateExistingFavoritesToExplicit() {
+            if (localStorage.getItem('explicit_favorites_migrated_v1') === 'done') return;
+            favorites.forEach((url) => explicitFavorites.add(url));
+            saveExplicitFavorites();
+            localStorage.setItem('explicit_favorites_migrated_v1', 'done');
+        }
+
         function isLegacyDefaultFavorite(url) {
+            if (isExplicitFavorite(url)) return false;
             if (!url) return false;
             const normalized = normalizeLinkUrl(url);
             if (LEGACY_DEFAULT_FAVORITE_URLS.some((legacy) => normalizeLinkUrl(legacy) === normalized)) {
@@ -4968,10 +5025,12 @@
         function toggleFavorite(url) {
             if (favorites.has(url)) {
                 favorites.delete(url);
+                unmarkExplicitFavorite(url);
                 playSound('thudSound', 0.3);
                 showNotification('⭐ Removed from favorites', 'info');
             } else {
                 favorites.add(url);
+                markExplicitFavorite(url);
                 playSound('permanentSound', 0.4);
                 showNotification('⭐ Added to favorites!', 'success');
             }
@@ -6334,6 +6393,7 @@
         function initHerculesCloudSyncBridge() {
             window.HerculesSyncDeps = {
                 getFavorites: () => filterOutLegacyDefaultFavorites([...favorites]),
+                getExplicitFavorites: () => [...explicitFavorites],
                 filterSyncFavorites: (arr) => filterOutLegacyDefaultFavorites(arr),
                 getSearchHistory: () => getSearchHistory(),
                 getPasswordHistory: () => JSON.parse(localStorage.getItem(PASSWORD_HISTORY_KEY) || '[]'),
@@ -6358,6 +6418,10 @@
                         normalizeFavoritesToLinks();
                         counts.favorites = favorites.size;
                         ensureFavoriteDefaultLinks();
+                    }
+                    if (merged.explicitFavorites && Array.isArray(merged.explicitFavorites)) {
+                        merged.explicitFavorites.forEach((url) => explicitFavorites.add(url));
+                        saveExplicitFavorites();
                     }
                     if (merged.searchHistory && Array.isArray(merged.searchHistory)) {
                         saveSearchHistory(merged.searchHistory);
