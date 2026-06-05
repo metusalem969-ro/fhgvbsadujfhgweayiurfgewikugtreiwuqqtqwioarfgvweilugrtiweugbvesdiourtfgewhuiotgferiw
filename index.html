@@ -3195,22 +3195,15 @@
             return isMobileViewport() ? 60 : 70;
         }
 
-        // La încărcare pe mobil, 70%+ și 100% salvat anterior sunt reduse la 60%.
-        function normalizeZoomForMobile(level) {
-            if (!isMobileViewport()) return level;
-            if (level >= 70) return 60;
-            return level;
-        }
-        
         function loadZoom() {
             try {
                 const saved = localStorage.getItem(ZOOM_KEY);
                 if (saved) {
-                    const zoomValue = normalizeZoomForMobile(parseInt(saved, 10));
+                    const zoomValue = parseInt(saved, 10);
                     const index = ZOOM_LEVELS.indexOf(zoomValue);
                     if (index !== -1) {
                         currentZoomIndex = index;
-                        applyZoom(zoomValue);
+                        applyZoom(zoomValue, { skipCloudPush: true });
                         return;
                     }
                 }
@@ -3220,10 +3213,11 @@
             const defaultLevel = getDefaultZoomLevel();
             currentZoomIndex = ZOOM_LEVELS.indexOf(defaultLevel);
             if (currentZoomIndex === -1) currentZoomIndex = 0;
-            applyZoom(ZOOM_LEVELS[currentZoomIndex]);
+            applyZoom(ZOOM_LEVELS[currentZoomIndex], { skipCloudPush: true });
         }
         
-        function applyZoom(level) {
+        function applyZoom(level, options) {
+            const opts = options || {};
             document.body.style.zoom = (level / 100);
             updateZoomButton(level);
             
@@ -3231,6 +3225,10 @@
                 localStorage.setItem(ZOOM_KEY, level.toString());
             } catch (e) {
                 console.error('Error saving zoom:', e);
+            }
+
+            if (!opts.skipCloudPush && window.HerculesCloudSync) {
+                HerculesCloudSync.scheduleCloudSyncPush();
             }
         }
         
@@ -6049,7 +6047,7 @@
                     if (importData.zoomLevel && ZOOM_LEVELS.includes(importData.zoomLevel)) {
                         const index = ZOOM_LEVELS.indexOf(importData.zoomLevel);
                         currentZoomIndex = index;
-                        applyZoom(importData.zoomLevel);
+                        applyZoom(importData.zoomLevel, { skipCloudPush: true });
                     }
 
                     renderLinks();
