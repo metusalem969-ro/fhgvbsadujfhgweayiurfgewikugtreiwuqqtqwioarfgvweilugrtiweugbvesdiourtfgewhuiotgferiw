@@ -3682,32 +3682,33 @@
         }
 
         const FAVORITES_KEY = 'favoriteLinks_v1';
-        /** Site-uri cu stea implicită — ca în captura principală a dashboard-ului */
-        const DEFAULT_STARRED_SITE_NAMES = [
-            'Yahoo', 'Gmail', 'YouTube', 'Facebook', 'WhatsApp',
-            'eBay', 'eBay UK', 'Amazon UK', 'AliExpress',
-            'ClickSud', 'ClickSud IN', 'ClickSud WTF', 'ClickSud NET', 'ClickSud UK', 'ClickSud S', 'Vezi Aici', 'Focus Sat', 'Dailymotion',
-            'Filelist', 'DivXFilme.org', 'DivX Filme (.be)', 'DivX Filme (.art)', 'IMDB', 'Vox Filme',
-            'FilmeHD.to', 'FilmeHD.cc', 'OneMagia', 'JustWatch', 'Top Filme HD',
-            'OpenAI', 'Gemini AI', 'Perplexity', 'Arduino', 'Control PC Mobil', 'Control PC Desktop',
-            'Bollywood Filme', 'Cinepub', 'Pluto TV', 'Despre Seriale', 'Voyo', 'Filmflix', 'Tubi', 'Roku', 'Octopus Energy'
-        ];
-        const DEFAULT_FAVORITE_EXTRA_URLS = [
-            'https://clicksud.com.in/',
-            'https://clicksud.wtf/',
-            'https://click-sud.net/',
-            'https://clicksud.org.uk/',
-            'https://click-suds.com/',
-            'https://veziaici.net/',
-            'https://www.focussat.ro/',
-            'https://www.dailymotion.com/',
-            'https://filmehd.to/',
-            'https://filmehd.cc/',
-            'https://onemagia.com/movies'
-        ];
-        const DEFAULT_FAVORITE_URLS = (() => {
-            const urls = new Set(DEFAULT_FAVORITE_EXTRA_URLS);
-            DEFAULT_STARRED_SITE_NAMES.forEach((name) => {
+        const FAVORITES_PURGE_DEFAULTS_KEY = 'favorites_purge_defaults_v1';
+        /** Listă veche — folosită o singură dată ca să scoată stelele puse automat */
+        const LEGACY_DEFAULT_FAVORITE_URLS = (() => {
+            const starredNames = [
+                'Yahoo', 'Gmail', 'YouTube', 'Facebook', 'WhatsApp',
+                'eBay', 'eBay UK', 'Amazon UK', 'AliExpress',
+                'ClickSud', 'ClickSud IN', 'ClickSud WTF', 'ClickSud NET', 'ClickSud UK', 'ClickSud S', 'Vezi Aici', 'Focus Sat', 'Dailymotion',
+                'Filelist', 'DivXFilme.org', 'DivX Filme (.be)', 'DivX Filme (.art)', 'IMDB', 'Vox Filme',
+                'FilmeHD.to', 'FilmeHD.cc', 'OneMagia', 'JustWatch', 'Top Filme HD',
+                'OpenAI', 'Gemini AI', 'Perplexity', 'Arduino', 'Control PC Mobil', 'Control PC Desktop',
+                'Bollywood Filme', 'Cinepub', 'Pluto TV', 'Despre Seriale', 'Voyo', 'Filmflix', 'Tubi', 'Roku', 'Octopus Energy'
+            ];
+            const extraUrls = [
+                'https://clicksud.com.in/',
+                'https://clicksud.wtf/',
+                'https://click-sud.net/',
+                'https://clicksud.org.uk/',
+                'https://click-suds.com/',
+                'https://veziaici.net/',
+                'https://www.focussat.ro/',
+                'https://www.dailymotion.com/',
+                'https://filmehd.to/',
+                'https://filmehd.cc/',
+                'https://onemagia.com/movies'
+            ];
+            const urls = new Set(extraUrls);
+            starredNames.forEach((name) => {
                 const entry = DEFAULT_LINKS.find((l) => l.name === name);
                 if (entry) urls.add(entry.url);
             });
@@ -3742,6 +3743,7 @@
         const VISIT_STATS_KEY = 'visitStats_v1';
         const LAST_CLICKED_URL_KEY = 'lastClickedUrl_v1';
         const DEVICE_ID_KEY = 'hercules_device_id_v1';
+        const AUTO_FAVORITE_VISIT_THRESHOLD = 3;
         let favorites = new Set();
         let customOrder = [];
         let draggedElement = null;
@@ -3914,6 +3916,7 @@
             purgeRemovedLinks();
             
             loadFavorites();
+            purgeLegacyDefaultFavorites();
             ensureBuiltinLinks();
             ensureMissingDefaultLinks();
             ensureFavoriteDefaultLinks();
@@ -4633,8 +4636,25 @@
             }, 400);
         }
 
+        function maybeAutoFavorite(url, previousCount) {
+            if (!url || isLinkFavorite(url)) return false;
+            const newCount = visitStats[url]?.count || 0;
+            if (newCount <= AUTO_FAVORITE_VISIT_THRESHOLD) return false;
+            if (previousCount > AUTO_FAVORITE_VISIT_THRESHOLD) return false;
+
+            favorites.add(url);
+            saveFavorites();
+            ensureFavoriteDefaultLinks();
+            playSound('permanentSound', 0.4);
+            showNotification('⭐ Adăugat automat la favorite (folosit des)', 'success');
+            scheduleLinksResortByVisits();
+            renderLinks();
+            return true;
+        }
+
         function trackVisit(url) {
             normalizeVisitStatsEntry(url);
+            const previousCount = visitStats[url].count || 0;
             const devId = getDeviceId();
             visitStats[url].byDevice[devId] = (Number(visitStats[url].byDevice[devId]) || 0) + 1;
             visitStats[url].count = sumByDevice(visitStats[url].byDevice);
@@ -4642,6 +4662,7 @@
             saveVisitStats();
             saveLastClickedUrl(url);
             updateLastClickedHighlight(url);
+            maybeAutoFavorite(url, previousCount);
             if (isLinkFavorite(url)) {
                 scheduleLinksResortByVisits();
             }
@@ -4654,15 +4675,27 @@
             } catch (e) {
                 favorites = new Set();
             }
+        }
+
+        function isLegacyDefaultFavorite(url) {
+            if (!url) return false;
+            return LEGACY_DEFAULT_FAVORITE_URLS.some((legacy) => linkUrlMatches(legacy, url));
+        }
+
+        function purgeLegacyDefaultFavorites() {
+            if (localStorage.getItem(FAVORITES_PURGE_DEFAULTS_KEY) === 'done') return;
             let changed = false;
-            DEFAULT_FAVORITE_URLS.forEach((url) => {
-                const already = [...favorites].some((f) => linkUrlMatches(f, url));
-                if (!already) {
-                    favorites.add(url);
+            [...favorites].forEach((favUrl) => {
+                if (isLegacyDefaultFavorite(favUrl)) {
+                    favorites.delete(favUrl);
                     changed = true;
                 }
             });
-            if (changed) saveFavorites(true);
+            localStorage.setItem(FAVORITES_PURGE_DEFAULTS_KEY, 'done');
+            if (changed) {
+                saveFavorites();
+                showNotification('⭐ Favorite implicite scoase — alege tu cu steaua sau folosind des', 'info');
+            }
         }
 
         function normalizeFavoritesToLinks() {
@@ -4717,8 +4750,6 @@
                 if (favorites.has(oldUrl)) {
                     favorites.delete(oldUrl);
                     favorites.add(replaceUrl);
-                    favorites.add('https://filmehd.cc/');
-                    favorites.add('https://onemagia.com/movies');
                     changed = true;
                 }
             });
