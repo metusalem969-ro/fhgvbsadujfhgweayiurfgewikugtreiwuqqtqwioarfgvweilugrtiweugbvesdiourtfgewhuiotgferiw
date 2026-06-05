@@ -143,11 +143,16 @@
     }
 
     function mergeVisitStats(local, remote) {
-        const merged = { ...(local || {}) };
-        Object.entries(remote || {}).forEach(([url, rStats]) => {
+        const localObj = local || {};
+        const remoteObj = remote || {};
+        if (Object.keys(localObj).length === 0) {
+            return { ...remoteObj };
+        }
+        const merged = { ...localObj };
+        Object.entries(remoteObj).forEach(([url, rStats]) => {
             const lStats = merged[url] || { count: 0, lastVisit: null };
             merged[url] = {
-                count: (lStats.count || 0) + (rStats?.count || 0),
+                count: Math.max(lStats.count || 0, rStats?.count || 0),
                 lastVisit: Math.max(lStats.lastVisit || 0, rStats?.lastVisit || 0) || null
             };
         });
@@ -544,7 +549,7 @@
                 if (r.applied && r.summary && global.HerculesSyncDeps && global.HerculesSyncDeps.notify) {
                     const s = r.summary;
                     global.HerculesSyncDeps.notify(
-                        '☁️ Din cloud: ' + s.favorites + ' favorite, ' + s.searches + ' căutări, ' + s.passwords + ' parole',
+                        '☁️ Din cloud: ' + s.favorites + ' favorite, ' + (s.visits || 0) + ' carduri cu vizite, ' + s.searches + ' căutări',
                         'success'
                     );
                 }
@@ -556,6 +561,12 @@
         setInterval(() => {
             if (syncPinCache) pushToCloud();
         }, 120000);
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden' && syncPinCache && isSyncConfigured()) {
+                pushToCloud();
+            }
+        });
     }
 
     global.HerculesCloudSync = {
