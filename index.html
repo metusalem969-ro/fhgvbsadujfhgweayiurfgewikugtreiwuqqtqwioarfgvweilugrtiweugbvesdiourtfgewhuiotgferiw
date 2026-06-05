@@ -3741,6 +3741,7 @@
         const CUSTOM_ORDER_KEY = 'customOrder_v1';
         const VISIT_STATS_KEY = 'visitStats_v1';
         const LAST_CLICKED_URL_KEY = 'lastClickedUrl_v1';
+        const DEVICE_ID_KEY = 'hercules_device_id_v1';
         let favorites = new Set();
         let customOrder = [];
         let draggedElement = null;
@@ -4457,19 +4458,88 @@
             }
         }
 
-        function mergeVisitStats(local, remote) {
-            const localObj = local || {};
-            const remoteObj = remote || {};
-            if (Object.keys(localObj).length === 0) {
-                return { ...remoteObj };
+        function getDeviceId() {
+            try {
+                let id = localStorage.getItem(DEVICE_ID_KEY);
+                if (!id) {
+                    id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+                    localStorage.setItem(DEVICE_ID_KEY, id);
+                }
+                return id;
+            } catch (e) {
+                return 'dev_fallback';
             }
-            const merged = { ...localObj };
-            Object.entries(remoteObj).forEach(([url, rStats]) => {
-                const lStats = merged[url] || { count: 0, lastVisit: null };
-                merged[url] = {
-                    count: Math.max(lStats.count || 0, rStats?.count || 0),
-                    lastVisit: Math.max(lStats.lastVisit || 0, rStats?.lastVisit || 0) || null
-                };
+        }
+
+        function visitStatsToByDevice(stats) {
+            if (!stats) return {};
+            if (stats.byDevice && typeof stats.byDevice === 'object') {
+                return { ...stats.byDevice };
+            }
+            if (stats.count) {
+                return { _legacy: stats.count };
+            }
+            return {};
+        }
+
+        function sumByDevice(byDevice) {
+            return Object.values(byDevice).reduce((sum, n) => sum + (Number(n) || 0), 0);
+        }
+
+        function mergeByDeviceMaps(localMap, remoteMap) {
+            const merged = { ...remoteMap };
+            Object.entries(localMap).forEach(([devId, count]) => {
+                merged[devId] = Math.max(Number(merged[devId]) || 0, Number(count) || 0);
+            });
+            return merged;
+        }
+
+        function buildVisitStatEntry(byDevice, lastVisit) {
+            return {
+                count: sumByDevice(byDevice),
+                lastVisit: lastVisit || null,
+                byDevice
+            };
+        }
+
+        function mergeVisitStatEntries(a, b) {
+            return buildVisitStatEntry(
+                mergeByDeviceMaps(visitStatsToByDevice(a), visitStatsToByDevice(b)),
+                Math.max(a?.lastVisit || 0, b?.lastVisit || 0) || null
+            );
+        }
+
+        function normalizeVisitStatsEntry(url) {
+            const devId = getDeviceId();
+            if (!visitStats[url]) {
+                visitStats[url] = { count: 0, lastVisit: null, byDevice: {} };
+                return;
+            }
+            const s = visitStats[url];
+            if (!s.byDevice || typeof s.byDevice !== 'object') {
+                s.byDevice = {};
+                if (s.count) {
+                    s.byDevice[devId] = s.count;
+                }
+            } else if (s.byDevice._legacy && !s.byDevice[devId]) {
+                s.byDevice[devId] = Math.max(Number(s.byDevice[devId]) || 0, Number(s.byDevice._legacy) || 0);
+                delete s.byDevice._legacy;
+            }
+            s.count = sumByDevice(s.byDevice);
+        }
+
+        function normalizeAllVisitStats() {
+            Object.keys(visitStats).forEach(normalizeVisitStatsEntry);
+        }
+
+        function mergeVisitStats(local, remote) {
+            const allUrls = new Set([
+                ...Object.keys(local || {}),
+                ...Object.keys(remote || {})
+            ]);
+            const merged = {};
+            allUrls.forEach((url) => {
+                merged[url] = mergeVisitStatEntries((local && local[url]) || {}, (remote && remote[url]) || {});
             });
             return merged;
         }
@@ -4491,6 +4561,7 @@
             } catch (e) {
                 visitStats = {};
             }
+            normalizeAllVisitStats();
         }
         
         function saveVisitStats(skipCloudSync) {
@@ -4541,10 +4612,10 @@
         }
 
         function trackVisit(url) {
-            if (!visitStats[url]) {
-                visitStats[url] = { count: 0, lastVisit: null };
-            }
-            visitStats[url].count++;
+            normalizeVisitStatsEntry(url);
+            const devId = getDeviceId();
+            visitStats[url].byDevice[devId] = (Number(visitStats[url].byDevice[devId]) || 0) + 1;
+            visitStats[url].count = sumByDevice(visitStats[url].byDevice);
             visitStats[url].lastVisit = Date.now();
             saveVisitStats();
             saveLastClickedUrl(url);
@@ -4631,11 +4702,8 @@
             });
             legacyUrls.forEach((oldUrl) => {
                 if (visitStats[oldUrl]) {
-                    const existing = visitStats[replaceUrl] || { count: 0, lastVisit: null };
-                    visitStats[replaceUrl] = {
-                        count: existing.count + visitStats[oldUrl].count,
-                        lastVisit: Math.max(existing.lastVisit || 0, visitStats[oldUrl].lastVisit || 0) || null
-                    };
+                    const existing = visitStats[replaceUrl] || { count: 0, lastVisit: null, byDevice: {} };
+                    visitStats[replaceUrl] = mergeVisitStatEntries(existing, visitStats[oldUrl]);
                     delete visitStats[oldUrl];
                     changed = true;
                 }
@@ -4672,11 +4740,8 @@
             Object.keys(visitStats).forEach((key) => {
                 const fixed = fixOutboundLinkUrl(key);
                 if (fixed !== key) {
-                    const existing = visitStats[fixed] || { count: 0, lastVisit: null };
-                    visitStats[fixed] = {
-                        count: existing.count + (visitStats[key].count || 0),
-                        lastVisit: Math.max(existing.lastVisit || 0, visitStats[key].lastVisit || 0) || null
-                    };
+                    const existing = visitStats[fixed] || { count: 0, lastVisit: null, byDevice: {} };
+                    visitStats[fixed] = mergeVisitStatEntries(existing, visitStats[key]);
                     delete visitStats[key];
                     changed = true;
                 }
@@ -6242,6 +6307,7 @@
                     }
                     if (merged.visitStats && typeof merged.visitStats === 'object') {
                         visitStats = mergeVisitStats(visitStats, merged.visitStats);
+                        normalizeAllVisitStats();
                         saveVisitStats(true);
                         counts.visits = Object.keys(visitStats).length;
                     }

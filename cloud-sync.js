@@ -142,19 +142,52 @@
         return [...set];
     }
 
-    function mergeVisitStats(local, remote) {
-        const localObj = local || {};
-        const remoteObj = remote || {};
-        if (Object.keys(localObj).length === 0) {
-            return { ...remoteObj };
+    function visitStatsToByDevice(stats) {
+        if (!stats) return {};
+        if (stats.byDevice && typeof stats.byDevice === 'object') {
+            return { ...stats.byDevice };
         }
-        const merged = { ...localObj };
-        Object.entries(remoteObj).forEach(([url, rStats]) => {
-            const lStats = merged[url] || { count: 0, lastVisit: null };
-            merged[url] = {
-                count: Math.max(lStats.count || 0, rStats?.count || 0),
-                lastVisit: Math.max(lStats.lastVisit || 0, rStats?.lastVisit || 0) || null
-            };
+        if (stats.count) {
+            return { _legacy: stats.count };
+        }
+        return {};
+    }
+
+    function sumByDevice(byDevice) {
+        return Object.values(byDevice).reduce((sum, n) => sum + (Number(n) || 0), 0);
+    }
+
+    function mergeByDeviceMaps(localMap, remoteMap) {
+        const merged = { ...remoteMap };
+        Object.entries(localMap).forEach(([devId, count]) => {
+            merged[devId] = Math.max(Number(merged[devId]) || 0, Number(count) || 0);
+        });
+        return merged;
+    }
+
+    function buildVisitStatEntry(byDevice, lastVisit) {
+        return {
+            count: sumByDevice(byDevice),
+            lastVisit: lastVisit || null,
+            byDevice
+        };
+    }
+
+    function mergeVisitStatEntries(a, b) {
+        return buildVisitStatEntry(
+            mergeByDeviceMaps(visitStatsToByDevice(a), visitStatsToByDevice(b)),
+            Math.max(a?.lastVisit || 0, b?.lastVisit || 0) || null
+        );
+    }
+
+    function mergeVisitStats(local, remote) {
+        const allUrls = new Set([
+            ...Object.keys(local || {}),
+            ...Object.keys(remote || {})
+        ]);
+        const merged = {};
+        allUrls.forEach((url) => {
+            merged[url] = mergeVisitStatEntries((local && local[url]) || {}, (remote && remote[url]) || {});
         });
         return merged;
     }
