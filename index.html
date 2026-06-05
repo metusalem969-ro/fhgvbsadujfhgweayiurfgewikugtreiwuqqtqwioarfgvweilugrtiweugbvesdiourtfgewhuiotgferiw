@@ -2288,24 +2288,30 @@
             color: #0c4a6e;
         }
 
-        /* Cloud sync modal — chenar până sus/jos pe ecran, fără scroll */
+        /* Cloud sync modal — chenar full screen + spațiu jos sub butoane */
         #cloudSyncModal.modal {
             padding: 0;
             box-sizing: border-box;
             align-items: stretch;
-            justify-content: center;
+            justify-content: stretch;
+            inset: 0;
+            height: 100%;
+            min-height: 100vh;
+            min-height: 100dvh;
         }
 
         #cloudSyncModal .modal-content.sync-modal-panel {
             max-height: none;
             overflow: hidden;
             width: min(520px, 100%);
+            flex: 1;
+            min-height: 100vh;
             min-height: 100dvh;
-            max-height: 100dvh;
-            height: 100dvh;
+            height: 100%;
+            max-height: none;
             display: flex;
             flex-direction: column;
-            padding: 16px 16px 20px;
+            padding: 14px 14px calc(36px + env(safe-area-inset-bottom, 0px));
             margin: 0 auto;
             box-sizing: border-box;
             border-radius: 0;
@@ -2315,7 +2321,7 @@
             flex: 1 1 auto;
             min-height: 0;
             overflow: visible;
-            padding-bottom: 0;
+            padding-bottom: 8px;
         }
 
         #cloudSyncModal .sync-modal-top {
@@ -2410,9 +2416,10 @@
         #cloudSyncModal .sync-btn-grid.modal-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 6px;
+            gap: 10px;
             margin-top: auto;
-            padding-top: 10px;
+            padding-top: 14px;
+            padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
             flex-shrink: 0;
         }
 
@@ -2420,7 +2427,7 @@
             flex: none;
             width: 100%;
             min-width: 0;
-            padding: 10px 6px;
+            padding: 11px 8px;
             font-size: 0.76em;
             margin: 0;
             box-sizing: border-box;
@@ -2434,10 +2441,10 @@
             #cloudSyncModal .modal-content.sync-modal-panel {
                 width: 100%;
                 max-width: 100%;
+                min-height: 100vh;
                 min-height: 100dvh;
-                max-height: 100dvh;
-                height: 100dvh;
-                padding: 14px 12px 16px;
+                height: 100%;
+                padding: 12px 12px calc(52px + env(safe-area-inset-bottom, 12px));
                 border-radius: 0;
                 border-left: none;
                 border-right: none;
@@ -2445,6 +2452,16 @@
 
             #cloudSyncModal .sync-modal-panel h2 {
                 font-size: 1.05em;
+            }
+
+            #cloudSyncModal .sync-btn-grid.modal-buttons {
+                gap: 10px;
+                padding-top: 16px;
+                padding-bottom: calc(16px + env(safe-area-inset-bottom, 16px));
+            }
+
+            #cloudSyncModal .sync-btn-grid.modal-buttons button {
+                padding: 12px 8px;
             }
         }
 
