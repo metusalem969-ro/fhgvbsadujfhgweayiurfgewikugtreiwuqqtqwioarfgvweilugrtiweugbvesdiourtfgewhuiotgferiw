@@ -1,5 +1,5 @@
 /* sw.js */
-const CACHE_VERSION = "2026-06-04_sync-modal-balanced"; // bump la fiecare deploy important
+const CACHE_VERSION = "2026-06-05_sync-modal-balanced-v2"; // bump la fiecare deploy important
 const CACHE_NAME = `cmd-center-${CACHE_VERSION}`;
 
 self.addEventListener("message", (event) => {
@@ -37,8 +37,12 @@ self.addEventListener("fetch", (event) => {
   const req = event.request;
   const url = new URL(req.url);
 
-  // 1) Navigations (index.html / routing) => NETWORK FIRST
-  if (req.mode === "navigate") {
+  // 1) Navigations + index.html => NETWORK FIRST (mereu versiune proaspătă)
+  const isIndexHtml =
+    url.origin === location.origin &&
+    (url.pathname.endsWith("/index.html") || url.pathname.endsWith("/") || url.pathname.endsWith(".html"));
+
+  if (req.mode === "navigate" || isIndexHtml) {
     event.respondWith((async () => {
       try {
         const fresh = await fetch(req, { cache: "no-store" });
