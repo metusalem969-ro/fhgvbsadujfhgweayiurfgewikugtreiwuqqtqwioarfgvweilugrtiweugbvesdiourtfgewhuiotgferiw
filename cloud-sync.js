@@ -249,11 +249,9 @@
             mergedFavorites = [...mergedExplicitFavorites];
         }
 
-        if (deps.filterSyncFavorites && Array.isArray(mergedFavorites)) {
+        // explicitFavorites din cloud = alegeri ale utilizatorului — nu se filtrează
+        if (deps.filterSyncFavorites && Array.isArray(mergedFavorites) && !Array.isArray(remote.explicitFavorites)) {
             mergedFavorites = deps.filterSyncFavorites(mergedFavorites);
-        }
-        if (deps.filterSyncFavorites && Array.isArray(mergedExplicitFavorites)) {
-            mergedExplicitFavorites = deps.filterSyncFavorites(mergedExplicitFavorites);
         }
 
         const mergedVisitStats = mergeVisitStats(

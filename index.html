@@ -4398,17 +4398,14 @@
         }
 
         function applyCloudFavoritesFromMerged(merged) {
-            const filteredExplicit = filterOutLegacyDefaultFavorites(
-                Array.isArray(merged.explicitFavorites) ? merged.explicitFavorites : []
-            );
-            const filteredFavorites = filterOutLegacyDefaultFavorites(
-                Array.isArray(merged.favorites) ? merged.favorites : filteredExplicit
-            );
+            const remoteExplicit = Array.isArray(merged.explicitFavorites) ? merged.explicitFavorites : [];
+            const remoteFavorites = Array.isArray(merged.favorites) ? merged.favorites : remoteExplicit;
 
             if (merged.fromCloud) {
-                explicitFavorites = new Set(filteredExplicit);
+                explicitFavorites = new Set(remoteExplicit);
             } else {
-                filteredExplicit.forEach((url) => explicitFavorites.add(url));
+                filterOutLegacyDefaultFavorites(remoteExplicit).forEach((url) => explicitFavorites.add(url));
+                const filteredFavorites = filterOutLegacyDefaultFavorites(remoteFavorites);
                 if (filteredFavorites.length > 0) {
                     favorites = new Set(filteredFavorites);
                 }
@@ -5181,6 +5178,7 @@
 
         function isLegacyDefaultFavorite(url) {
             if (!url) return false;
+            if (isExplicitFavorite(url)) return false;
             const normalized = normalizeLinkUrl(url);
             if (LEGACY_DEFAULT_FAVORITE_URLS.some((legacy) => normalizeLinkUrl(legacy) === normalized)) {
                 return true;
@@ -6881,7 +6879,6 @@
             window.HerculesSyncDeps = {
                 getFavorites: () => [...explicitFavorites],
                 getExplicitFavorites: () => [...explicitFavorites],
-                filterSyncFavorites: (arr) => filterOutLegacyDefaultFavorites(arr),
                 getSearchHistory: () => getSearchHistory(),
                 getPasswordHistory: () => JSON.parse(localStorage.getItem(PASSWORD_HISTORY_KEY) || '[]'),
                 getNotes: () => getNotes(),
