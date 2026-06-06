@@ -493,15 +493,43 @@
         );
     }
 
+    async function gitlabFetchText(path) {
+        const token = getProviderToken('gitlab');
+        const headers = {};
+        if (token) headers['PRIVATE-TOKEN'] = token;
+        const res = await fetch('https://gitlab.com/api/v4' + path, { headers });
+        if (!res.ok) {
+            const errText = await res.text().catch(() => '');
+            throw new Error('GitLab: ' + res.status + ' ' + (errText.slice(0, 120) || res.statusText));
+        }
+        return res.text();
+    }
+
+    async function gitlabReadSnippetEnvelope(id) {
+        const snippet = await gitlabFetch('/snippets/' + encodeURIComponent(id));
+        let content = snippet.content || '';
+        if (!content && snippet.files) {
+            if (Array.isArray(snippet.files)) {
+                content = (snippet.files[0] && snippet.files[0].content) || '';
+            } else if (typeof snippet.files === 'object') {
+                const first = Object.values(snippet.files)[0];
+                content = (first && first.content) || '';
+            }
+        }
+        // GitLab API adesea nu returnează content în GET — folosește /raw
+        if (!content || !String(content).trim()) {
+            content = await gitlabFetchText('/snippets/' + encodeURIComponent(id) + '/raw');
+        }
+        if (!content || !String(content).trim()) return null;
+        return JSON.parse(content);
+    }
+
     async function remoteReadEnvelope(provider) {
         const id = getProviderRemoteId(provider);
         if (!id) throw missingRemoteIdError();
 
         if (provider === 'gitlab') {
-            const snippet = await gitlabFetch('/snippets/' + encodeURIComponent(id));
-            const content = snippet.content || (snippet.files && snippet.files[0] && snippet.files[0].content) || '';
-            if (!content) return null;
-            return JSON.parse(content);
+            return gitlabReadSnippetEnvelope(id);
         }
 
         const gist = await githubFetch('/gists/' + encodeURIComponent(id));
