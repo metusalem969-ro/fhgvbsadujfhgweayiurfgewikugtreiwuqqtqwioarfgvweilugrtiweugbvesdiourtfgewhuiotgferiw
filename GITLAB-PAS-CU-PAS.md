@@ -2,7 +2,7 @@
 
 Pe **GitHub**, agentul poate modifica codul și face `git push` direct. Pe **GitLab**, același lucru e posibil **după o configurare de 5 minute** (token). Apoi fiecare modificare merge la fel: commit → push GitHub → push GitLab → pipeline Pages.
 
-Proiectul tău GitLab (import): **`Hercules-metusalem969/dashboard`**
+Proiectul tău GitLab (Pages): **`Hercules-metusalem969/hercules-dashboard`**
 
 ---
 
@@ -25,7 +25,7 @@ Alege **una** variantă:
 1. În Cursor: setările proiectului / Cloud Agent → **Secrets** (sau Environment)
 2. Adaugă:
    - `GITLAB_TOKEN` = tokenul de la Pas 1
-   - `GITLAB_PROJECT` = `Hercules-metusalem969/dashboard`
+   - `GITLAB_PROJECT` = `Hercules-metusalem969/hercules-dashboard`
 3. Repornește agentul sau trimite din nou cererea: *„fă push pe GitLab”*
 
 Agentul rulează:
@@ -40,12 +40,12 @@ chmod +x scripts/push-to-gitlab.sh
 1. GitHub → repo → **Settings** → **Secrets and variables** → **Actions**
 2. **New repository secret:**
    - `GITLAB_TOKEN` = același token
-   - `GITLAB_PROJECT` = `Hercules-metusalem969/dashboard`
+   - `GITLAB_PROJECT` = `Hercules-metusalem969/hercules-dashboard`
 3. La fiecare push pe `main`, workflow-ul `.github/workflows/sync-to-gitlab.yml` trimite codul la GitLab.
 
 ### C) Mirror Pull în GitLab (fără token în Cursor)
 
-1. GitLab → proiect **dashboard** → **Settings** → **Repository** → **Mirroring repositories**
+1. GitLab → proiect **hercules-dashboard** → **Settings** → **Repository** → **Mirroring repositories**
 2. URL:
    ```
    https://github.com/metusalem969-ro/fhgvbsadujfhgweayiurfgewikugtreiwuqqtqwioarfgvweilugrtiweugbvesdiourtfgewhuiotgferiw.git
@@ -103,4 +103,4 @@ Cloud Agent are acces doar la **GitHub** (`origin`). GitLab e cont separat — f
 | Pipeline roșu | **Build** → job → log; de obicei lipsește `index.html` în repo |
 | Site vechi, fără Bollywood | Rulează sync (Pas 2) sau **Update now** la mirror |
 | 403 la push | Token expirat sau fără `write_repository` |
-| Proiect greșit | `GITLAB_PROJECT` trebuie exact `Hercules-metusalem969/dashboard` |
+| Proiect greșit | `GITLAB_PROJECT` trebuie exact `Hercules-metusalem969/hercules-dashboard` |

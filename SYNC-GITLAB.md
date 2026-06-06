@@ -48,7 +48,7 @@ Dacă mirror nu merge pe proiectul vechi:
 2. Copiază tokenul.
 3. GitHub → repo → **Settings** → **Secrets and variables** → **Actions** → **New secret**:
    - `GITLAB_TOKEN` = tokenul GitLab
-   - `GITLAB_PROJECT` = `Hercules-metusalem969/dashboard` (proiectul importat cu Pages)
+   - `GITLAB_PROJECT` = `Hercules-metusalem969/hercules-dashboard` (proiectul cu Pages)
 4. La fiecare push pe `main`, workflow-ul `.github/workflows/sync-to-gitlab.yml` trimite codul la GitLab.
 
 ---
