@@ -16,11 +16,19 @@
     const SYNC_SESSION_PIN_KEY = 'herculesSyncSessionPin_v1';
     const SYNC_FILE_NAME = 'hercules-sync.enc.json';
     const PASSWORD_HISTORY_MAX = 30;
+    /** Auto-sync mai rar — evită GitHub 403 rate limit */
+    const AUTO_PULL_MS = 5 * 60 * 1000;
+    const AUTO_PUSH_MS = 5 * 60 * 1000;
+    const PUSH_DEBOUNCE_MS = 15000;
+    const MIN_API_GAP_MS = 8000;
 
     let syncPinCache = null;
     let pushTimer = null;
     let pullInFlight = false;
     let pushInFlight = false;
+    let rateLimitUntil = 0;
+    let lastApiCallAt = 0;
+    let rateLimitNotified = false;
 
     function bytesToB64(bytes) {
         let s = '';
@@ -299,10 +307,56 @@
         if (status === 404) {
             return 'Gist negăsit (404). Verifică ID profil sau reactivează pe primul dispozitiv.';
         }
+        if (status === 403 && lower.includes('rate limit')) {
+            return (
+                'GitHub: limită API depășită (prea multe sync-uri). ' +
+                'Așteaptă 15–60 minute sau folosește GitLab Snippet. ' +
+                'Între timp: datele locale rămân, dar Încarcă/Descarcă nu merge.'
+            );
+        }
         return 'GitHub ' + status + ': ' + (errText.slice(0, 100) || 'eroare API');
     }
 
+    function isRateLimited() {
+        return Date.now() < rateLimitUntil;
+    }
+
+    function markRateLimitFromResponse(res, errText) {
+        const lower = (errText || '').toLowerCase();
+        if (res.status !== 403 || !lower.includes('rate limit')) return false;
+        const resetHeader = res.headers.get('X-RateLimit-Reset');
+        let until = Date.now() + 15 * 60 * 1000;
+        if (resetHeader) {
+            const resetMs = parseInt(resetHeader, 10) * 1000;
+            if (Number.isFinite(resetMs)) {
+                until = Math.max(Date.now() + 60000, resetMs);
+            }
+        }
+        rateLimitUntil = until;
+        if (!rateLimitNotified && global.HerculesSyncDeps && global.HerculesSyncDeps.notify) {
+            rateLimitNotified = true;
+            const mins = Math.max(1, Math.ceil((until - Date.now()) / 60000));
+            global.HerculesSyncDeps.notify(
+                '⏳ GitHub: limită API. Sync automat oprit ~' + mins + ' min.',
+                'warning'
+            );
+        }
+        return true;
+    }
+
+    async function waitForApiSlot() {
+        if (isRateLimited()) {
+            throw new Error(formatGitHubError(403, 'rate limit exceeded'));
+        }
+        const gap = Date.now() - lastApiCallAt;
+        if (gap < MIN_API_GAP_MS) {
+            await new Promise((resolve) => setTimeout(resolve, MIN_API_GAP_MS - gap));
+        }
+        lastApiCallAt = Date.now();
+    }
+
     async function githubFetch(path, options) {
+        await waitForApiSlot();
         const token = getSyncToken();
         const headers = {
             Accept: 'application/vnd.github+json',
@@ -313,8 +367,10 @@
         const res = await fetch('https://api.github.com' + path, { ...options, headers });
         if (!res.ok) {
             const errText = await res.text().catch(() => '');
+            markRateLimitFromResponse(res, errText);
             throw new Error(formatGitHubError(res.status, errText));
         }
+        rateLimitNotified = false;
         return res.json();
     }
 
@@ -420,6 +476,7 @@
 
     async function pullFromCloud(pin, force) {
         if (!navigator.onLine || pullInFlight) return { ok: false, reason: 'offline' };
+        if (!force && isRateLimited()) return { ok: false, reason: 'rate-limit' };
         if (!getRemoteId()) return { ok: false, error: missingRemoteIdError().message };
         pullInFlight = true;
         try {
@@ -454,6 +511,7 @@
 
     async function pushToCloud(pin, force) {
         if (!navigator.onLine || pushInFlight) return { ok: false, reason: 'offline' };
+        if (!force && isRateLimited()) return { ok: false, reason: 'rate-limit' };
         if (!isSyncConfigured() && !force) return { ok: false, reason: 'not-configured' };
         pushInFlight = true;
         try {
@@ -484,7 +542,7 @@
                     global.HerculesSyncDeps.onSyncStatus('pushed');
                 }
             });
-        }, 2500);
+        }, PUSH_DEBOUNCE_MS);
     }
 
     function warnIfGitHubTokenUnsuitable(token, provider) {
@@ -619,14 +677,14 @@
             });
         });
         setInterval(() => {
-            if (syncPinCache) pullFromCloud();
-        }, 90000);
+            if (syncPinCache && !isRateLimited()) pullFromCloud();
+        }, AUTO_PULL_MS);
         setInterval(() => {
-            if (syncPinCache) pushToCloud();
-        }, 120000);
+            if (syncPinCache && !isRateLimited()) pushToCloud();
+        }, AUTO_PUSH_MS);
 
         document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden' && syncPinCache && isSyncConfigured()) {
+            if (document.visibilityState === 'hidden' && syncPinCache && isSyncConfigured() && !isRateLimited()) {
                 pushToCloud();
             }
         });
