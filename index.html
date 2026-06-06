@@ -3928,6 +3928,7 @@
 
         const FAVORITES_KEY = 'favoriteLinks_v1';
         const EXPLICIT_FAVORITES_KEY = 'explicitFavorites_v1';
+        const EXPLICIT_FAVORITES_MODIFIED_KEY = 'explicitFavoritesModifiedAt_v1';
         const FAVORITES_PURGE_DEFAULTS_KEY = 'favorites_purge_defaults_v1';
         /** Nume site-uri care aveau stea implicită (potrivire și după nume) */
         const LEGACY_DEFAULT_FAVORITE_NAMES = [
@@ -4167,8 +4168,10 @@
             loadFavorites();
             loadExplicitFavorites();
             migrateExistingFavoritesToExplicit();
-            stripLegacyDefaultFavorites({ notifyOnce: true });
             repairLegacyExplicitFavoritesOnce();
+            normalizeExplicitAndFavoriteLinks();
+            saveExplicitFavorites();
+            saveFavorites(true);
             ensureBuiltinLinks();
             ensureMissingDefaultLinks();
             ensureFavoriteDefaultLinks();
@@ -4412,8 +4415,15 @@
             }
 
             favorites = new Set([...explicitFavorites]);
-            normalizeFavoritesToLinks();
-            saveExplicitFavorites();
+            normalizeExplicitAndFavoriteLinks();
+            saveExplicitFavorites(true);
+            if (merged.fromCloud && merged.remoteUpdatedAt) {
+                try {
+                    localStorage.setItem(EXPLICIT_FAVORITES_MODIFIED_KEY, String(merged.remoteUpdatedAt));
+                } catch (e) { /* ignore */ }
+            } else if (!merged.fromCloud) {
+                touchExplicitFavoritesModified();
+            }
             saveFavorites(true);
             ensureFavoriteDefaultLinks();
             return explicitFavorites.size;
@@ -5125,18 +5135,34 @@
             }
         }
 
+        function getExplicitFavoritesModifiedAt() {
+            return parseInt(localStorage.getItem(EXPLICIT_FAVORITES_MODIFIED_KEY) || '0', 10) || 0;
+        }
+
+        function touchExplicitFavoritesModified() {
+            try {
+                localStorage.setItem(EXPLICIT_FAVORITES_MODIFIED_KEY, String(Date.now()));
+            } catch (e) {
+                console.warn('Could not save explicit favorites modified time:', e);
+            }
+        }
+
         function loadExplicitFavorites() {
             try {
                 const saved = localStorage.getItem(EXPLICIT_FAVORITES_KEY);
                 explicitFavorites = saved ? new Set(JSON.parse(saved)) : new Set();
+                if (explicitFavorites.size > 0 && !localStorage.getItem(EXPLICIT_FAVORITES_MODIFIED_KEY)) {
+                    touchExplicitFavoritesModified();
+                }
             } catch (e) {
                 explicitFavorites = new Set();
             }
         }
 
-        function saveExplicitFavorites() {
+        function saveExplicitFavorites(skipTouch) {
             try {
                 localStorage.setItem(EXPLICIT_FAVORITES_KEY, JSON.stringify([...explicitFavorites]));
+                if (!skipTouch) touchExplicitFavoritesModified();
             } catch (e) {
                 console.error('Error saving explicit favorites:', e);
             }
@@ -5237,6 +5263,7 @@
             }
             favorites = new Set();
             explicitFavorites = new Set();
+            touchExplicitFavoritesModified();
             saveFavorites(true);
             saveExplicitFavorites();
             renderLinks();
@@ -5259,14 +5286,19 @@
             }
         }
 
-        function normalizeFavoritesToLinks() {
-            const normalized = new Set();
-            favorites.forEach((favUrl) => {
+        function normalizeExplicitAndFavoriteLinks() {
+            const normalizedExplicit = new Set();
+            explicitFavorites.forEach((favUrl) => {
                 const match = links.find((l) => sameLinkUrl(l.url, favUrl));
-                if (match) normalized.add(match.url);
-                else normalized.add(favUrl);
+                if (match) normalizedExplicit.add(match.url);
+                else normalizedExplicit.add(favUrl);
             });
-            favorites = normalized;
+            explicitFavorites = normalizedExplicit;
+            favorites = new Set([...explicitFavorites]);
+        }
+
+        function normalizeFavoritesToLinks() {
+            normalizeExplicitAndFavoriteLinks();
         }
 
 
@@ -6879,6 +6911,10 @@
             window.HerculesSyncDeps = {
                 getFavorites: () => [...explicitFavorites],
                 getExplicitFavorites: () => [...explicitFavorites],
+                getExplicitFavoritesModifiedAt: () => getExplicitFavoritesModifiedAt(),
+                scheduleCloudSyncPush: () => {
+                    if (window.HerculesCloudSync) HerculesCloudSync.scheduleCloudSyncPush();
+                },
                 getSearchHistory: () => getSearchHistory(),
                 getPasswordHistory: () => JSON.parse(localStorage.getItem(PASSWORD_HISTORY_KEY) || '[]'),
                 getNotes: () => getNotes(),
@@ -6952,9 +6988,6 @@
                         const index = ZOOM_LEVELS.indexOf(merged.zoomLevel);
                         currentZoomIndex = index;
                         applyZoom(merged.zoomLevel);
-                    }
-                    if (stripLegacyDefaultFavorites()) {
-                        counts.favorites = favorites.size;
                     }
                     renderLinks();
                     updateCloudSyncStatusUi();

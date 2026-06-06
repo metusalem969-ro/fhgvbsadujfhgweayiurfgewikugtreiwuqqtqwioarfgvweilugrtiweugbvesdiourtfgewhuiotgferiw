@@ -249,6 +249,23 @@
             mergedFavorites = [...mergedExplicitFavorites];
         }
 
+        // Cloud gol, dar ai favorite noi local (ex. YouTube) — păstrează local, urcă în cloud
+        const localExplicit = deps.getExplicitFavorites ? deps.getExplicitFavorites() : [];
+        const localExplicitModified = deps.getExplicitFavoritesModifiedAt
+            ? deps.getExplicitFavoritesModifiedAt()
+            : 0;
+        let pushLocalFavoritesAfterApply = false;
+        if (
+            Array.isArray(remote.explicitFavorites)
+            && remote.explicitFavorites.length === 0
+            && localExplicit.length > 0
+            && localExplicitModified > (remote.updatedAt || 0)
+        ) {
+            mergedExplicitFavorites = [...localExplicit];
+            mergedFavorites = [...localExplicit];
+            pushLocalFavoritesAfterApply = true;
+        }
+
         // explicitFavorites din cloud = alegeri ale utilizatorului — nu se filtrează
         if (deps.filterSyncFavorites && Array.isArray(mergedFavorites) && !Array.isArray(remote.explicitFavorites)) {
             mergedFavorites = deps.filterSyncFavorites(mergedFavorites);
@@ -275,7 +292,8 @@
             theme: remote.theme,
             soundEnabled: remote.soundEnabled,
             zoomLevel: remote.zoomLevel,
-            fromCloud: true
+            fromCloud: true,
+            remoteUpdatedAt: remote.updatedAt || 0
         };
         if (Array.isArray(remote.searchHistory)) {
             mergedPayload.searchHistory = remote.searchHistory;
@@ -284,6 +302,12 @@
         let summary = { favorites: 0, searches: 0, passwords: 0, notes: 0, links: 0 };
         if (deps.applyMerged) {
             summary = deps.applyMerged(mergedPayload) || summary;
+        }
+        if (pushLocalFavoritesAfterApply) {
+            if (deps.scheduleCloudSyncPush) deps.scheduleCloudSyncPush();
+            else if (global.HerculesCloudSync && global.HerculesCloudSync.scheduleCloudSyncPush) {
+                global.HerculesCloudSync.scheduleCloudSyncPush();
+            }
         }
         localStorage.setItem(SYNC_LAST_PULL_KEY, String(remoteTs || Date.now()));
         return { applied: true, summary, remoteTs };
