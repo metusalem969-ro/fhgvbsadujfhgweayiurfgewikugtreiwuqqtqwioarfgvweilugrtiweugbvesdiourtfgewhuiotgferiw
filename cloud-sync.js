@@ -7,8 +7,14 @@
 
     const SYNC_VERSION = 5;
     const SYNC_PROVIDER_KEY = 'herculesSyncProvider_v1';
+    const SYNC_MODE_KEY = 'herculesSyncMode_v1';
     const SYNC_TOKEN_KEY = 'herculesSyncToken_v1';
     const SYNC_REMOTE_ID_KEY = 'herculesSyncRemoteId_v1';
+    const SYNC_GITHUB_TOKEN_KEY = 'herculesSyncGithubToken_v1';
+    const SYNC_GITHUB_REMOTE_ID_KEY = 'herculesSyncGithubRemoteId_v1';
+    const SYNC_GITLAB_TOKEN_KEY = 'herculesSyncGitlabToken_v1';
+    const SYNC_GITLAB_REMOTE_ID_KEY = 'herculesSyncGitlabRemoteId_v1';
+    const SYNC_MIGRATED_V2_KEY = 'herculesSyncMigrated_v2';
     const SYNC_PIN_HASH_KEY = 'herculesSyncPinHash_v1';
     const SYNC_ENABLED_KEY = 'herculesSyncEnabled_v1';
     const SYNC_LAST_PULL_KEY = 'herculesSyncLastPull_v1';
@@ -92,25 +98,95 @@
         return JSON.parse(new TextDecoder().decode(plain));
     }
 
-    function isSyncConfigured() {
-        return (
-            localStorage.getItem(SYNC_ENABLED_KEY) === 'true' &&
-            !!localStorage.getItem(SYNC_REMOTE_ID_KEY) &&
-            !!localStorage.getItem(SYNC_TOKEN_KEY) &&
-            !!localStorage.getItem(SYNC_PIN_HASH_KEY)
-        );
+    function providerTokenKey(provider) {
+        return provider === 'gitlab' ? SYNC_GITLAB_TOKEN_KEY : SYNC_GITHUB_TOKEN_KEY;
+    }
+
+    function providerRemoteIdKey(provider) {
+        return provider === 'gitlab' ? SYNC_GITLAB_REMOTE_ID_KEY : SYNC_GITHUB_REMOTE_ID_KEY;
+    }
+
+    function migrateLegacySyncStorage() {
+        if (localStorage.getItem(SYNC_MIGRATED_V2_KEY) === 'done') return;
+        const token = localStorage.getItem(SYNC_TOKEN_KEY);
+        const remoteId = localStorage.getItem(SYNC_REMOTE_ID_KEY);
+        const provider = localStorage.getItem(SYNC_PROVIDER_KEY) || 'github';
+        if (token) {
+            const tKey = providerTokenKey(provider === 'gitlab' ? 'gitlab' : 'github');
+            const rKey = providerRemoteIdKey(provider === 'gitlab' ? 'gitlab' : 'github');
+            if (!localStorage.getItem(tKey)) localStorage.setItem(tKey, token);
+            if (remoteId && !localStorage.getItem(rKey)) localStorage.setItem(rKey, remoteId);
+        }
+        if (!localStorage.getItem(SYNC_MODE_KEY) && localStorage.getItem(SYNC_ENABLED_KEY) === 'true') {
+            localStorage.setItem(SYNC_MODE_KEY, provider === 'gitlab' ? 'gitlab' : 'github');
+        }
+        localStorage.setItem(SYNC_MIGRATED_V2_KEY, 'done');
+    }
+
+    migrateLegacySyncStorage();
+
+    function getSyncMode() {
+        return localStorage.getItem(SYNC_MODE_KEY) || localStorage.getItem(SYNC_PROVIDER_KEY) || 'github';
     }
 
     function getSyncProvider() {
-        return localStorage.getItem(SYNC_PROVIDER_KEY) || 'github';
+        return getSyncMode();
     }
 
-    function getSyncToken() {
-        return localStorage.getItem(SYNC_TOKEN_KEY) || '';
+    function getProviderToken(provider) {
+        return localStorage.getItem(providerTokenKey(provider)) || '';
+    }
+
+    function setProviderToken(provider, token) {
+        if (token) localStorage.setItem(providerTokenKey(provider), token);
+    }
+
+    function getProviderRemoteId(provider) {
+        return localStorage.getItem(providerRemoteIdKey(provider)) || '';
+    }
+
+    function setProviderRemoteId(provider, id) {
+        if (id) localStorage.setItem(providerRemoteIdKey(provider), String(id));
     }
 
     function getRemoteId() {
-        return localStorage.getItem(SYNC_REMOTE_ID_KEY) || '';
+        const mode = getSyncMode();
+        if (mode === 'gitlab') return getProviderRemoteId('gitlab');
+        if (mode === 'both') return getProviderRemoteId('github') || getProviderRemoteId('gitlab');
+        return getProviderRemoteId('github');
+    }
+
+    function getRemoteIds() {
+        return {
+            github: getProviderRemoteId('github'),
+            gitlab: getProviderRemoteId('gitlab')
+        };
+    }
+
+    function getActiveProvidersForSync() {
+        const mode = getSyncMode();
+        const providers = [];
+        if (mode === 'both' || mode === 'github') {
+            if (getProviderToken('github')) providers.push('github');
+        }
+        if (mode === 'both' || mode === 'gitlab') {
+            if (getProviderToken('gitlab')) providers.push('gitlab');
+        }
+        return providers;
+    }
+
+    function isSyncConfigured() {
+        if (localStorage.getItem(SYNC_ENABLED_KEY) !== 'true') return false;
+        if (!localStorage.getItem(SYNC_PIN_HASH_KEY)) return false;
+        const providers = getActiveProvidersForSync();
+        if (providers.length === 0) return false;
+        return providers.some((p) => !!getProviderRemoteId(p));
+    }
+
+    function getSyncToken() {
+        const mode = getSyncMode();
+        if (mode === 'gitlab') return getProviderToken('gitlab');
+        return getProviderToken('github');
     }
 
     function collectPayload() {
@@ -379,7 +455,7 @@
 
     async function githubFetch(path, options) {
         await waitForApiSlot();
-        const token = getSyncToken();
+        const token = getProviderToken('github');
         const headers = {
             Accept: 'application/vnd.github+json',
             'X-GitHub-Api-Version': '2022-11-28',
@@ -397,7 +473,7 @@
     }
 
     async function gitlabFetch(path, options) {
-        const token = getSyncToken();
+        const token = getProviderToken('gitlab');
         const headers = {
             ...(options && options.headers ? options.headers : {})
         };
@@ -417,9 +493,8 @@
         );
     }
 
-    async function remoteReadEnvelope() {
-        const provider = getSyncProvider();
-        const id = getRemoteId();
+    async function remoteReadEnvelope(provider) {
+        const id = getProviderRemoteId(provider);
         if (!id) throw missingRemoteIdError();
 
         if (provider === 'gitlab') {
@@ -435,9 +510,8 @@
         return JSON.parse(file.content);
     }
 
-    async function remoteWriteEnvelope(envelope) {
-        const provider = getSyncProvider();
-        const id = getRemoteId();
+    async function remoteWriteEnvelope(provider, envelope) {
+        const id = getProviderRemoteId(provider);
         const content = JSON.stringify(envelope);
 
         if (provider === 'gitlab') {
@@ -453,7 +527,7 @@
                         content
                     })
                 });
-                localStorage.setItem(SYNC_REMOTE_ID_KEY, String(created.id));
+                setProviderRemoteId('gitlab', created.id);
                 return created.id;
             }
             await gitlabFetch('/snippets/' + encodeURIComponent(id), {
@@ -480,7 +554,7 @@
                     }
                 })
             });
-            localStorage.setItem(SYNC_REMOTE_ID_KEY, created.id);
+            setProviderRemoteId('github', created.id);
             return created.id;
         }
 
@@ -498,30 +572,58 @@
 
     async function pullFromCloud(pin, force) {
         if (!navigator.onLine || pullInFlight) return { ok: false, reason: 'offline' };
-        if (!force && isRateLimited()) return { ok: false, reason: 'rate-limit' };
-        if (!getRemoteId()) return { ok: false, error: missingRemoteIdError().message };
+        const providers = getActiveProvidersForSync().filter((p) => getProviderRemoteId(p));
+        if (providers.length === 0) return { ok: false, error: missingRemoteIdError().message };
         pullInFlight = true;
         try {
             const usePin = pin || syncPinCache;
             if (!usePin) return { ok: false, reason: 'no-pin' };
-            const envelope = await remoteReadEnvelope();
-            if (!envelope) {
+
+            let bestPayload = null;
+            let bestTs = -1;
+            let bestProvider = null;
+            const errors = [];
+
+            for (const provider of providers) {
+                if (provider === 'github' && !force && isRateLimited()) {
+                    errors.push('GitHub: limită API (folosește GitLab sau așteaptă)');
+                    continue;
+                }
+                try {
+                    const envelope = await remoteReadEnvelope(provider);
+                    if (!envelope) {
+                        errors.push(provider + ': cloud gol');
+                        continue;
+                    }
+                    const payload = await decryptJson(usePin, envelope);
+                    const ts = payload.updatedAt || 0;
+                    if (ts >= bestTs) {
+                        bestTs = ts;
+                        bestPayload = payload;
+                        bestProvider = provider;
+                    }
+                } catch (e) {
+                    errors.push(provider + ': ' + (e.message || String(e)));
+                }
+            }
+
+            if (!bestPayload) {
                 return {
-                    ok: true,
-                    applied: false,
-                    updated: false,
-                    error: 'Cloud gol. Pe dispozitivul 1: ☁️ → Încarcă acum, apoi încearcă din nou Descarcă.'
+                    ok: false,
+                    error: errors.join(' | ') || 'Nu s-a putut citi din cloud.'
                 };
             }
-            const payload = await decryptJson(usePin, envelope);
-            const result = await applyRemotePayload(payload, { force: !!force, preferRemote: !!force });
+
+            const result = await applyRemotePayload(bestPayload, { force: !!force, preferRemote: !!force });
             const applied = !!(result && result.applied);
             return {
                 ok: true,
                 applied,
                 updated: applied,
                 summary: result && result.summary ? result.summary : null,
-                fromCloud: true
+                fromCloud: true,
+                fromProvider: bestProvider,
+                warnings: errors.length ? errors : null
             };
         } catch (e) {
             console.warn('Cloud pull:', e);
@@ -533,7 +635,8 @@
 
     async function pushToCloud(pin, force) {
         if (!navigator.onLine || pushInFlight) return { ok: false, reason: 'offline' };
-        if (!force && isRateLimited()) return { ok: false, reason: 'rate-limit' };
+        const providers = getActiveProvidersForSync();
+        if (providers.length === 0) return { ok: false, reason: 'not-configured' };
         if (!isSyncConfigured() && !force) return { ok: false, reason: 'not-configured' };
         pushInFlight = true;
         try {
@@ -542,11 +645,38 @@
             const payload = collectPayload();
             if (!payload) return { ok: false, reason: 'no-deps' };
             const envelope = await encryptJson(usePin, payload);
-            const remoteId = await remoteWriteEnvelope(envelope);
+            const remoteIds = {};
+            const errors = [];
+            let okCount = 0;
+
+            for (const provider of providers) {
+                if (provider === 'github' && !force && isRateLimited()) {
+                    errors.push('GitHub: limită API — încărcat doar pe GitLab');
+                    continue;
+                }
+                try {
+                    const remoteId = await remoteWriteEnvelope(provider, envelope);
+                    remoteIds[provider] = remoteId || getProviderRemoteId(provider);
+                    okCount += 1;
+                } catch (e) {
+                    errors.push(provider + ': ' + (e.message || String(e)));
+                }
+            }
+
+            if (okCount === 0) {
+                return { ok: false, error: errors.join(' | ') || 'Eroare la încărcare' };
+            }
+
             const ts = String(payload.updatedAt || Date.now());
             localStorage.setItem(SYNC_LAST_PUSH_KEY, ts);
             localStorage.setItem(SYNC_LAST_PULL_KEY, ts);
-            return { ok: true, remoteId: remoteId || getRemoteId() };
+            return {
+                ok: true,
+                remoteId: remoteIds.github || remoteIds.gitlab || getRemoteId(),
+                remoteIds,
+                partial: errors.length > 0,
+                warnings: errors.length ? errors : null
+            };
         } catch (e) {
             console.warn('Cloud push:', e);
             return { ok: false, error: e.message };
@@ -576,27 +706,54 @@
         }
     }
 
-    async function setupCloudSync({ provider, token, pin, remoteId }) {
+    async function setupCloudSync(options) {
+        const opts = options || {};
+        const provider = opts.provider || 'github';
+        const pin = opts.pin;
+        const token = (opts.token || '').trim();
+        const githubToken = (opts.githubToken || (provider === 'github' || provider === 'both' ? token : '') || getProviderToken('github')).trim();
+        const gitlabToken = (opts.gitlabToken || (provider === 'gitlab' || provider === 'both' ? token : '') || getProviderToken('gitlab')).trim();
+        const githubRemoteId = (opts.githubRemoteId || opts.remoteId || getProviderRemoteId('github') || '').trim();
+        const gitlabRemoteId = (opts.gitlabRemoteId || opts.remoteId || getProviderRemoteId('gitlab') || '').trim();
+
         if (!pin || pin.length < 8) throw new Error('PIN-ul trebuie să aibă minim 8 caractere');
-        if (!token || token.length < 10) throw new Error('Token invalid — lipește token GitHub (ghp_…) sau GitLab (glpat-…)');
-        const prov = provider === 'gitlab' ? 'gitlab' : 'github';
-        warnIfGitHubTokenUnsuitable(token.trim(), prov);
+        if (provider === 'both') {
+            if (!githubToken && !gitlabToken) {
+                throw new Error('Pentru modul «Ambele»: lipește token GitHub (ghp_) și/sau GitLab (glpat-).');
+            }
+        } else if (provider === 'gitlab') {
+            if (!gitlabToken) throw new Error('Token GitLab invalid — lipește glpat-…');
+        } else if (!githubToken) {
+            throw new Error('Token GitHub invalid — lipește ghp_… cu scope «gist».');
+        }
+
+        if (githubToken) warnIfGitHubTokenUnsuitable(githubToken, 'github');
+
+        const mode = provider === 'both' ? 'both' : (provider === 'gitlab' ? 'gitlab' : 'github');
         const pinHash = await sha256Hex(pin);
         syncPinCache = pin;
         saveSessionPin(pin);
-        localStorage.setItem(SYNC_PROVIDER_KEY, provider === 'gitlab' ? 'gitlab' : 'github');
-        localStorage.setItem(SYNC_TOKEN_KEY, token.trim());
+        localStorage.setItem(SYNC_MODE_KEY, mode);
+        localStorage.setItem(SYNC_PROVIDER_KEY, mode === 'both' ? 'both' : mode);
         localStorage.setItem(SYNC_PIN_HASH_KEY, pinHash);
         localStorage.setItem(SYNC_ENABLED_KEY, 'true');
 
-        const trimmedRemote = remoteId ? String(remoteId).trim() : '';
-        const hadExistingRemote = !!(trimmedRemote || getRemoteId());
-        if (trimmedRemote) {
-            localStorage.setItem(SYNC_REMOTE_ID_KEY, trimmedRemote);
+        if (githubToken) setProviderToken('github', githubToken);
+        if (gitlabToken) setProviderToken('gitlab', gitlabToken);
+        if (githubRemoteId) setProviderRemoteId('github', githubRemoteId);
+        if (gitlabRemoteId) setProviderRemoteId('gitlab', gitlabRemoteId);
+
+        // compatibilitate veche
+        if (mode === 'gitlab') {
+            localStorage.setItem(SYNC_TOKEN_KEY, gitlabToken);
+            if (gitlabRemoteId) localStorage.setItem(SYNC_REMOTE_ID_KEY, gitlabRemoteId);
+        } else if (mode === 'github') {
+            localStorage.setItem(SYNC_TOKEN_KEY, githubToken);
+            if (githubRemoteId) localStorage.setItem(SYNC_REMOTE_ID_KEY, githubRemoteId);
         }
 
-        // Al 2-lea dispozitiv / pagina GitLab: MAI ÎNTÂI descarcă din cloud, apoi încarcă
-        // (altfel push-ul cu favoritele implicite locale șterge stelele de pe PC)
+        const hadExistingRemote = !!(githubRemoteId || gitlabRemoteId || getProviderRemoteId('github') || getProviderRemoteId('gitlab'));
+
         if (hadExistingRemote) {
             const pullFirst = await pullFromCloud(pin, true);
             if (!pullFirst.ok && pullFirst.error) {
@@ -606,13 +763,13 @@
 
         const pushResult = await pushToCloud(pin, true);
         if (!pushResult.ok) {
-            throw new Error(pushResult.error || 'Nu s-a putut încărca în cloud. Verifică token-ul (GitHub: scope «gist»).');
+            throw new Error(pushResult.error || 'Nu s-a putut încărca în cloud. Verifică token-ul.');
         }
 
-        const finalId = getRemoteId();
-        if (!finalId) {
+        const ids = getRemoteIds();
+        if (!ids.github && !ids.gitlab) {
             throw new Error(
-                'Cloud-ul nu a returnat ID profil. Verifică token-ul și încearcă din nou «Activează» (fără ID profil pe primul dispozitiv).'
+                'Cloud-ul nu a returnat ID profil. Verifică token-ul și încearcă din nou «Activează».'
             );
         }
 
@@ -623,13 +780,24 @@
             }
         }
 
-        return { remoteId: finalId };
+        return {
+            remoteId: ids.github || ids.gitlab,
+            remoteIds: ids,
+            mode,
+            warnings: pushResult.warnings || null
+        };
     }
 
     function disableCloudSync() {
         localStorage.removeItem(SYNC_ENABLED_KEY);
         localStorage.removeItem(SYNC_TOKEN_KEY);
         localStorage.removeItem(SYNC_REMOTE_ID_KEY);
+        localStorage.removeItem(SYNC_MODE_KEY);
+        localStorage.removeItem(SYNC_PROVIDER_KEY);
+        localStorage.removeItem(SYNC_GITHUB_TOKEN_KEY);
+        localStorage.removeItem(SYNC_GITHUB_REMOTE_ID_KEY);
+        localStorage.removeItem(SYNC_GITLAB_TOKEN_KEY);
+        localStorage.removeItem(SYNC_GITLAB_REMOTE_ID_KEY);
         localStorage.removeItem(SYNC_PIN_HASH_KEY);
         localStorage.removeItem(SYNC_LAST_PULL_KEY);
         clearSessionPin();
@@ -699,14 +867,19 @@
             });
         });
         setInterval(() => {
-            if (syncPinCache && !isRateLimited()) pullFromCloud();
+            if (syncPinCache && getActiveProvidersForSync().some((p) => p === 'gitlab' || !isRateLimited())) {
+                pullFromCloud();
+            }
         }, AUTO_PULL_MS);
         setInterval(() => {
-            if (syncPinCache && !isRateLimited()) pushToCloud();
+            if (syncPinCache && getActiveProvidersForSync().some((p) => p === 'gitlab' || !isRateLimited())) {
+                pushToCloud();
+            }
         }, AUTO_PUSH_MS);
 
         document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden' && syncPinCache && isSyncConfigured() && !isRateLimited()) {
+            if (document.visibilityState === 'hidden' && syncPinCache && isSyncConfigured()
+                && getActiveProvidersForSync().some((p) => p === 'gitlab' || !isRateLimited())) {
                 pushToCloud();
             }
         });
@@ -722,7 +895,10 @@
         initCloudSync,
         unlockSyncPin,
         getRemoteId,
+        getRemoteIds,
         getSyncProvider,
+        getSyncMode,
+        getActiveProvidersForSync,
         PASSWORD_HISTORY_MAX
     };
 })(typeof window !== 'undefined' ? window : globalThis);
