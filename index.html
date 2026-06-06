@@ -4402,12 +4402,11 @@
                 Array.isArray(merged.explicitFavorites) ? merged.explicitFavorites : []
             );
             const filteredFavorites = filterOutLegacyDefaultFavorites(
-                Array.isArray(merged.favorites) ? merged.favorites : []
+                Array.isArray(merged.favorites) ? merged.favorites : filteredExplicit
             );
 
             if (merged.fromCloud) {
                 explicitFavorites = new Set(filteredExplicit);
-                favorites = new Set(filteredExplicit.length ? filteredExplicit : filteredFavorites);
             } else {
                 filteredExplicit.forEach((url) => explicitFavorites.add(url));
                 if (filteredFavorites.length > 0) {
@@ -5235,7 +5234,7 @@
         }
 
         async function clearAllFavoritesUi() {
-            if (!confirm('Scoți TOATE stelele (favorite)?\n\nApoi se încarcă lista goală în cloud, ca să nu revină la Descarcă.')) {
+            if (!confirm('Scoți TOATE stelele (favorite)?\n\nApoi se încarcă lista goală în cloud.\nFă același lucru pe telefon, altfel telefonul le poate pune înapoi.')) {
                 return;
             }
             favorites = new Set();
@@ -5244,14 +5243,21 @@
             saveExplicitFavorites();
             renderLinks();
             playSound('thudSound', 0.3);
-            showNotification('☆ Toate favoritele scoase', 'info');
-            if (window.HerculesCloudSync && HerculesCloudSync.isSyncConfigured()) {
-                const r = await HerculesCloudSync.pushToCloud(null, true);
-                if (r.ok) {
-                    showNotification('☁️ Favorite goale încărcate în cloud', 'success');
-                } else if (r.reason === 'no-pin') {
-                    showNotification('☁️ Apasă Încarcă după ce introduci PIN-ul', 'info');
-                }
+            if (!window.HerculesCloudSync || !HerculesCloudSync.isSyncConfigured()) {
+                showNotification('☆ Toate favoritele scoase (local)', 'info');
+                return;
+            }
+            const pin = (document.getElementById('syncPin') && document.getElementById('syncPin').value.trim()) || '';
+            if (pin && HerculesCloudSync.unlockSyncPin) {
+                await HerculesCloudSync.unlockSyncPin(pin);
+            }
+            const r = await HerculesCloudSync.pushToCloud(pin || null, true);
+            if (r.ok) {
+                showNotification('☆ 0 favorite — încărcat în cloud. Refresh OK.', 'success');
+            } else if (r.reason === 'no-pin') {
+                showNotification('☆ Scoase local. Deschide ☁️, pune PIN, apasă Încarcă.', 'warning');
+            } else {
+                showNotification('☆ Scoase local. Încarcă manual în cloud (PIN).', 'warning');
             }
         }
 
@@ -6873,7 +6879,7 @@
         // ===== CLOUD SYNC UI =====
         function initHerculesCloudSyncBridge() {
             window.HerculesSyncDeps = {
-                getFavorites: () => filterOutLegacyDefaultFavorites([...favorites]),
+                getFavorites: () => [...explicitFavorites],
                 getExplicitFavorites: () => [...explicitFavorites],
                 filterSyncFavorites: (arr) => filterOutLegacyDefaultFavorites(arr),
                 getSearchHistory: () => getSearchHistory(),
@@ -6894,7 +6900,9 @@
                         counts.links = merged.links.length;
                         saveAllLinks();
                     }
-                    if (merged.favorites || merged.explicitFavorites) {
+        if (merged.fromCloud && (Array.isArray(merged.favorites) || Array.isArray(merged.explicitFavorites))) {
+                        counts.favorites = applyCloudFavoritesFromMerged(merged);
+                    } else if (merged.favorites || merged.explicitFavorites) {
                         counts.favorites = applyCloudFavoritesFromMerged(merged);
                     }
                     if (merged.searchHistory && Array.isArray(merged.searchHistory)) {
