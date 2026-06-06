@@ -3220,6 +3220,7 @@
                 <button type="button" class="btn-secondary" onclick="manualCloudPull()">⬇️ Descarcă</button>
                 <button type="button" class="btn-secondary" onclick="manualCloudPush()">⬆️ Încarcă</button>
                 <button type="button" class="btn-secondary" onclick="stripDefaultFavoritesUi()">⭐ Scoate implicite</button>
+                <button type="button" class="btn-secondary" onclick="clearAllFavoritesUi()">☆ Scoate toate</button>
                 <button type="button" class="btn-secondary" onclick="disableCloudSyncUi()">🚫 Dezactivează</button>
                 <button type="button" class="btn-secondary sync-btn-wide" onclick="closeCloudSyncModal()">❌ Închide</button>
             </div>
@@ -4393,9 +4394,33 @@
         }
 
         function shouldShowFavoriteStar(url) {
-            if (!url) return false;
-            if (isExplicitFavorite(url)) return true;
-            return favorites.has(url);
+            return isExplicitFavorite(url);
+        }
+
+        function applyCloudFavoritesFromMerged(merged) {
+            const filteredExplicit = filterOutLegacyDefaultFavorites(
+                Array.isArray(merged.explicitFavorites) ? merged.explicitFavorites : []
+            );
+            const filteredFavorites = filterOutLegacyDefaultFavorites(
+                Array.isArray(merged.favorites) ? merged.favorites : []
+            );
+
+            if (merged.fromCloud) {
+                explicitFavorites = new Set(filteredExplicit);
+                favorites = new Set(filteredExplicit.length ? filteredExplicit : filteredFavorites);
+            } else {
+                filteredExplicit.forEach((url) => explicitFavorites.add(url));
+                if (filteredFavorites.length > 0) {
+                    favorites = new Set(filteredFavorites);
+                }
+            }
+
+            favorites = new Set([...explicitFavorites]);
+            normalizeFavoritesToLinks();
+            saveExplicitFavorites();
+            saveFavorites(true);
+            ensureFavoriteDefaultLinks();
+            return explicitFavorites.size;
         }
 
         function getVisitStatsForUrl(url) {
@@ -5209,6 +5234,27 @@
             renderLinks();
         }
 
+        async function clearAllFavoritesUi() {
+            if (!confirm('Scoți TOATE stelele (favorite)?\n\nApoi se încarcă lista goală în cloud, ca să nu revină la Descarcă.')) {
+                return;
+            }
+            favorites = new Set();
+            explicitFavorites = new Set();
+            saveFavorites(true);
+            saveExplicitFavorites();
+            renderLinks();
+            playSound('thudSound', 0.3);
+            showNotification('☆ Toate favoritele scoase', 'info');
+            if (window.HerculesCloudSync && HerculesCloudSync.isSyncConfigured()) {
+                const r = await HerculesCloudSync.pushToCloud(null, true);
+                if (r.ok) {
+                    showNotification('☁️ Favorite goale încărcate în cloud', 'success');
+                } else if (r.reason === 'no-pin') {
+                    showNotification('☁️ Apasă Încarcă după ce introduci PIN-ul', 'info');
+                }
+            }
+        }
+
         function normalizeFavoritesToLinks() {
             const normalized = new Set();
             favorites.forEach((favUrl) => {
@@ -5458,9 +5504,9 @@
         }
         
         function toggleFavorite(url) {
-            if (favorites.has(url)) {
-                favorites.delete(url);
+            if (isExplicitFavorite(url)) {
                 unmarkExplicitFavorite(url);
+                favorites.delete(url);
                 playSound('thudSound', 0.3);
                 showNotification('⭐ Removed from favorites', 'info');
             } else {
@@ -6848,15 +6894,8 @@
                         counts.links = merged.links.length;
                         saveAllLinks();
                     }
-                    if (merged.favorites && Array.isArray(merged.favorites) && merged.favorites.length > 0) {
-                        favorites = new Set(merged.favorites);
-                        normalizeFavoritesToLinks();
-                        counts.favorites = favorites.size;
-                        ensureFavoriteDefaultLinks();
-                    }
-                    if (merged.explicitFavorites && Array.isArray(merged.explicitFavorites)) {
-                        merged.explicitFavorites.forEach((url) => explicitFavorites.add(url));
-                        saveExplicitFavorites();
+                    if (merged.favorites || merged.explicitFavorites) {
+                        counts.favorites = applyCloudFavoritesFromMerged(merged);
                     }
                     if (merged.searchHistory && Array.isArray(merged.searchHistory)) {
                         saveSearchHistory(merged.searchHistory);
