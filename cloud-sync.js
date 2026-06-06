@@ -853,18 +853,9 @@
 
     function initCloudSync() {
         if (!isSyncConfigured()) return;
-        // Fără prompt la refresh: PIN memorat doar în sesiunea tab-ului (până închizi browserul)
+        // Fără pull la refresh — evită suprascrierea favorite locale înainte de push
         tryRestoreSessionPin().then((ok) => {
             if (!ok) return;
-            pullFromCloud(null, false).then((r) => {
-                if (r.applied && r.summary && global.HerculesSyncDeps && global.HerculesSyncDeps.notify) {
-                    const s = r.summary;
-                    global.HerculesSyncDeps.notify(
-                        '☁️ Din cloud: ' + s.favorites + ' favorite, ' + (s.visits || 0) + ' carduri cu vizite, ' + s.searches + ' căutări',
-                        'success'
-                    );
-                }
-            });
         });
         setInterval(() => {
             if (syncPinCache && getActiveProvidersForSync().some((p) => p === 'gitlab' || !isRateLimited())) {

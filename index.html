@@ -4193,9 +4193,8 @@
             loadFavorites();
             loadExplicitFavorites();
             migrateExistingFavoritesToExplicit();
-            repairLegacyExplicitFavoritesOnce();
             normalizeExplicitAndFavoriteLinks();
-            saveExplicitFavorites();
+            saveExplicitFavorites(true);
             saveFavorites(true);
             ensureBuiltinLinks();
             ensureMissingDefaultLinks();
@@ -5240,7 +5239,11 @@
         }
 
         function filterOutLegacyDefaultFavorites(favList) {
-            return (favList || []).filter((url) => !isLegacyDefaultFavorite(url));
+            // Nu filtra niciodată explicitFavorites — steaua manuală = alegerea utilizatorului
+            return (favList || []).filter((url) => {
+                if (isExplicitFavorite(url)) return true;
+                return !isLegacyDefaultFavorite(url);
+            });
         }
 
         function stripLegacyDefaultFavorites(options) {
