@@ -12,6 +12,7 @@
     const SYNC_PIN_HASH_KEY = 'herculesSyncPinHash_v1';
     const SYNC_ENABLED_KEY = 'herculesSyncEnabled_v1';
     const SYNC_LAST_PULL_KEY = 'herculesSyncLastPull_v1';
+    const SYNC_LAST_PUSH_KEY = 'herculesSyncLastPush_v1';
     const SYNC_SESSION_PIN_KEY = 'herculesSyncSessionPin_v1';
     const SYNC_FILE_NAME = 'hercules-sync.enc.json';
     const PASSWORD_HISTORY_MAX = 30;
@@ -221,34 +222,30 @@
         const remoteTs = remote.updatedAt || 0;
         if (!opts.force && remoteTs <= localTs) return { applied: false, reason: 'stale' };
 
-        const useRemoteFavorites = opts.force || opts.preferRemote;
-        let mergedFavorites;
-        if (Array.isArray(remote.favorites) && remote.favorites.length > 0) {
-            mergedFavorites = useRemoteFavorites
-                ? remote.favorites
-                : mergeFavorites(deps.getFavorites(), remote.favorites);
-        } else if (Array.isArray(remote.favorites) && remote.favorites.length === 0 && useRemoteFavorites) {
-            mergedFavorites = deps.getFavorites();
-        } else if (Array.isArray(remote.favorites)) {
-            mergedFavorites = mergeFavorites(deps.getFavorites(), remote.favorites);
+        let mergedExplicitFavorites;
+        if (Array.isArray(remote.explicitFavorites)) {
+            mergedExplicitFavorites = [...remote.explicitFavorites];
         } else {
-            mergedFavorites = deps.getFavorites();
+            mergedExplicitFavorites = deps.getExplicitFavorites ? deps.getExplicitFavorites() : [];
+        }
+
+        let mergedFavorites;
+        if (Array.isArray(remote.favorites)) {
+            mergedFavorites = [...remote.favorites];
+        } else {
+            mergedFavorites = [...mergedExplicitFavorites];
+        }
+
+        // Stele = explicitFavorites; lista din cloud înlocuiește local (nu se face uniune)
+        if (Array.isArray(remote.explicitFavorites)) {
+            mergedFavorites = [...mergedExplicitFavorites];
         }
 
         if (deps.filterSyncFavorites && Array.isArray(mergedFavorites)) {
             mergedFavorites = deps.filterSyncFavorites(mergedFavorites);
         }
-
-        let mergedExplicitFavorites;
-        if (Array.isArray(remote.explicitFavorites) && remote.explicitFavorites.length > 0) {
-            mergedExplicitFavorites = mergeFavorites(
-                deps.getExplicitFavorites ? deps.getExplicitFavorites() : [],
-                remote.explicitFavorites
-            );
-        } else if (Array.isArray(remote.explicitFavorites)) {
-            mergedExplicitFavorites = deps.getExplicitFavorites ? deps.getExplicitFavorites() : [];
-        } else {
-            mergedExplicitFavorites = deps.getExplicitFavorites ? deps.getExplicitFavorites() : [];
+        if (deps.filterSyncFavorites && Array.isArray(mergedExplicitFavorites)) {
+            mergedExplicitFavorites = deps.filterSyncFavorites(mergedExplicitFavorites);
         }
 
         const mergedVisitStats = mergeVisitStats(
@@ -466,6 +463,9 @@
             if (!payload) return { ok: false, reason: 'no-deps' };
             const envelope = await encryptJson(usePin, payload);
             const remoteId = await remoteWriteEnvelope(envelope);
+            const ts = String(payload.updatedAt || Date.now());
+            localStorage.setItem(SYNC_LAST_PUSH_KEY, ts);
+            localStorage.setItem(SYNC_LAST_PULL_KEY, ts);
             return { ok: true, remoteId: remoteId || getRemoteId() };
         } catch (e) {
             console.warn('Cloud push:', e);
