@@ -1388,7 +1388,7 @@
         /* Links Grid */
         .links-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
             gap: 20px;
             margin: 30px 0;
         }
@@ -1431,6 +1431,21 @@
             border-color: rgba(255, 255, 255, 0.9);
             box-shadow: 0 15px 40px rgba(255, 255, 255, 0.5);
             background: rgba(255, 255, 255, 0.45);
+        }
+
+        @media (hover: hover) and (pointer: fine) {
+            .link-card:hover:not(.last-clicked) {
+                transform: translateY(-4px);
+                border-color: rgba(255, 255, 255, 0.75);
+                box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
+                background: rgba(255, 255, 255, 0.38);
+            }
+
+            body[data-theme="light"] .link-card:hover:not(.last-clicked) {
+                border-color: rgba(148, 163, 184, 0.9);
+                box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+                background: rgba(255, 255, 255, 0.95);
+            }
         }
 
         .link-card.hidden {
@@ -1538,22 +1553,22 @@
         }
 
         body[data-theme="light"] .link-card.last-clicked {
-            border-color: #2563eb !important;
-            background: #fff;
+            border-color: #d97706 !important;
+            background: #fffbeb;
             animation-name: lastClickedGlowLight;
         }
 
         @keyframes lastClickedGlowLight {
             0%, 100% {
-                box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.45), 0 0 24px rgba(59, 130, 246, 0.5), 0 12px 32px rgba(59, 130, 246, 0.3);
+                box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.35), 0 0 18px rgba(245, 158, 11, 0.35), 0 10px 24px rgba(217, 119, 6, 0.18);
             }
             50% {
-                box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.6), 0 0 32px rgba(59, 130, 246, 0.65), 0 14px 40px rgba(59, 130, 246, 0.4);
+                box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.45), 0 0 24px rgba(245, 158, 11, 0.45), 0 12px 28px rgba(217, 119, 6, 0.22);
             }
         }
 
         body[data-theme="light"] .link-card.last-clicked .link-name {
-            color: #1d4ed8;
+            color: #b45309;
             text-shadow: none;
         }
 
@@ -1579,10 +1594,14 @@
 
         @media (min-width: 769px) {
             .link-card .link-name {
-                white-space: nowrap;
+                white-space: normal;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 word-break: normal;
+                min-height: 2.4em;
             }
 
             .link-card {
@@ -4148,6 +4167,7 @@
             loadExplicitFavorites();
             migrateExistingFavoritesToExplicit();
             stripLegacyDefaultFavorites({ notifyOnce: true });
+            repairLegacyExplicitFavoritesOnce();
             ensureBuiltinLinks();
             ensureMissingDefaultLinks();
             ensureFavoriteDefaultLinks();
@@ -4369,8 +4389,13 @@
 
         function isLinkFavorite(url) {
             if (!url) return false;
-            if (favorites.has(url)) return true;
-            return [...favorites].some((f) => sameLinkUrl(f, url));
+            return favorites.has(url);
+        }
+
+        function shouldShowFavoriteStar(url) {
+            if (!url) return false;
+            if (isExplicitFavorite(url)) return true;
+            return favorites.has(url);
         }
 
         function getVisitStatsForUrl(url) {
@@ -4445,7 +4470,7 @@
                     console.warn('Invalid link URL skipped:', link.url);
                     return;
                 }
-                const isFavorite = isLinkFavorite(link.url);
+                const isFavorite = shouldShowFavoriteStar(link.url);
                 const isLastClicked = isLastClickedLink(link.url);
                 
                 const iconUrl = getSafeIconUrl(link, domain);
@@ -4860,17 +4885,32 @@
         function hasAbsurdVisitStats() {
             for (const link of links) {
                 const c = getVisitCountForLink(link.url);
-                if (!Number.isFinite(c) || c > MAX_VISIT_COUNT) return true;
+                if (!Number.isFinite(c) || c >= MAX_VISIT_COUNT) return true;
             }
             for (const stats of Object.values(visitStats)) {
-                const c = clampVisitCount(stats?.count);
-                if (!Number.isFinite(Number(stats?.count)) || Number(stats?.count) > MAX_VISIT_COUNT) return true;
+                const raw = Number(stats?.count);
+                if (!Number.isFinite(raw) || raw >= MAX_VISIT_COUNT) return true;
+            }
+            return false;
+        }
+
+        function hasSuspiciousVisitStats() {
+            const tally = new Map();
+            let atCap = 0;
+            links.forEach((link) => {
+                const c = getVisitCountForLink(link.url);
+                if (c >= MAX_VISIT_COUNT) atCap++;
+                if (c >= 100) tally.set(c, (tally.get(c) || 0) + 1);
+            });
+            if (atCap >= 1) return true;
+            for (const [count, n] of tally) {
+                if (n >= 2 && count >= 100) return true;
             }
             return false;
         }
 
         function detectVisitStatsCorruption() {
-            if (hasAbsurdVisitStats()) return true;
+            if (hasAbsurdVisitStats() || hasSuspiciousVisitStats()) return true;
             const tally = new Map();
             links.forEach((link) => {
                 const c = getVisitCountForLink(link.url);
@@ -4923,10 +4963,10 @@
 
         function sanitizeVisitStatsAfterSync() {
             normalizeAllVisitStats();
-            if (hasAbsurdVisitStats()) {
+            if (hasAbsurdVisitStats() || hasSuspiciousVisitStats()) {
                 resetAllVisitStatsInternal(true);
                 saveVisitStats(false);
-                showNotification('📊 Vizite resetate după sync — date corupte în cloud', 'warning');
+                showNotification('📊 Vizite resetate după sync — numere false în cloud', 'warning');
                 return true;
             }
             if (!detectVisitStatsCorruption()) return false;
@@ -4937,17 +4977,19 @@
         }
 
         function repairVisitStatsCorruption() {
-            if (hasAbsurdVisitStats()) {
+            if (hasAbsurdVisitStats() || hasSuspiciousVisitStats()) {
                 resetAllVisitStatsInternal(true);
                 saveVisitStats(false);
-                showNotification('📊 Contoare resetate — erau stricate (numere uriașe)', 'warning');
+                localStorage.removeItem('visitStats_repair_v7');
+                localStorage.setItem('visitStats_repair_v8', 'done');
+                showNotification('📊 Contoare resetate — numerele false (ex. 50k) au fost șterse', 'warning');
                 return;
             }
-            if (localStorage.getItem('visitStats_repair_v7') === 'done') return;
+            if (localStorage.getItem('visitStats_repair_v8') === 'done') return;
             const corrupted = detectVisitStatsCorruption();
             rebuildVisitStatsFromDevices({ deviceOnly: corrupted });
             saveVisitStats(true);
-            localStorage.setItem('visitStats_repair_v7', 'done');
+            localStorage.setItem('visitStats_repair_v8', 'done');
             if (corrupted) {
                 showNotification('📊 Contoare vizite corectate — fiecare site are numărul lui', 'info');
             }
@@ -5114,7 +5156,6 @@
         }
 
         function isLegacyDefaultFavorite(url) {
-            if (isExplicitFavorite(url)) return false;
             if (!url) return false;
             const normalized = normalizeLinkUrl(url);
             if (LEGACY_DEFAULT_FAVORITE_URLS.some((legacy) => normalizeLinkUrl(legacy) === normalized)) {
@@ -5132,9 +5173,13 @@
         function stripLegacyDefaultFavorites(options) {
             const opts = options || {};
             const before = favorites.size;
+            const beforeExplicit = explicitFavorites.size;
             favorites = new Set(filterOutLegacyDefaultFavorites([...favorites]));
-            if (favorites.size === before) return false;
+            explicitFavorites = new Set(filterOutLegacyDefaultFavorites([...explicitFavorites]));
+            const changed = favorites.size !== before || explicitFavorites.size !== beforeExplicit;
+            if (!changed) return false;
             saveFavorites(opts.skipCloudSync === true);
+            saveExplicitFavorites();
             if (opts.notifyOnce && localStorage.getItem(FAVORITES_PURGE_DEFAULTS_KEY) !== 'done') {
                 localStorage.setItem(FAVORITES_PURGE_DEFAULTS_KEY, 'done');
                 showNotification('⭐ Favorite implicite scoase — alege tu cu steaua sau folosind des', 'info');
@@ -5142,6 +5187,18 @@
                 showNotification('⭐ Favorite implicite scoase (' + (before - favorites.size) + ')', 'info');
             }
             return true;
+        }
+
+        function repairLegacyExplicitFavoritesOnce() {
+            if (localStorage.getItem('explicit_favorites_legacy_strip_v2') === 'done') return;
+            const before = explicitFavorites.size;
+            explicitFavorites = new Set(filterOutLegacyDefaultFavorites([...explicitFavorites]));
+            favorites = new Set(filterOutLegacyDefaultFavorites([...favorites]));
+            if (explicitFavorites.size !== before) {
+                saveExplicitFavorites();
+                saveFavorites(true);
+            }
+            localStorage.setItem('explicit_favorites_legacy_strip_v2', 'done');
         }
 
         function stripDefaultFavoritesUi() {
