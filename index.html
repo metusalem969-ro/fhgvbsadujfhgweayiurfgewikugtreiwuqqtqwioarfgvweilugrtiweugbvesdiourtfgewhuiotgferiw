@@ -2306,6 +2306,10 @@
             color: rgba(255, 255, 255, 0.75);
         }
 
+        .sync-form-compact .hidden {
+            display: none !important;
+        }
+
         .sync-status-box {
             padding: 10px 12px;
             border-radius: 8px;
@@ -3190,30 +3194,51 @@
                 <summary>ℹ️ Ajutor configurare</summary>
                 <p style="margin: 0 0 6px;"><strong>1) Primul PC:</strong> token + PIN → «Activează» → copiază ID profil.</p>
                 <p style="margin: 0 0 6px;"><strong>2) Telefon:</strong> același token + PIN + ID → «Activează» → «Descarcă acum».</p>
-                <p style="margin: 0;">GitHub Pages și GitLab Pages = configurezi separat, aceleași date în Gist.</p>
+                <p style="margin: 0 0 6px;"><strong>Ambele platforme:</strong> token GitHub + token GitLab — sync pe ambele; când GitHub e blocat, merge GitLab.</p>
+                <p style="margin: 0;">Mod «Ambele»: copiază <strong>ambele ID-uri</strong> pe telefon.</p>
             </details>
             <div id="cloudSyncStatus" class="sync-status-box">Stare: neconfigurat</div>
             </div>
             <div class="sync-form-compact">
                 <label class="sync-label">Platformă</label>
-                <select id="syncProvider" class="sync-input">
+                <select id="syncProvider" class="sync-input" onchange="updateSyncProviderFields()">
                     <option value="github">GitHub Gist (ghp_ + gist)</option>
                     <option value="gitlab">GitLab Snippet (glpat-)</option>
+                    <option value="both">Ambele — GitHub + GitLab (recomandat)</option>
                 </select>
                 <details class="sync-help-details sync-muted">
                     <summary>Token 403 / fine-grained?</summary>
                     <p style="margin: 0;">Tokenul github_pat_ nu merge la Gist. Folosește classic ghp_:
-                    <a href="https://github.com/settings/tokens/new?scopes=gist&amp;description=Hercules-sync" target="_blank" rel="noopener" style="color: #7dd3fc;">creează token</a></p>
+                    <a href="https://github.com/settings/tokens/new?scopes=gist&amp;description=Hercules-sync" target="_blank" rel="noopener" style="color: #7dd3fc;">GitHub token</a>
+                    · GitLab:
+                    <a href="https://gitlab.com/-/user_settings/personal_access_tokens" target="_blank" rel="noopener" style="color: #7dd3fc;">glpat- token</a> (scope: api)</p>
                 </details>
-                <label class="sync-label">Token API</label>
-                <input type="password" id="syncToken" class="sync-input" placeholder="ghp_… (salvat în browser)" autocomplete="off">
+                <div id="syncGithubFields">
+                    <label class="sync-label">Token GitHub (ghp_)</label>
+                    <input type="password" id="syncGithubToken" class="sync-input" placeholder="ghp_… (salvat în browser)" autocomplete="off">
+                </div>
+                <div id="syncGitlabFields" class="hidden">
+                    <label class="sync-label">Token GitLab (glpat-)</label>
+                    <input type="password" id="syncGitlabToken" class="sync-input" placeholder="glpat-… (salvat în browser)" autocomplete="off">
+                </div>
                 <label class="sync-label">PIN (min. 8 caractere)</label>
                 <input type="password" id="syncPin" class="sync-input" placeholder="Același PIN peste tot" autocomplete="off">
-                <label class="sync-label">ID profil</label>
-                <div class="sync-id-row">
-                    <input type="text" id="syncRemoteId" class="sync-input" placeholder="Gol la prima activare" readonly autocomplete="off">
-                    <button type="button" class="btn-secondary sync-copy-btn" onclick="copySyncProfileId()">📋 Copiază ID</button>
+                <div id="syncGithubIdFields">
+                    <label class="sync-label">ID profil GitHub</label>
+                    <div class="sync-id-row">
+                        <input type="text" id="syncRemoteIdGithub" class="sync-input" placeholder="Gol la prima activare" readonly autocomplete="off">
+                        <button type="button" class="btn-secondary sync-copy-btn" onclick="copySyncProfileId('github')">📋 Copiază</button>
+                    </div>
                 </div>
+                <div id="syncGitlabIdFields" class="hidden">
+                    <label class="sync-label">ID profil GitLab</label>
+                    <div class="sync-id-row">
+                        <input type="text" id="syncRemoteIdGitlab" class="sync-input" placeholder="Gol la prima activare" readonly autocomplete="off">
+                        <button type="button" class="btn-secondary sync-copy-btn" onclick="copySyncProfileId('gitlab')">📋 Copiază</button>
+                    </div>
+                </div>
+                <input type="hidden" id="syncRemoteId" value="">
+                <input type="hidden" id="syncToken" value="">
             </div>
             <div class="sync-btn-grid modal-buttons">
                 <button type="button" class="btn-primary" onclick="activateCloudSync()">✅ Activează</button>
@@ -3928,6 +3953,7 @@
 
         const FAVORITES_KEY = 'favoriteLinks_v1';
         const EXPLICIT_FAVORITES_KEY = 'explicitFavorites_v1';
+        const EXPLICIT_FAVORITES_MODIFIED_KEY = 'explicitFavoritesModifiedAt_v1';
         const FAVORITES_PURGE_DEFAULTS_KEY = 'favorites_purge_defaults_v1';
         /** Nume site-uri care aveau stea implicită (potrivire și după nume) */
         const LEGACY_DEFAULT_FAVORITE_NAMES = [
@@ -4167,8 +4193,9 @@
             loadFavorites();
             loadExplicitFavorites();
             migrateExistingFavoritesToExplicit();
-            stripLegacyDefaultFavorites({ notifyOnce: true });
-            repairLegacyExplicitFavoritesOnce();
+            normalizeExplicitAndFavoriteLinks();
+            saveExplicitFavorites(true);
+            saveFavorites(true);
             ensureBuiltinLinks();
             ensureMissingDefaultLinks();
             ensureFavoriteDefaultLinks();
@@ -4398,25 +4425,29 @@
         }
 
         function applyCloudFavoritesFromMerged(merged) {
-            const filteredExplicit = filterOutLegacyDefaultFavorites(
-                Array.isArray(merged.explicitFavorites) ? merged.explicitFavorites : []
-            );
-            const filteredFavorites = filterOutLegacyDefaultFavorites(
-                Array.isArray(merged.favorites) ? merged.favorites : filteredExplicit
-            );
+            const remoteExplicit = Array.isArray(merged.explicitFavorites) ? merged.explicitFavorites : [];
+            const remoteFavorites = Array.isArray(merged.favorites) ? merged.favorites : remoteExplicit;
 
             if (merged.fromCloud) {
-                explicitFavorites = new Set(filteredExplicit);
+                explicitFavorites = new Set(remoteExplicit);
             } else {
-                filteredExplicit.forEach((url) => explicitFavorites.add(url));
+                filterOutLegacyDefaultFavorites(remoteExplicit).forEach((url) => explicitFavorites.add(url));
+                const filteredFavorites = filterOutLegacyDefaultFavorites(remoteFavorites);
                 if (filteredFavorites.length > 0) {
                     favorites = new Set(filteredFavorites);
                 }
             }
 
             favorites = new Set([...explicitFavorites]);
-            normalizeFavoritesToLinks();
-            saveExplicitFavorites();
+            normalizeExplicitAndFavoriteLinks();
+            saveExplicitFavorites(true);
+            if (merged.fromCloud && merged.remoteUpdatedAt) {
+                try {
+                    localStorage.setItem(EXPLICIT_FAVORITES_MODIFIED_KEY, String(merged.remoteUpdatedAt));
+                } catch (e) { /* ignore */ }
+            } else if (!merged.fromCloud) {
+                touchExplicitFavoritesModified();
+            }
             saveFavorites(true);
             ensureFavoriteDefaultLinks();
             return explicitFavorites.size;
@@ -5128,18 +5159,34 @@
             }
         }
 
+        function getExplicitFavoritesModifiedAt() {
+            return parseInt(localStorage.getItem(EXPLICIT_FAVORITES_MODIFIED_KEY) || '0', 10) || 0;
+        }
+
+        function touchExplicitFavoritesModified() {
+            try {
+                localStorage.setItem(EXPLICIT_FAVORITES_MODIFIED_KEY, String(Date.now()));
+            } catch (e) {
+                console.warn('Could not save explicit favorites modified time:', e);
+            }
+        }
+
         function loadExplicitFavorites() {
             try {
                 const saved = localStorage.getItem(EXPLICIT_FAVORITES_KEY);
                 explicitFavorites = saved ? new Set(JSON.parse(saved)) : new Set();
+                if (explicitFavorites.size > 0 && !localStorage.getItem(EXPLICIT_FAVORITES_MODIFIED_KEY)) {
+                    touchExplicitFavoritesModified();
+                }
             } catch (e) {
                 explicitFavorites = new Set();
             }
         }
 
-        function saveExplicitFavorites() {
+        function saveExplicitFavorites(skipTouch) {
             try {
                 localStorage.setItem(EXPLICIT_FAVORITES_KEY, JSON.stringify([...explicitFavorites]));
+                if (!skipTouch) touchExplicitFavoritesModified();
             } catch (e) {
                 console.error('Error saving explicit favorites:', e);
             }
@@ -5181,6 +5228,7 @@
 
         function isLegacyDefaultFavorite(url) {
             if (!url) return false;
+            if (isExplicitFavorite(url)) return false;
             const normalized = normalizeLinkUrl(url);
             if (LEGACY_DEFAULT_FAVORITE_URLS.some((legacy) => normalizeLinkUrl(legacy) === normalized)) {
                 return true;
@@ -5191,7 +5239,11 @@
         }
 
         function filterOutLegacyDefaultFavorites(favList) {
-            return (favList || []).filter((url) => !isLegacyDefaultFavorite(url));
+            // Nu filtra niciodată explicitFavorites — steaua manuală = alegerea utilizatorului
+            return (favList || []).filter((url) => {
+                if (isExplicitFavorite(url)) return true;
+                return !isLegacyDefaultFavorite(url);
+            });
         }
 
         function stripLegacyDefaultFavorites(options) {
@@ -5239,6 +5291,7 @@
             }
             favorites = new Set();
             explicitFavorites = new Set();
+            touchExplicitFavoritesModified();
             saveFavorites(true);
             saveExplicitFavorites();
             renderLinks();
@@ -5261,14 +5314,19 @@
             }
         }
 
-        function normalizeFavoritesToLinks() {
-            const normalized = new Set();
-            favorites.forEach((favUrl) => {
+        function normalizeExplicitAndFavoriteLinks() {
+            const normalizedExplicit = new Set();
+            explicitFavorites.forEach((favUrl) => {
                 const match = links.find((l) => sameLinkUrl(l.url, favUrl));
-                if (match) normalized.add(match.url);
-                else normalized.add(favUrl);
+                if (match) normalizedExplicit.add(match.url);
+                else normalizedExplicit.add(favUrl);
             });
-            favorites = normalized;
+            explicitFavorites = normalizedExplicit;
+            favorites = new Set([...explicitFavorites]);
+        }
+
+        function normalizeFavoritesToLinks() {
+            normalizeExplicitAndFavoriteLinks();
         }
 
 
@@ -6881,7 +6939,10 @@
             window.HerculesSyncDeps = {
                 getFavorites: () => [...explicitFavorites],
                 getExplicitFavorites: () => [...explicitFavorites],
-                filterSyncFavorites: (arr) => filterOutLegacyDefaultFavorites(arr),
+                getExplicitFavoritesModifiedAt: () => getExplicitFavoritesModifiedAt(),
+                scheduleCloudSyncPush: () => {
+                    if (window.HerculesCloudSync) HerculesCloudSync.scheduleCloudSyncPush();
+                },
                 getSearchHistory: () => getSearchHistory(),
                 getPasswordHistory: () => JSON.parse(localStorage.getItem(PASSWORD_HISTORY_KEY) || '[]'),
                 getNotes: () => getNotes(),
@@ -6956,9 +7017,6 @@
                         currentZoomIndex = index;
                         applyZoom(merged.zoomLevel);
                     }
-                    if (stripLegacyDefaultFavorites()) {
-                        counts.favorites = favorites.size;
-                    }
                     renderLinks();
                     updateCloudSyncStatusUi();
                     return counts;
@@ -6966,43 +7024,103 @@
             };
         }
 
+        function getSyncProviderMode() {
+            const sel = document.getElementById('syncProvider');
+            return sel ? sel.value : 'github';
+        }
+
+        function updateSyncProviderFields() {
+            const mode = getSyncProviderMode();
+            const ghFields = document.getElementById('syncGithubFields');
+            const glFields = document.getElementById('syncGitlabFields');
+            const ghIdFields = document.getElementById('syncGithubIdFields');
+            const glIdFields = document.getElementById('syncGitlabIdFields');
+            const ghLabel = ghIdFields && ghIdFields.querySelector('.sync-label');
+            if (ghFields) ghFields.classList.toggle('hidden', mode === 'gitlab');
+            if (glFields) glFields.classList.toggle('hidden', mode === 'github');
+            if (ghIdFields) ghIdFields.classList.toggle('hidden', mode === 'gitlab');
+            if (glIdFields) glIdFields.classList.toggle('hidden', mode === 'github');
+            if (ghLabel) {
+                ghLabel.textContent = mode === 'both' ? 'ID profil GitHub' : 'ID profil';
+            }
+        }
+
+        function fillSyncRemoteIdFields(ids) {
+            const remoteIds = ids || (window.HerculesCloudSync && HerculesCloudSync.getRemoteIds
+                ? HerculesCloudSync.getRemoteIds() : { github: '', gitlab: '' });
+            const ghInput = document.getElementById('syncRemoteIdGithub');
+            const glInput = document.getElementById('syncRemoteIdGitlab');
+            const legacy = document.getElementById('syncRemoteId');
+            if (ghInput) ghInput.value = remoteIds.github || '';
+            if (glInput) glInput.value = remoteIds.gitlab || '';
+            if (legacy) legacy.value = remoteIds.github || remoteIds.gitlab || '';
+        }
+
+        function readSyncRemoteIdsFromForm() {
+            const mode = getSyncProviderMode();
+            const gh = (document.getElementById('syncRemoteIdGithub') && document.getElementById('syncRemoteIdGithub').value.trim()) || '';
+            const gl = (document.getElementById('syncRemoteIdGitlab') && document.getElementById('syncRemoteIdGitlab').value.trim()) || '';
+            if (mode === 'gitlab') return { gitlabRemoteId: gl || gh, githubRemoteId: '' };
+            if (mode === 'both') return { githubRemoteId: gh, gitlabRemoteId: gl };
+            return { githubRemoteId: gh || gl, gitlabRemoteId: '' };
+        }
+
         function updateCloudSyncStatusUi() {
             const el = document.getElementById('cloudSyncStatus');
             const btn = document.getElementById('cloudSyncButton');
-            const idInput = document.getElementById('syncRemoteId');
             if (!el) return;
             if (!window.HerculesCloudSync || !HerculesCloudSync.isSyncConfigured()) {
                 el.textContent = 'Neconfigurat — token + PIN → Activează (fără ID la prima activare).';
-                if (idInput) {
-                    idInput.value = '';
-                    idInput.removeAttribute('readonly');
-                    idInput.placeholder = 'Gol la prima activare';
-                }
+                fillSyncRemoteIdFields({ github: '', gitlab: '' });
+                ['syncRemoteIdGithub', 'syncRemoteIdGitlab'].forEach((id) => {
+                    const input = document.getElementById(id);
+                    if (input) {
+                        input.removeAttribute('readonly');
+                        input.placeholder = 'Gol la prima activare';
+                    }
+                });
                 if (btn) btn.style.boxShadow = '0 5px 20px rgba(14, 165, 233, 0.6)';
+                updateSyncProviderFields();
                 return;
             }
-            const id = HerculesCloudSync.getRemoteId();
-            const prov = HerculesCloudSync.getSyncProvider() === 'gitlab' ? 'GitLab' : 'GitHub';
-            el.textContent = '✅ Activ (' + prov + ') — ID în câmpul de jos. Copiază 📋 pe telefon.';
-            if (idInput) {
-                idInput.value = id;
-                idInput.setAttribute('readonly', 'readonly');
-            }
+            const ids = HerculesCloudSync.getRemoteIds ? HerculesCloudSync.getRemoteIds() : { github: HerculesCloudSync.getRemoteId(), gitlab: '' };
+            const mode = HerculesCloudSync.getSyncMode ? HerculesCloudSync.getSyncMode() : HerculesCloudSync.getSyncProvider();
+            let provLabel = mode === 'both' ? 'GitHub + GitLab' : (mode === 'gitlab' ? 'GitLab' : 'GitHub');
+            const parts = [];
+            if (ids.github) parts.push('GH: ' + ids.github.slice(0, 8) + '…');
+            if (ids.gitlab) parts.push('GL: ' + ids.gitlab);
+            el.textContent = '✅ Activ (' + provLabel + ')' + (parts.length ? ' — ' + parts.join(' · ') : '') + '. Copiază ID-urile pe telefon.';
+            fillSyncRemoteIdFields(ids);
+            ['syncRemoteIdGithub', 'syncRemoteIdGitlab'].forEach((id) => {
+                const input = document.getElementById(id);
+                if (input) input.setAttribute('readonly', 'readonly');
+            });
             if (btn) btn.style.boxShadow = '0 5px 24px rgba(16, 185, 129, 0.85)';
+            updateSyncProviderFields();
         }
 
-        function copySyncProfileId() {
-            const id = (document.getElementById('syncRemoteId') && document.getElementById('syncRemoteId').value.trim()) ||
-                (window.HerculesCloudSync && HerculesCloudSync.getRemoteId()) || '';
-            if (!id) {
-                showNotification('ℹ️ ID-ul apare după «Activează» pe primul PC (cu token ghp_ + gist)', 'info');
+        function copySyncProfileId(which) {
+            const ids = window.HerculesCloudSync && HerculesCloudSync.getRemoteIds
+                ? HerculesCloudSync.getRemoteIds()
+                : { github: '', gitlab: '' };
+            const fromFormGh = document.getElementById('syncRemoteIdGithub');
+            const fromFormGl = document.getElementById('syncRemoteIdGitlab');
+            const gh = (fromFormGh && fromFormGh.value.trim()) || ids.github || '';
+            const gl = (fromFormGl && fromFormGl.value.trim()) || ids.gitlab || '';
+            let text = '';
+            if (which === 'gitlab') text = gl;
+            else if (which === 'github') text = gh;
+            else text = gh || gl;
+            if (!text) {
+                showNotification('ℹ️ ID-ul apare după «Activează» pe primul PC', 'info');
                 return;
             }
-            navigator.clipboard.writeText(id).then(() => {
+            navigator.clipboard.writeText(text).then(() => {
                 playSound('permanentSound', 0.35);
-                showNotification('📋 ID copiat! Lipește-l pe telefon la ☁️ → ID profil', 'success');
+                const label = which === 'gitlab' ? 'GitLab' : 'GitHub';
+                showNotification('📋 ID ' + label + ' copiat!', 'success');
             }).catch(() => {
-                prompt('Copiază manual acest ID:', id);
+                prompt('Copiază manual:', text);
             });
         }
 
@@ -7010,11 +7128,12 @@
             playSound('bleepSound', 0.3);
             document.getElementById('cloudSyncModal').classList.add('show');
             const prov = document.getElementById('syncProvider');
-            const remote = document.getElementById('syncRemoteId');
             if (window.HerculesCloudSync && HerculesCloudSync.isSyncConfigured()) {
-                prov.value = HerculesCloudSync.getSyncProvider();
-                remote.value = HerculesCloudSync.getRemoteId();
+                const mode = HerculesCloudSync.getSyncMode ? HerculesCloudSync.getSyncMode() : HerculesCloudSync.getSyncProvider();
+                prov.value = mode === 'both' ? 'both' : (mode === 'gitlab' ? 'gitlab' : 'github');
+                fillSyncRemoteIdFields(HerculesCloudSync.getRemoteIds ? HerculesCloudSync.getRemoteIds() : null);
             }
+            updateSyncProviderFields();
             updateCloudSyncStatusUi();
         }
 
@@ -7024,37 +7143,68 @@
         }
 
         async function activateCloudSync() {
-            const provider = document.getElementById('syncProvider').value;
-            const token = document.getElementById('syncToken').value.trim();
+            const provider = getSyncProviderMode();
+            const githubToken = (document.getElementById('syncGithubToken') && document.getElementById('syncGithubToken').value.trim()) || '';
+            const gitlabToken = (document.getElementById('syncGitlabToken') && document.getElementById('syncGitlabToken').value.trim()) || '';
             const pin = document.getElementById('syncPin').value;
-            const remoteId = document.getElementById('syncRemoteId').value.trim();
+            const remoteIds = readSyncRemoteIdsFromForm();
             if (!window.HerculesCloudSync) {
                 showNotification('Modulul de sync nu s-a încărcat', 'error');
                 return;
             }
             try {
-                const result = await HerculesCloudSync.setupCloudSync({ provider, token, pin, remoteId: remoteId || null });
-                document.getElementById('syncToken').value = '';
+                const result = await HerculesCloudSync.setupCloudSync({
+                    provider,
+                    pin,
+                    githubToken,
+                    gitlabToken,
+                    githubRemoteId: remoteIds.githubRemoteId || null,
+                    gitlabRemoteId: remoteIds.gitlabRemoteId || null
+                });
+                if (document.getElementById('syncGithubToken')) document.getElementById('syncGithubToken').value = '';
+                if (document.getElementById('syncGitlabToken')) document.getElementById('syncGitlabToken').value = '';
                 document.getElementById('syncPin').value = '';
-                document.getElementById('syncRemoteId').value = result.remoteId || '';
+                fillSyncRemoteIdFields(result.remoteIds || { github: result.remoteId, gitlab: '' });
                 updateCloudSyncStatusUi();
                 playSound('permanentSound', 0.4);
-                showNotification('☁️ Sincronizare activă! ID: ' + (result.remoteId || ''), 'success');
+                let msg = '☁️ Sincronizare activă!';
+                if (result.remoteIds && result.remoteIds.github && result.remoteIds.gitlab) {
+                    msg += ' GitHub: ' + result.remoteIds.github + ' · GitLab: ' + result.remoteIds.gitlab;
+                } else {
+                    msg += ' ID: ' + (result.remoteId || '');
+                }
+                if (result.warnings && result.warnings.length) {
+                    msg += ' (' + result.warnings.join('; ') + ')';
+                }
+                showNotification(msg, result.warnings && result.warnings.length ? 'warning' : 'success');
             } catch (e) {
                 const msg = e.message || String(e);
                 showNotification('❌ ' + msg, 'error');
             }
         }
 
+        function applySyncModeFromForm() {
+            const mode = getSyncProviderMode();
+            localStorage.setItem('herculesSyncMode_v1', mode);
+            localStorage.setItem('herculesSyncProvider_v1', mode);
+            localStorage.setItem('herculesSyncEnabled_v1', 'true');
+        }
+
         async function manualCloudPull() {
             if (!window.HerculesCloudSync) return;
-            const existingId = HerculesCloudSync.getRemoteId() || document.getElementById('syncRemoteId').value.trim();
-            if (!existingId) {
-                showNotification('⚠️ Lipsește ID profil. Pe primul PC: «Activează» fără ID. Pe telefon: lipește ID-ul copiat.', 'error');
+            applySyncModeFromForm();
+            const ids = HerculesCloudSync.getRemoteIds ? HerculesCloudSync.getRemoteIds() : { github: HerculesCloudSync.getRemoteId(), gitlab: '' };
+            const formIds = readSyncRemoteIdsFromForm();
+            if (!ids.github && !ids.gitlab && !formIds.githubRemoteId && !formIds.gitlabRemoteId) {
+                showNotification('⚠️ Lipsește ID profil. Pe primul PC: «Activează» fără ID. Pe telefon: lipește ID-urile copiate.', 'error');
                 return;
             }
-            const tokenField = document.getElementById('syncToken').value.trim();
-            if (tokenField) localStorage.setItem('herculesSyncToken_v1', tokenField);
+            const ghTok = (document.getElementById('syncGithubToken') && document.getElementById('syncGithubToken').value.trim()) || '';
+            const glTok = (document.getElementById('syncGitlabToken') && document.getElementById('syncGitlabToken').value.trim()) || '';
+            if (ghTok) localStorage.setItem('herculesSyncGithubToken_v1', ghTok);
+            if (glTok) localStorage.setItem('herculesSyncGitlabToken_v1', glTok);
+            if (formIds.githubRemoteId) localStorage.setItem('herculesSyncGithubRemoteId_v1', formIds.githubRemoteId);
+            if (formIds.gitlabRemoteId) localStorage.setItem('herculesSyncGitlabRemoteId_v1', formIds.gitlabRemoteId);
             const pin = document.getElementById('syncPin').value || prompt('PIN sincronizare:');
             if (!pin) return;
             const pinOk = await HerculesCloudSync.unlockSyncPin(pin);
@@ -7066,8 +7216,9 @@
             const r = await HerculesCloudSync.pullFromCloud(pin, true);
             if (r.ok && r.applied && r.summary) {
                 const s = r.summary;
+                const from = r.fromProvider === 'gitlab' ? ' (GitLab)' : (r.fromProvider === 'github' ? ' (GitHub)' : '');
                 showNotification(
-                    '☁️ DESCĂRCAT DIN CLOUD: ' + s.favorites + ' favorite, ' + s.searches + ' căutări, ' +
+                    '☁️ DESCĂRCAT' + from + ': ' + s.favorites + ' favorite, ' + s.searches + ' căutări, ' +
                     s.passwords + ' parole, ' + s.notes + ' note',
                     'success'
                 );
@@ -7078,24 +7229,53 @@
             } else {
                 showNotification('❌ Din cloud: ' + (r.error || 'eroare la descărcare'), 'error');
             }
+            if (r.warnings && r.warnings.length) {
+                showNotification('ℹ️ ' + r.warnings.join(' · '), 'warning');
+            }
             updateCloudSyncStatusUi();
         }
 
         async function manualCloudPush() {
             if (!window.HerculesCloudSync) return;
-            const token = document.getElementById('syncToken').value.trim() || localStorage.getItem('herculesSyncToken_v1');
-            if (!token) {
-                showNotification('⚠️ Lipsește token API. Completează token-ul și apasă «Activează».', 'error');
+            applySyncModeFromForm();
+            const ghTok = (document.getElementById('syncGithubToken') && document.getElementById('syncGithubToken').value.trim()) ||
+                localStorage.getItem('herculesSyncGithubToken_v1') || '';
+            const glTok = (document.getElementById('syncGitlabToken') && document.getElementById('syncGitlabToken').value.trim()) ||
+                localStorage.getItem('herculesSyncGitlabToken_v1') || '';
+            const mode = getSyncProviderMode();
+            if (mode === 'github' && !ghTok) {
+                showNotification('⚠️ Lipsește token GitHub (ghp_…).', 'error');
                 return;
             }
+            if (mode === 'gitlab' && !glTok) {
+                showNotification('⚠️ Lipsește token GitLab (glpat-…).', 'error');
+                return;
+            }
+            if (mode === 'both' && !ghTok && !glTok) {
+                showNotification('⚠️ Lipsește token GitHub și/sau GitLab.', 'error');
+                return;
+            }
+            if (ghTok) localStorage.setItem('herculesSyncGithubToken_v1', ghTok);
+            if (glTok) localStorage.setItem('herculesSyncGitlabToken_v1', glTok);
             const pin = document.getElementById('syncPin').value || prompt('PIN sincronizare:');
             if (!pin) return;
             await HerculesCloudSync.unlockSyncPin(pin);
             const r = await HerculesCloudSync.pushToCloud(pin, true);
             if (r.ok) {
-                if (r.remoteId) document.getElementById('syncRemoteId').value = r.remoteId;
+                fillSyncRemoteIdFields(r.remoteIds || { github: r.remoteId, gitlab: '' });
                 updateCloudSyncStatusUi();
-                showNotification('☁️ ÎNCĂRCAT ÎN CLOUD. ID profil: ' + (r.remoteId || HerculesCloudSync.getRemoteId()), 'success');
+                let msg = '☁️ ÎNCĂRCAT ÎN CLOUD.';
+                if (r.remoteIds && r.remoteIds.github && r.remoteIds.gitlab) {
+                    msg += ' GitHub + GitLab OK.';
+                } else if (r.remoteIds && r.remoteIds.gitlab) {
+                    msg += ' GitLab OK.';
+                } else {
+                    msg += ' GitHub OK.';
+                }
+                if (r.warnings && r.warnings.length) {
+                    msg += ' ' + r.warnings.join(' ');
+                }
+                showNotification(msg, r.partial ? 'warning' : 'success');
             } else showNotification('❌ ' + (r.error || 'Eroare la încărcare'), 'error');
         }
 
